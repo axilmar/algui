@@ -77,6 +77,12 @@ typedef enum ALGUI_MESSAGE {
      * Invoked after the children are painted.
      */
      ALGUI_MESSAGE_PAINT_FOREGROUND,
+
+     /**
+      * Set up the geometry of the node and its subnodes.
+      * The default implementation passes the message to its children.
+      */
+     ALGUI_MESSAGE_DO_LAYOUT,
 } ALGUI_MESSAGE;
 
 
@@ -257,6 +263,17 @@ ALGUI_RESULT algui_send_message(ALGUI_NODE* node, int id, void* data);
 
 
 /**
+ * Sends the given message to all the children of the given node.
+ * @param node parent node.
+ * @param id message id.
+ * @param data message data.
+ * @param results optional table with message results. Must have enough room for each child of node.
+ * @return result of operation.
+ */
+ALGUI_RESULT algui_send_message_to_children(ALGUI_NODE* node, int id, void* data, ALGUI_RESULT results[]);
+
+
+/**
  * Sends an init message to the node.
  * The node's proc must have been setup.
  * @param node target node.
@@ -302,6 +319,14 @@ ALGUI_RESULT algui_remove_child(ALGUI_NODE* node, ALGUI_NODE* child);
  * @return result of operation.
  */
 ALGUI_RESULT algui_paint_node(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_PAINT* data);
+
+
+/**
+ * Sends the do-layout message to the node.
+ * @param node target node.
+ * @return result of operation.
+ */
+ALGUI_RESULT algui_do_layout(ALGUI_NODE* node);
 
 
 /**

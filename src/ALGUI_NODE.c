@@ -220,6 +220,16 @@ static ALGUI_RESULT node_paint(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_PAINT* data)
 }
 
 
+static ALGUI_RESULT node_do_layout(ALGUI_NODE* node) {
+    for (ALGUI_NODE* child = node->first; child; ) {
+        ALGUI_NODE* next = child->next;
+        algui_send_message(child, ALGUI_MESSAGE_DO_LAYOUT, NULL);
+        child = next;
+    }
+    return ALGUI_RESULT_OK;
+}
+
+
 //default proc
 ALGUI_RESULT algui_node_proc(ALGUI_NODE* node, int id, void* data) {
     switch (id) {
@@ -237,6 +247,9 @@ ALGUI_RESULT algui_node_proc(ALGUI_NODE* node, int id, void* data) {
 
         case ALGUI_MESSAGE_PAINT:
             return node_paint(node, (ALGUI_MESSAGE_DATA_PAINT*)data);
+
+        case ALGUI_MESSAGE_DO_LAYOUT:
+            return node_do_layout(node);
     }
 
     return ALGUI_RESULT_UNKNOWN;
@@ -257,6 +270,36 @@ ALGUI_RESULT algui_send_message(ALGUI_NODE* node, int id, void* data) {
 
     //invoke the proc
     return node->proc(node, id, data);
+}
+
+
+//send message to children
+ALGUI_RESULT algui_send_message_to_children(ALGUI_NODE* node, int id, void* data, ALGUI_RESULT results[]) {
+    //check the node
+    if (!node) {
+        return ALGUI_RESULT_ERROR_NULL_NODE;
+    }
+
+    //set results
+    if (results) {
+        unsigned index = 0;
+        for (ALGUI_NODE* child = node->first; child; ) {
+            ALGUI_NODE* next = child->next;
+            results[index++] = algui_send_message(child, id, data);
+            child = next;
+        }
+    }
+
+    //else ignore results
+    else {
+        for (ALGUI_NODE* child = node->first; child; ) {
+            ALGUI_NODE* next = child->next;
+            algui_send_message(child, id, data);
+            child = next;
+        }
+    }
+
+    return ALGUI_RESULT_OK;
 }
 
 
@@ -309,6 +352,12 @@ ALGUI_RESULT algui_remove_child(ALGUI_NODE* node, ALGUI_NODE* child) {
 //paint a node
 ALGUI_RESULT algui_paint_node(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_PAINT* data) {
     return algui_send_message(node, ALGUI_MESSAGE_PAINT, data);
+}
+
+
+//sends the layout message
+ALGUI_RESULT algui_do_layout(ALGUI_NODE* node) {
+    return algui_send_message(node, ALGUI_MESSAGE_DO_LAYOUT, NULL);
 }
 
 

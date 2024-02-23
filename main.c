@@ -5,8 +5,16 @@
 #include "ALGUI_NODE.h"
 
 
+typedef enum LAYOUT {
+    LAYOUT_NONE,
+    LAYOUT_HOR,
+    LAYOUT_VER
+} LAYOUT;
+
+
 typedef struct TEST {
     ALGUI_NODE node;
+    LAYOUT layout;
 } TEST;
 
 
@@ -49,11 +57,51 @@ static ALGUI_RESULT test_paint(TEST* test, ALGUI_MESSAGE_DATA_PAINT* data) {
 }
 
 
+static void test_format(TEST* test, float xf, float yf) {
+    float x = 0, y = 0;
+
+    for (ALGUI_NODE* child = test->node.first; child; child = child->next) {
+        float w = child->position.right - child->position.left;
+        float h = child->position.bottom - child->position.top;
+        child->position.left = x;
+        child->position.top = y;
+        child->position.right = child->position.left + w;
+        child->position.bottom = child->position.top + h;
+        x += w * xf;
+        y += h * yf;
+    }
+}
+
+
+static ALGUI_RESULT test_layout(TEST* test) {
+    algui_send_message_to_children(&test->node, ALGUI_MESSAGE_DO_LAYOUT, NULL, NULL);
+    switch (test->layout) {
+        case LAYOUT_HOR:
+            test_format(test, 1, 0);
+            break;
+
+        case LAYOUT_VER:
+            test_format(test, 0, 1);
+            break;
+    }
+    return ALGUI_RESULT_OK;
+}
+
+
 static ALGUI_RESULT test_proc(ALGUI_NODE* node, int id, void* data) {
     switch (id) {
+        case ALGUI_MESSAGE_INIT:
+            algui_node_proc(node, id, data);
+            ((TEST*)node)->layout = LAYOUT_NONE;
+            return ALGUI_RESULT_OK;
+
         case ALGUI_MESSAGE_PAINT_BACKGROUND:
             return test_paint((TEST*)node, (ALGUI_MESSAGE_DATA_PAINT*)data);
+
+        case ALGUI_MESSAGE_DO_LAYOUT:
+            return test_layout((TEST*)node);
     }
+
     return algui_node_proc(node, id, data);
 }
 
@@ -101,6 +149,7 @@ int main(int argc, const char* argv[])
     form2.node.position.top = 150;
     form2.node.position.right = form2.node.position.left + 200;
     form2.node.position.bottom = form2.node.position.top + 150;
+    form2.layout = LAYOUT_VER;
     algui_insert_child(&root.node, &form2.node, -1);
 
     TEST form3;
@@ -136,6 +185,8 @@ int main(int argc, const char* argv[])
     algui_insert_child(&form2.node, &button3.node, -1);
 
     form2.node.active = 1;
+
+    algui_do_layout(&root.node);
 
     while (1) {
         ALLEGRO_EVENT event;
