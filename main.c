@@ -149,7 +149,7 @@ int main(int argc, const char* argv[])
     form2.node.position.top = 150;
     form2.node.position.right = form2.node.position.left + 200;
     form2.node.position.bottom = form2.node.position.top + 150;
-    form2.layout = LAYOUT_VER;
+    //form2.layout = LAYOUT_VER;
     algui_insert_child(&root.node, &form2.node, -1);
 
     TEST form3;
@@ -184,7 +184,7 @@ int main(int argc, const char* argv[])
     button3.node.position.bottom = button3.node.position.top + 40;
     algui_insert_child(&form2.node, &button3.node, -1);
 
-    form2.node.active = 1;
+    //form2.node.active = 1;
 
     algui_do_layout(&root.node);
 
@@ -200,7 +200,7 @@ int main(int argc, const char* argv[])
             redraw = true;
         }
 
-        if (event.type == ALLEGRO_EVENT_KEY_CHAR) {
+        else if (event.type == ALLEGRO_EVENT_KEY_CHAR) {
             if (event.keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
                 break;
             }
