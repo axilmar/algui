@@ -2,22 +2,8 @@
 #define ALGUI_NODE_H
 
 
-/**
- * Rectangle.
- */
-typedef struct ALGUI_RECT {
-    ///left coordinate.
-    float left;
-
-    ///top coordinate.
-    float top;
-
-    ///right coordinate.
-    float right;
-
-    ///bottom coordinate.
-    float bottom;
-} ALGUI_RECT;
+#include "allegro5/allegro.h"
+#include "ALGUI_RECT.h"
 
 
 /**
@@ -57,11 +43,38 @@ typedef enum ALGUI_MESSAGE {
      */
     ALGUI_MESSAGE_PAINT,
 
-     /**
-      * Set up the geometry of the node and its subnodes.
-      * The default implementation passes the message to its children.
-      */
-     ALGUI_MESSAGE_DO_LAYOUT,
+    /**
+     * Set up the geometry of the node and its subnodes.
+     * The default implementation passes the message to its children.
+     */
+    ALGUI_MESSAGE_DO_LAYOUT,
+
+    /**
+     * Dispatches an Allegro event.
+     * The default implementation uses the Allegro event to dispath it 
+     * to the appropriate child, based on event type.
+     */
+    ALGUI_MESSAGE_DISPATCH_EVENT,
+
+    /**
+     * A mouse enter event.
+     * The default implementation sends the event to the appropriate child under the mouse coordinates.
+     */
+    ALGUI_MESSAGE_MOUSE_ENTER,
+
+    /**
+     * A mouse move event.
+     * The default implementation sends the event to the appropriate child under the mouse coordinates.
+     * If the mouse cursor crosses children, then the child node that lost the mouse receives the mouse leave event,
+     * while the child node that got the mouse receives a mouse enter event.
+     */
+    ALGUI_MESSAGE_MOUSE_MOVE,
+
+    /**
+     * A mouse leave event.
+     * The default implementation sends the event to the child that had the mouse.
+     */
+     ALGUI_MESSAGE_MOUSE_LEAVE,
 } ALGUI_MESSAGE;
 
 
@@ -89,6 +102,12 @@ typedef enum ALGUI_RESULT {
 
     ///operation could not be completed because because the child 's parent is invalid (not null on insert or different than parent on remove).
     ALGUI_RESULT_ERROR_CHILD_INVALID_PARENT,
+
+    ///node is disabled and cannot handle events.
+    ALGUI_RESULT_ERROR_DISABLED_NODE,
+
+    ///node is invisible
+    ALGUI_RESULT_ERROR_INVISIBLE_NODE
 
 } ALGUI_RESULT;
 
@@ -167,6 +186,18 @@ typedef struct ALGUI_MESSAGE_DATA_PAINT {
 
 
 /**
+ * Event data.
+ */
+typedef struct ALGUI_MESSAGE_DATA_EVENT {
+    //the associated allegro event
+    ALLEGRO_EVENT* event;
+
+    ///screen rectangle of the node
+    ALGUI_RECT position;
+} ALGUI_MESSAGE_DATA_EVENT;
+
+
+/**
  * Base struct for UI nodes.
  */
 typedef struct ALGUI_NODE {
@@ -217,6 +248,9 @@ typedef struct ALGUI_NODE {
 
     ///active flag; if the node contains the focus (but it is not focused itself).
     unsigned active : 1;
+
+    ///if the node has currently the mouse or not
+    unsigned has_mouse : 1;
 } ALGUI_NODE;
 
 
@@ -323,6 +357,26 @@ ALGUI_RESULT algui_do_node_layout(ALGUI_NODE* node);
  * @return child at the given z-order or null if none exists.
  */
 ALGUI_NODE* algui_find_child_node_at_z_order(ALGUI_NODE* node, unsigned z_order);
+
+
+/**
+ * Locates a child node at the given local coordinates.
+ * @param node node to get the child node of.
+ * @param x x coordinate.
+ * @param y y coordinate.
+ * @return the node under the given point or NULL if none found.
+ */
+ALGUI_NODE* algui_find_child_node_at_point(ALGUI_NODE* node, float x, float y);
+
+
+/**
+ * Sends the given node the given allegro event in order for the node to dispatch it
+ * to itself and its children.
+ * @param node target node.
+ * @param event allegro event to dispatch.
+ * @return result of operation.
+ */
+ALGUI_RESULT algui_dispatch_event(ALGUI_NODE* node, ALLEGRO_EVENT* event);
 
 
 #endif //ALGUI_NODE_H

@@ -2,7 +2,12 @@
 #include <stdlib.h>
 #include "allegro5/allegro.h"
 #include "allegro5/allegro_primitives.h"
+#include "allegro5/allegro_font.h"
+#include <allegro5/allegro_ttf.h>
 #include "ALGUI_NODE.h"
+
+
+#define MAX_MESSAGES 15
 
 
 typedef enum LAYOUT {
@@ -15,7 +20,12 @@ typedef enum LAYOUT {
 typedef struct TEST {
     ALGUI_NODE node;
     LAYOUT layout;
+    const char* messages[MAX_MESSAGES];
+    ALLEGRO_COLOR colors[MAX_MESSAGES];
 } TEST;
+
+
+static ALLEGRO_FONT* test_font;
 
 
 static ALGUI_RESULT test_paint(TEST* test, ALGUI_MESSAGE_DATA_PAINT* data) {
@@ -53,6 +63,12 @@ static ALGUI_RESULT test_paint(TEST* test, ALGUI_MESSAGE_DATA_PAINT* data) {
     al_draw_filled_rectangle(data->position.left, data->position.top, data->position.right, data->position.bottom, bg);
     al_draw_rectangle(data->position.left, data->position.top, data->position.right, data->position.bottom, fg, 2);
 
+    for (unsigned i = 0; i < MAX_MESSAGES; ++i) {
+        if (test->messages[i]) {
+            al_draw_text(test_font, test->colors[i], data->position.left, data->position.top + al_get_font_line_height(test_font) * i, 0, test->messages[i]);
+        }
+    }
+
     return algui_node_proc(&test->node, ALGUI_MESSAGE_PAINT, data);
 }
 
@@ -88,11 +104,22 @@ static ALGUI_RESULT test_layout(TEST* test) {
 }
 
 
+unsigned char random255() {
+    return (unsigned char)(rand() * 255);
+}
+
+
+ALLEGRO_COLOR random_color() {
+    return al_map_rgb(random255(), random255(), random255());
+}
+
+
 static ALGUI_RESULT test_proc(ALGUI_NODE* node, int id, void* data) {
     switch (id) {
         case ALGUI_MESSAGE_INIT:
             algui_node_proc(node, id, data);
             ((TEST*)node)->layout = LAYOUT_NONE;
+            memset((char*)&((TEST*)node)->messages[0], 0, sizeof(const char*) * MAX_MESSAGES);
             return ALGUI_RESULT_OK;
 
         case ALGUI_MESSAGE_PAINT:
@@ -100,6 +127,21 @@ static ALGUI_RESULT test_proc(ALGUI_NODE* node, int id, void* data) {
 
         case ALGUI_MESSAGE_DO_LAYOUT:
             return test_layout((TEST*)node);
+
+        case ALGUI_MESSAGE_MOUSE_ENTER:
+            ((TEST*)node)->messages[0] = "MouseEnter";
+            ((TEST*)node)->colors[0] = random_color();
+            return algui_node_proc(node, id, data);
+
+        case ALGUI_MESSAGE_MOUSE_MOVE:
+            ((TEST*)node)->messages[1] = "MouseMove";
+            ((TEST*)node)->colors[1] = random_color();
+            return algui_node_proc(node, id, data);
+
+        case ALGUI_MESSAGE_MOUSE_LEAVE:
+            ((TEST*)node)->messages[2] = "MouseLeave";
+            ((TEST*)node)->colors[2] = random_color();
+            return algui_node_proc(node, id, data);
     }
 
     return algui_node_proc(node, id, data);
@@ -120,15 +162,20 @@ int main(int argc, const char* argv[])
     al_install_mouse();
     al_install_keyboard();
     al_init_primitives_addon();
+    al_init_font_addon();
+    al_init_ttf_addon();
 
     display = al_create_display(800, 600);
     timer = al_create_timer(1.0 / 30);
 
     queue = al_create_event_queue();
+    al_register_event_source(queue, al_get_mouse_event_source());
     al_register_event_source(queue, al_get_keyboard_event_source());
     al_register_event_source(queue, al_get_display_event_source(display));
     al_register_event_source(queue, al_get_timer_event_source(timer));
     al_start_timer(timer);
+
+    test_font = al_load_ttf_font("SourceSansPro-Regular.ttf", -12, 0);
 
     TEST root;
     algui_init_node(&root.node, test_proc, false, NULL);
@@ -205,6 +252,8 @@ int main(int argc, const char* argv[])
                 break;
             }
         }
+
+        algui_dispatch_event(&root.node, &event);
 
         if (redraw) {
             redraw = false;

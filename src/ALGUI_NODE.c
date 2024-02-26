@@ -23,6 +23,7 @@ static ALGUI_RESULT node_init(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_INIT* data) {
     node->pressed = 0;
     node->selected = 0;
     node->active = 0;
+    node->has_mouse = 0;
     return ALGUI_RESULT_OK;
 }
 
@@ -226,12 +227,212 @@ static ALGUI_RESULT node_paint(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_PAINT* data)
 }
 
 
+//do layout in children
 static ALGUI_RESULT node_do_layout(ALGUI_NODE* node) {
     for (ALGUI_NODE* child = node->first; child; ) {
         ALGUI_NODE* next = child->next;
         algui_send_message_to_node(child, ALGUI_MESSAGE_DO_LAYOUT, NULL);
         child = next;
     }
+    return ALGUI_RESULT_OK;
+}
+
+
+//dispatch a mouse move event
+static ALGUI_RESULT node_dispatch_mouse_move_event(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_EVENT* data) {
+    const unsigned node_has_mouse = algui_rect_intersects_with_point(&data->position, data->event->mouse.x, data->event->mouse.y);
+
+    if (node->has_mouse && node_has_mouse) {
+        return algui_send_message_to_node(node, ALGUI_MESSAGE_MOUSE_MOVE, data);
+    }
+
+    if (!node->has_mouse) {
+        node->has_mouse = 1;
+        return algui_send_message_to_node(node, ALGUI_MESSAGE_MOUSE_ENTER, data);
+    }
+
+    if (!node_has_mouse) {
+        node->has_mouse = 0;
+        return algui_send_message_to_node(node, ALGUI_MESSAGE_MOUSE_LEAVE, data);
+    }
+
+    return ALGUI_RESULT_UNKNOWN;
+}
+
+
+//compute node position from root
+static void compute_node_position_from_root(ALGUI_NODE* node, ALGUI_RECT* pos) {
+    pos->left = node->position.left;
+    pos->top = node->position.top;
+
+    for (ALGUI_NODE* ancestor = node->parent; ancestor; ancestor = ancestor->parent) {
+        pos->left += ancestor->position.left;
+        pos->top += ancestor->position.top;
+    }
+
+    pos->right = pos->left + node->position.right - node->position.left;
+    pos->bottom = pos->top + node->position.bottom - node->position.top;
+}
+
+
+//dispatch allegro mouse event
+static ALGUI_RESULT node_dispatch_mouse_axes_event(ALGUI_NODE* node, ALLEGRO_EVENT* event) {
+    //results
+    ALGUI_RESULT mouse_move_result = ALGUI_RESULT_UNKNOWN;
+
+    //if mouse moved 
+    if (event->mouse.dx || event->mouse.dy) {
+        ALGUI_MESSAGE_DATA_EVENT data;
+        data.event = event;
+        compute_node_position_from_root(node, &data.position);
+        mouse_move_result = node_dispatch_mouse_move_event(node, &data);
+    }
+
+    return mouse_move_result;
+}
+
+
+//dispatch event
+static ALGUI_RESULT node_dispatch_event(ALGUI_NODE* node, ALLEGRO_EVENT* event) {
+    //if node is disabled, it cannot handle events
+    if (!node->enabled) {
+        return ALGUI_RESULT_ERROR_DISABLED_NODE;
+    }
+
+    //dispatch event according to Allegro event type
+    switch (event->type) {
+        case ALLEGRO_EVENT_MOUSE_AXES:
+            return node_dispatch_mouse_axes_event(node, event);
+    }
+
+    return ALGUI_RESULT_UNKNOWN;
+}
+
+
+//mouse enter event
+static ALGUI_RESULT node_mouse_enter(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_EVENT* data) {
+    //find child under mouse coordinates
+    ALGUI_NODE* child_under_mouse = algui_find_child_node_at_point(node, data->event->mouse.x - data->position.left, data->event->mouse.y - data->position.top);
+
+    //if found, set its 'has mouse' flag and send the mouse enter event to it
+    if (child_under_mouse) {
+        child_under_mouse->has_mouse = 1;
+        if (child_under_mouse->enabled) {
+            ALGUI_MESSAGE_DATA_EVENT childData = { 
+                data->event, 
+                {
+                    child_under_mouse->position.left + data->position.left,
+                    child_under_mouse->position.top + data->position.top,
+                    child_under_mouse->position.right + data->position.left,
+                    child_under_mouse->position.bottom + data->position.top
+                }
+            };
+            return algui_send_message_to_node(child_under_mouse, ALGUI_MESSAGE_MOUSE_ENTER, &childData);
+        }
+    }
+
+    return ALGUI_RESULT_OK;
+}
+
+
+//finds the child with the 'has_mouse' flag set to true
+static ALGUI_NODE* find_child_with_mouse(ALGUI_NODE* node) {
+    for (ALGUI_NODE* child = node->last; child; child = child->prev) {
+        if (child->has_mouse) {
+            return child;
+        }
+    }
+    return NULL;
+}
+
+
+//mouse move event
+static ALGUI_RESULT node_mouse_move(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_EVENT* data) {
+    //find child under mouse coordinates
+    ALGUI_NODE* child_under_mouse = algui_find_child_node_at_point(node, data->event->mouse.x - data->position.left, data->event->mouse.y - data->position.top);
+
+    //find child that has the mouse
+    ALGUI_NODE* child_with_mouse = find_child_with_mouse(node);
+
+    //if the same child, then send it a mouse move
+    if (child_under_mouse == child_with_mouse) {
+        if (child_under_mouse && child_under_mouse->enabled) {
+            ALGUI_MESSAGE_DATA_EVENT childData = {
+                data->event,
+                {
+                    child_under_mouse->position.left + data->position.left,
+                    child_under_mouse->position.top + data->position.top,
+                    child_under_mouse->position.right + data->position.left,
+                    child_under_mouse->position.bottom + data->position.top
+                }
+            };
+            return algui_send_message_to_node(child_under_mouse, ALGUI_MESSAGE_MOUSE_MOVE, &childData);
+        }
+        return ALGUI_RESULT_UNKNOWN;
+    }
+
+    unsigned mouse_leave_result = 0, mouse_enter_result = 0;
+
+    //if the mouse left a child, send it a mouse leave event
+    if (child_with_mouse) {
+        child_with_mouse->has_mouse = 0;
+        if (child_with_mouse->enabled) {
+            ALGUI_MESSAGE_DATA_EVENT childData = {
+                data->event,
+                {
+                    child_with_mouse->position.left + data->position.left,
+                    child_with_mouse->position.top + data->position.top,
+                    child_with_mouse->position.right + data->position.left,
+                    child_with_mouse->position.bottom + data->position.top
+                }
+            };
+            mouse_leave_result = algui_send_message_to_node(child_with_mouse, ALGUI_MESSAGE_MOUSE_LEAVE, &childData);
+        }
+    }
+
+    //if the mouse entered a child, send it a mouse enter event
+    if (child_under_mouse) {
+        child_under_mouse->has_mouse = 1;
+        if (child_under_mouse->enabled) {
+            ALGUI_MESSAGE_DATA_EVENT childData = {
+                data->event,
+                {
+                    child_under_mouse->position.left + data->position.left,
+                    child_under_mouse->position.top + data->position.top,
+                    child_under_mouse->position.right + data->position.left,
+                    child_under_mouse->position.bottom + data->position.top
+                }
+            };
+            mouse_enter_result = algui_send_message_to_node(child_under_mouse, ALGUI_MESSAGE_MOUSE_ENTER, &childData);
+        }
+    }
+
+    return mouse_enter_result || mouse_leave_result;
+}
+
+
+//mouse leave event
+static ALGUI_RESULT node_mouse_leave(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_EVENT* data) {
+    //find child that has the mouse
+    ALGUI_NODE* child_with_mouse = find_child_with_mouse(node);
+
+    //if the mouse left a child, send it a mouse leave event
+    if (child_with_mouse) {
+        child_with_mouse->has_mouse = 0;
+        if (child_with_mouse->enabled) {
+            ALGUI_MESSAGE_DATA_EVENT childData = {
+                data->event,
+                {
+                    child_with_mouse->position.left + data->position.left,
+                    child_with_mouse->position.top + data->position.top,
+                    child_with_mouse->position.right + data->position.left,
+                    child_with_mouse->position.bottom + data->position.top
+                }
+            };
+            return algui_send_message_to_node(child_with_mouse, ALGUI_MESSAGE_MOUSE_LEAVE, &childData);
+        }
+    }
+
     return ALGUI_RESULT_OK;
 }
 
@@ -256,6 +457,18 @@ ALGUI_RESULT algui_node_proc(ALGUI_NODE* node, int id, void* data) {
 
         case ALGUI_MESSAGE_DO_LAYOUT:
             return node_do_layout(node);
+
+        case ALGUI_MESSAGE_DISPATCH_EVENT:
+            return node_dispatch_event(node, (ALLEGRO_EVENT*)data);
+
+        case ALGUI_MESSAGE_MOUSE_ENTER:
+            return node_mouse_enter(node, (ALGUI_MESSAGE_DATA_EVENT*)data);
+
+        case ALGUI_MESSAGE_MOUSE_MOVE:
+            return node_mouse_move(node, (ALGUI_MESSAGE_DATA_EVENT*)data);
+
+        case ALGUI_MESSAGE_MOUSE_LEAVE:
+            return node_mouse_leave(node, (ALGUI_MESSAGE_DATA_EVENT*)data);
     }
 
     return ALGUI_RESULT_UNKNOWN;
@@ -415,4 +628,34 @@ ALGUI_NODE* algui_find_child_node_at_z_order(ALGUI_NODE* node, unsigned z_order)
 
     //not found
     return NULL;
+}
+
+
+//find child node from point
+ALGUI_NODE* algui_find_child_node_at_point(ALGUI_NODE* node, float x, float y) {
+    //check the node
+    if (!node) {
+        return NULL;
+    }
+
+    //check if the node is visible
+    if (!node->visible) {
+        return NULL;
+    }
+
+    //iterate children in the reverse order they are drawn
+    for (ALGUI_NODE* child = node->last; child; child = child->prev) {
+        if (child->visible && algui_rect_intersects_with_point(&child->position, x, y)) {
+            return child;
+        }
+    }
+
+    //not found
+    return NULL;
+}
+
+
+//dispatch event
+ALGUI_RESULT algui_dispatch_event(ALGUI_NODE* node, ALLEGRO_EVENT* event) {
+    return algui_send_message_to_node(node, ALGUI_MESSAGE_DISPATCH_EVENT, event);
 }
