@@ -75,6 +75,26 @@ typedef enum ALGUI_MESSAGE {
      * The default implementation sends the event to the child that had the mouse.
      */
      ALGUI_MESSAGE_MOUSE_LEAVE,
+
+     /**
+      * Mouse button down event.
+      * The default implementation sends the event to the child that has the mouse.
+      */
+     ALGUI_MESSAGE_MOUSE_BUTTON_DOWN,
+
+     /**
+      * Mouse button up event.
+      * The default implementation sends the event to the child that has the mouse.
+      */
+     ALGUI_MESSAGE_MOUSE_BUTTON_UP,
+
+     /**
+      * Click event.
+      * It is fired when the user presses and releases the mouse over a node.
+      * The default implementation sends the event to the child that has the mouse.
+      * If the mouse moves outside of a node, then the event is not sent.
+      */
+     ALGUI_MESSAGE_CLICK,
 } ALGUI_MESSAGE;
 
 
@@ -230,6 +250,9 @@ typedef struct ALGUI_NODE {
 
     ///visible flag
     unsigned visible : 1;
+
+    ///if it has the click flag
+    unsigned has_click : 1;
 
     ///enabled flag.
     unsigned enabled : 1;

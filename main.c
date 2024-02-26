@@ -142,6 +142,21 @@ static ALGUI_RESULT test_proc(ALGUI_NODE* node, int id, void* data) {
             ((TEST*)node)->messages[2] = "MouseLeave";
             ((TEST*)node)->colors[2] = random_color();
             return algui_node_proc(node, id, data);
+
+        case ALGUI_MESSAGE_MOUSE_BUTTON_DOWN:
+            ((TEST*)node)->messages[3] = "ButtonDown";
+            ((TEST*)node)->colors[3] = random_color();
+            return algui_node_proc(node, id, data);
+
+        case ALGUI_MESSAGE_MOUSE_BUTTON_UP:
+            ((TEST*)node)->messages[4] = "ButtonUp";
+            ((TEST*)node)->colors[4] = random_color();
+            return algui_node_proc(node, id, data);
+
+        case ALGUI_MESSAGE_CLICK:
+            ((TEST*)node)->messages[5] = "Click";
+            ((TEST*)node)->colors[5] = random_color();
+            return algui_node_proc(node, id, data);
     }
 
     return algui_node_proc(node, id, data);
