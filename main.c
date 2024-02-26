@@ -53,7 +53,7 @@ static ALGUI_RESULT test_paint(TEST* test, ALGUI_MESSAGE_DATA_PAINT* data) {
     al_draw_filled_rectangle(data->position.left, data->position.top, data->position.right, data->position.bottom, bg);
     al_draw_rectangle(data->position.left, data->position.top, data->position.right, data->position.bottom, fg, 2);
 
-    return ALGUI_RESULT_OK;
+    return algui_node_proc(&test->node, ALGUI_MESSAGE_PAINT, data);
 }
 
 
@@ -74,7 +74,7 @@ static void test_format(TEST* test, float xf, float yf) {
 
 
 static ALGUI_RESULT test_layout(TEST* test) {
-    algui_send_message_to_children(&test->node, ALGUI_MESSAGE_DO_LAYOUT, NULL, NULL);
+    algui_send_message_to_child_nodes(&test->node, ALGUI_MESSAGE_DO_LAYOUT, NULL, NULL);
     switch (test->layout) {
         case LAYOUT_HOR:
             test_format(test, 1, 0);
@@ -95,7 +95,7 @@ static ALGUI_RESULT test_proc(ALGUI_NODE* node, int id, void* data) {
             ((TEST*)node)->layout = LAYOUT_NONE;
             return ALGUI_RESULT_OK;
 
-        case ALGUI_MESSAGE_PAINT_BACKGROUND:
+        case ALGUI_MESSAGE_PAINT:
             return test_paint((TEST*)node, (ALGUI_MESSAGE_DATA_PAINT*)data);
 
         case ALGUI_MESSAGE_DO_LAYOUT:
@@ -141,7 +141,7 @@ int main(int argc, const char* argv[])
     form1.node.position.top = 50;
     form1.node.position.right = form1.node.position.left + 200;
     form1.node.position.bottom = form1.node.position.top + 150;
-    algui_insert_child(&root.node, &form1.node, -1);
+    algui_insert_child_node(&root.node, &form1.node, -1);
 
     TEST form2;
     algui_init_node(&form2.node, test_proc, false, NULL);
@@ -150,7 +150,7 @@ int main(int argc, const char* argv[])
     form2.node.position.right = form2.node.position.left + 200;
     form2.node.position.bottom = form2.node.position.top + 150;
     //form2.layout = LAYOUT_VER;
-    algui_insert_child(&root.node, &form2.node, -1);
+    algui_insert_child_node(&root.node, &form2.node, -1);
 
     TEST form3;
     algui_init_node(&form3.node, test_proc, false, NULL);
@@ -158,7 +158,7 @@ int main(int argc, const char* argv[])
     form3.node.position.top = 250;
     form3.node.position.right = form3.node.position.left + 200;
     form3.node.position.bottom = form3.node.position.top + 150;
-    algui_insert_child(&root.node, &form3.node, -1);
+    algui_insert_child_node(&root.node, &form3.node, -1);
 
     TEST button1;
     algui_init_node(&button1.node, test_proc, false, NULL);
@@ -166,7 +166,7 @@ int main(int argc, const char* argv[])
     button1.node.position.top = 40;
     button1.node.position.right = button1.node.position.left + 50;
     button1.node.position.bottom = button1.node.position.top + 40;
-    algui_insert_child(&form2.node, &button1.node, -1);
+    algui_insert_child_node(&form2.node, &button1.node, -1);
 
     TEST button2;
     algui_init_node(&button2.node, test_proc, false, NULL);
@@ -174,7 +174,7 @@ int main(int argc, const char* argv[])
     button2.node.position.top = 60;
     button2.node.position.right = button2.node.position.left + 50;
     button2.node.position.bottom = button2.node.position.top + 40;
-    algui_insert_child(&form2.node, &button2.node, -1);
+    algui_insert_child_node(&form2.node, &button2.node, -1);
 
     TEST button3;
     algui_init_node(&button3.node, test_proc, false, NULL);
@@ -182,11 +182,11 @@ int main(int argc, const char* argv[])
     button3.node.position.top = 80;
     button3.node.position.right = button3.node.position.left + 50;
     button3.node.position.bottom = button3.node.position.top + 40;
-    algui_insert_child(&form2.node, &button3.node, -1);
+    algui_insert_child_node(&form2.node, &button3.node, -1);
 
     //form2.node.active = 1;
 
-    algui_do_layout(&root.node);
+    algui_do_node_layout(&root.node);
 
     while (1) {
         ALLEGRO_EVENT event;
@@ -209,7 +209,7 @@ int main(int argc, const char* argv[])
         if (redraw) {
             redraw = false;
             //al_clear_to_color(al_map_rgb_f(0, 0, 0));
-            algui_paint_node(&root.node, NULL);
+            algui_paint_node(&root.node);
             al_flip_display();
         }
     }

@@ -53,30 +53,9 @@ typedef enum ALGUI_MESSAGE {
 
     /**
      * Paints the node.
-     * The default implementation computes the visual state of a node,
-     * then paints the node's background, then paints the children, then paints the node's foreground.
+     * The default implementation paints the children of a node.
      */
     ALGUI_MESSAGE_PAINT,
-
-    /**
-     * The background of a node is to be painted.
-     * The default implementation does nothing.
-     * Invoked before the children are painted.
-     */
-    ALGUI_MESSAGE_PAINT_BACKGROUND,
-
-    /**
-     * Paints the children.
-     * Each child receives a paint message with the message data containing the appropriate child state.
-     */
-    ALGUI_MESSAGE_PAINT_CHILDREN,
-
-    /**
-     * The foreground of a node is to be painted.
-     * The default implementation does nothing.
-     * Invoked after the children are painted.
-     */
-     ALGUI_MESSAGE_PAINT_FOREGROUND,
 
      /**
       * Set up the geometry of the node and its subnodes.
@@ -259,7 +238,15 @@ ALGUI_RESULT algui_node_proc(ALGUI_NODE* node, int id, void* data);
  * @param data message data.
  * @return depends on message.
  */
-ALGUI_RESULT algui_send_message(ALGUI_NODE* node, int id, void* data);
+ALGUI_RESULT algui_send_message_to_node(ALGUI_NODE* node, int id, void* data);
+
+
+/**
+ * Goes through the node child list and counts the children.
+ * @param node node to get the number of children.
+ * @return the number of children or -1 if there was a problem (e.g. if node was null).
+ */
+unsigned algui_count_child_nodes(ALGUI_NODE* node);
 
 
 /**
@@ -270,7 +257,7 @@ ALGUI_RESULT algui_send_message(ALGUI_NODE* node, int id, void* data);
  * @param results optional table with message results. Must have enough room for each child of node.
  * @return result of operation.
  */
-ALGUI_RESULT algui_send_message_to_children(ALGUI_NODE* node, int id, void* data, ALGUI_RESULT results[]);
+ALGUI_RESULT algui_send_message_to_child_nodes(ALGUI_NODE* node, int id, void* data, ALGUI_RESULT results[]);
 
 
 /**
@@ -300,7 +287,7 @@ ALGUI_RESULT algui_cleanup_node(ALGUI_NODE* node);
  * @param z_order z-order; 0 for first child, -1 for last child.
  * @return result of operation.
  */
-ALGUI_RESULT algui_insert_child(ALGUI_NODE* node, ALGUI_NODE* child, unsigned z_order);
+ALGUI_RESULT algui_insert_child_node(ALGUI_NODE* node, ALGUI_NODE* child, unsigned z_order);
 
 
 /**
@@ -309,7 +296,7 @@ ALGUI_RESULT algui_insert_child(ALGUI_NODE* node, ALGUI_NODE* child, unsigned z_
  * @param child child node.
  * @return result of operation.
  */
-ALGUI_RESULT algui_remove_child(ALGUI_NODE* node, ALGUI_NODE* child);
+ALGUI_RESULT algui_remove_child_node(ALGUI_NODE* node, ALGUI_NODE* child);
 
 
 /**
@@ -318,7 +305,7 @@ ALGUI_RESULT algui_remove_child(ALGUI_NODE* node, ALGUI_NODE* child);
  * @param data paint data; if not given, an internal structure will be used.
  * @return result of operation.
  */
-ALGUI_RESULT algui_paint_node(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_PAINT* data);
+ALGUI_RESULT algui_paint_node(ALGUI_NODE* node);
 
 
 /**
@@ -326,7 +313,7 @@ ALGUI_RESULT algui_paint_node(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_PAINT* data);
  * @param node target node.
  * @return result of operation.
  */
-ALGUI_RESULT algui_do_layout(ALGUI_NODE* node);
+ALGUI_RESULT algui_do_node_layout(ALGUI_NODE* node);
 
 
 /**
@@ -335,7 +322,7 @@ ALGUI_RESULT algui_do_layout(ALGUI_NODE* node);
  * @param z_order z-order.
  * @return child at the given z-order or null if none exists.
  */
-ALGUI_NODE* algui_find_child_at_z_order(ALGUI_NODE* node, unsigned z_order);
+ALGUI_NODE* algui_find_child_node_at_z_order(ALGUI_NODE* node, unsigned z_order);
 
 
 #endif //ALGUI_NODE_H

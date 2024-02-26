@@ -31,7 +31,7 @@ static ALGUI_RESULT node_init(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_INIT* data) {
 static ALGUI_RESULT node_cleanup(ALGUI_NODE* node) {
     //if the node is still a child, remove it from its parent
     if (node->parent) {
-        algui_remove_child(node->parent, node);
+        algui_remove_child_node(node->parent, node);
     }
 
     //remove and cleanup the children
@@ -69,7 +69,7 @@ static ALGUI_RESULT node_insert_child(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_INSER
     }
 
     //find next sibling from z-order
-    ALGUI_NODE* next = algui_find_child_at_z_order(node, data->z_order);
+    ALGUI_NODE* next = algui_find_child_node_at_z_order(node, data->z_order);
 
     //connect the child to the ui tree
     child->parent = node;
@@ -133,8 +133,14 @@ static ALGUI_RESULT node_remove_child(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_REMOV
 }
 
 
-//computes the visual state of an object from root
-static void compute_visual_state_from_root(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_PAINT* state) {
+//computes the visual state of an object from root; returns true if not is visible through the tree
+static int compute_visual_state_from_root(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_PAINT* state) {
+    //do not compute anything if the node is not visible
+    int visible = node->visible;
+    if (!visible) {
+        return 0;
+    }
+
     //init the state from node
     state->position.left = node->position.left;
     state->position.top = node->position.top;
@@ -155,6 +161,7 @@ static void compute_visual_state_from_root(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_
         state->pressed = state->pressed || ancestor->pressed;
         state->selected = state->selected || ancestor->selected;
         state->active = state->active || ancestor->active;
+        visible = visible || ancestor->visible;
     }
 
     //finalize the size
@@ -162,6 +169,9 @@ static void compute_visual_state_from_root(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_
     const float h = node->position.bottom - node->position.top;
     state->position.right = state->position.left + w;
     state->position.bottom = state->position.top + h;
+
+    //return visibility
+    return visible;
 }
 
 
@@ -192,29 +202,25 @@ static ALGUI_RESULT node_paint(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_PAINT* data)
         return ALGUI_RESULT_OK;
     }
 
-    //compute the visual state
-    ALGUI_MESSAGE_DATA_PAINT visual_state;
-    if (data) {
-        compute_visual_state_from_data(node, data, &visual_state);
+    //if no children, then do nothing
+    if (!node->first) {
+        return ALGUI_RESULT_OK;
     }
-    else {
-        compute_visual_state_from_root(node, &visual_state);
-    }
-
-    //paint the background
-    node->proc(node, ALGUI_MESSAGE_PAINT_BACKGROUND, &visual_state);
 
     //paint the children
-    if (node->first) {
-        for (ALGUI_NODE* child = node->first; child; ) {
-            ALGUI_NODE* next = child->next;
-            algui_send_message(child, ALGUI_MESSAGE_PAINT, &visual_state);
-            child = next;
-        }
-    }
+    for (ALGUI_NODE* child = node->first; child; ) {
+        ALGUI_NODE* next = child->next;
 
-    //paint the foreground
-    node->proc(node, ALGUI_MESSAGE_PAINT_FOREGROUND, &visual_state);
+        //compute the child paint data
+        ALGUI_MESSAGE_DATA_PAINT child_data;
+        compute_visual_state_from_data(child, data, &child_data);
+            
+        //paint the child
+        algui_send_message_to_node(child, ALGUI_MESSAGE_PAINT, &child_data);
+
+        //next child
+        child = next;
+    }
 
     return ALGUI_RESULT_OK;
 }
@@ -223,7 +229,7 @@ static ALGUI_RESULT node_paint(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_PAINT* data)
 static ALGUI_RESULT node_do_layout(ALGUI_NODE* node) {
     for (ALGUI_NODE* child = node->first; child; ) {
         ALGUI_NODE* next = child->next;
-        algui_send_message(child, ALGUI_MESSAGE_DO_LAYOUT, NULL);
+        algui_send_message_to_node(child, ALGUI_MESSAGE_DO_LAYOUT, NULL);
         child = next;
     }
     return ALGUI_RESULT_OK;
@@ -257,7 +263,7 @@ ALGUI_RESULT algui_node_proc(ALGUI_NODE* node, int id, void* data) {
 
 
 //send message to node
-ALGUI_RESULT algui_send_message(ALGUI_NODE* node, int id, void* data) {
+ALGUI_RESULT algui_send_message_to_node(ALGUI_NODE* node, int id, void* data) {
     //check the node
     if (!node) {
         return ALGUI_RESULT_ERROR_NULL_NODE;
@@ -273,8 +279,26 @@ ALGUI_RESULT algui_send_message(ALGUI_NODE* node, int id, void* data) {
 }
 
 
+//count child nodes
+unsigned algui_count_child_nodes(ALGUI_NODE* node) {
+    //check the node
+    if (!node) {
+        return -1;
+    }
+
+    unsigned count = 0;
+
+    //count nodes
+    for (ALGUI_NODE* child = node->first; child; child = child->next) {
+        ++count;
+    }
+
+    return count;
+}
+
+
 //send message to children
-ALGUI_RESULT algui_send_message_to_children(ALGUI_NODE* node, int id, void* data, ALGUI_RESULT results[]) {
+ALGUI_RESULT algui_send_message_to_child_nodes(ALGUI_NODE* node, int id, void* data, ALGUI_RESULT results[]) {
     //check the node
     if (!node) {
         return ALGUI_RESULT_ERROR_NULL_NODE;
@@ -285,7 +309,7 @@ ALGUI_RESULT algui_send_message_to_children(ALGUI_NODE* node, int id, void* data
         unsigned index = 0;
         for (ALGUI_NODE* child = node->first; child; ) {
             ALGUI_NODE* next = child->next;
-            results[index++] = algui_send_message(child, id, data);
+            results[index++] = algui_send_message_to_node(child, id, data);
             child = next;
         }
     }
@@ -294,7 +318,7 @@ ALGUI_RESULT algui_send_message_to_children(ALGUI_NODE* node, int id, void* data
     else {
         for (ALGUI_NODE* child = node->first; child; ) {
             ALGUI_NODE* next = child->next;
-            algui_send_message(child, id, data);
+            algui_send_message_to_node(child, id, data);
             child = next;
         }
     }
@@ -328,41 +352,50 @@ ALGUI_RESULT algui_init_node(ALGUI_NODE* node, ALGUI_NODE_MESSAGE_PROC proc, uns
 
 //cleanup a node
 ALGUI_RESULT algui_cleanup_node(ALGUI_NODE* node) {
-    return algui_send_message(node, ALGUI_MESSAGE_CLEANUP, NULL);
+    return algui_send_message_to_node(node, ALGUI_MESSAGE_CLEANUP, NULL);
 }
 
 
 //Sends the insert child message to the node.
-ALGUI_RESULT algui_insert_child(ALGUI_NODE* node, ALGUI_NODE* child, unsigned z_order) {
+ALGUI_RESULT algui_insert_child_node(ALGUI_NODE* node, ALGUI_NODE* child, unsigned z_order) {
     ALGUI_MESSAGE_DATA_INSERT_CHILD data;
     data.child = child;
     data.z_order = z_order;
-    return algui_send_message(node, ALGUI_MESSAGE_INSERT_CHILD, &data);
+    return algui_send_message_to_node(node, ALGUI_MESSAGE_INSERT_CHILD, &data);
 }
 
 
 //Sends the remove child message to the node.
-ALGUI_RESULT algui_remove_child(ALGUI_NODE* node, ALGUI_NODE* child) {
+ALGUI_RESULT algui_remove_child_node(ALGUI_NODE* node, ALGUI_NODE* child) {
     ALGUI_MESSAGE_DATA_REMOVE_CHILD data;
     data.child = child;
-    return algui_send_message(node, ALGUI_MESSAGE_REMOVE_CHILD, &data);
+    return algui_send_message_to_node(node, ALGUI_MESSAGE_REMOVE_CHILD, &data);
 }
 
 
 //paint a node
-ALGUI_RESULT algui_paint_node(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_PAINT* data) {
-    return algui_send_message(node, ALGUI_MESSAGE_PAINT, data);
+ALGUI_RESULT algui_paint_node(ALGUI_NODE* node) {
+    ALGUI_MESSAGE_DATA_PAINT data;
+
+    //compute the visual state of the object from root; 
+    //if it is not visible, then do not paint it
+    if (!compute_visual_state_from_root(node, &data)) {
+        return ALGUI_RESULT_OK;
+    }
+
+    //paint the object
+    return algui_send_message_to_node(node, ALGUI_MESSAGE_PAINT, &data);
 }
 
 
 //sends the layout message
-ALGUI_RESULT algui_do_layout(ALGUI_NODE* node) {
-    return algui_send_message(node, ALGUI_MESSAGE_DO_LAYOUT, NULL);
+ALGUI_RESULT algui_do_node_layout(ALGUI_NODE* node) {
+    return algui_send_message_to_node(node, ALGUI_MESSAGE_DO_LAYOUT, NULL);
 }
 
 
 //find child at z-order
-ALGUI_NODE* algui_find_child_at_z_order(ALGUI_NODE* node, unsigned z_order) {
+ALGUI_NODE* algui_find_child_node_at_z_order(ALGUI_NODE* node, unsigned z_order) {
     //check the node
     if (!node) {
         return NULL;
