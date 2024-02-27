@@ -76,25 +76,52 @@ typedef enum ALGUI_MESSAGE {
      */
      ALGUI_MESSAGE_MOUSE_LEAVE,
 
-     /**
-      * Mouse button down event.
-      * The default implementation sends the event to the child that has the mouse.
-      */
-     ALGUI_MESSAGE_MOUSE_BUTTON_DOWN,
+    /**
+     * Mouse button down event.
+     * The default implementation sends the event to the child that has the mouse.
+     */
+    ALGUI_MESSAGE_MOUSE_BUTTON_DOWN,
 
-     /**
-      * Mouse button up event.
-      * The default implementation sends the event to the child that has the mouse.
-      */
-     ALGUI_MESSAGE_MOUSE_BUTTON_UP,
+    /**
+     * Mouse button up event.
+     * The default implementation sends the event to the child that has the mouse.
+     */
+    ALGUI_MESSAGE_MOUSE_BUTTON_UP,
 
-     /**
-      * Click event.
-      * It is fired when the user presses and releases the mouse over a node.
-      * The default implementation sends the event to the child that has the mouse.
-      * If the mouse moves outside of a node, then the event is not sent.
-      */
-     ALGUI_MESSAGE_CLICK,
+    /**
+     * Click event.
+     * It is fired when the user presses and releases the mouse over a node.
+     * The default implementation sends the event to the child that has the mouse.
+     * If the mouse moves outside of a node, then the event is not sent.
+     */
+    ALGUI_MESSAGE_CLICK,
+
+    /**
+     * Sent to a node that it should receive the focus.
+     * The default implementation gives the input focus to the node.
+     * If another node has the focus, then it must lose the focus first
+     * in order for the focus to change.
+     */
+    ALGUI_MESSAGE_FOCUS,
+
+    /**
+     * Sent to a node to remove focus from it.
+     * The default implementation removes the focus from it,
+     * if it has the focus.
+     */
+    ALGUI_MESSAGE_DEFOCUS,
+
+    /**
+     * Sent to a node when a descentant node receives the input focus.
+     * The default implementation sends the message to the parent.
+     */
+    ALGUI_MESSAGE_ACTIVATE,
+
+    /**
+     * Sent to a node when a descentant node loses the input focus.
+     * The default implementation sends the message to the parent.
+     */
+    ALGUI_MESSAGE_DEACTIVATE,
 } ALGUI_MESSAGE;
 
 
@@ -103,31 +130,43 @@ typedef enum ALGUI_MESSAGE {
  */
 typedef enum ALGUI_RESULT {
     ///message not processed.
-    ALGUI_RESULT_UNKNOWN,
+    ALGUI_RESULT_UNKNOWN = -1,
+
+    ///false.
+    ALGUI_RESULT_FALSE = 0,
+
+    ///true.
+    ALGUI_RESULT_TRUE = 1,
 
     ///no error occured.
-    ALGUI_RESULT_OK,
+    ALGUI_RESULT_OK = 1,
 
     ///node was null.
-    ALGUI_RESULT_ERROR_NULL_NODE,
+    ALGUI_RESULT_ERROR_NULL_NODE = -2,
 
     ///node proc was null.
-    ALGUI_RESULT_ERROR_NULL_NODE_PROC,
+    ALGUI_RESULT_ERROR_NULL_NODE_PROC = -3,
 
     ///the data argument is null.
-    ALGUI_RESULT_ERROR_NULL_DATA,
+    ALGUI_RESULT_ERROR_NULL_DATA = -4,
 
     ///the child is null.
-    ALGUI_RESULT_ERROR_NULL_CHILD,
+    ALGUI_RESULT_ERROR_NULL_CHILD = -5,
 
     ///operation could not be completed because because the child 's parent is invalid (not null on insert or different than parent on remove).
-    ALGUI_RESULT_ERROR_CHILD_INVALID_PARENT,
+    ALGUI_RESULT_ERROR_CHILD_INVALID_PARENT = -6,
 
     ///node is disabled and cannot handle events.
-    ALGUI_RESULT_ERROR_DISABLED_NODE,
+    ALGUI_RESULT_ERROR_DISABLED_NODE = -7,
 
     ///node is invisible
-    ALGUI_RESULT_ERROR_INVISIBLE_NODE
+    ALGUI_RESULT_ERROR_INVISIBLE_NODE = -8,
+
+    ///root node was null.
+    ALGUI_RESULT_ERROR_NULL_ROOT = -9,
+
+    ///focused node refused to lose the focus
+    ALGUI_RESULT_ERROR_CANNOT_DEFOCUS_FOCUSED_NODE = -10,
 
 } ALGUI_RESULT;
 
@@ -245,14 +284,17 @@ typedef struct ALGUI_NODE {
     ///user data.
     void* data;
 
-    ///if node is allocated on the heap
+    ///if it is allocated on the heap.
     unsigned heap_allocated : 1;
+
+    ///if it has a click.
+    unsigned has_click : 1;
+
+    ///if it has the mouse.
+    unsigned has_mouse : 1;
 
     ///visible flag
     unsigned visible : 1;
-
-    ///if it has the click flag
-    unsigned has_click : 1;
 
     ///enabled flag.
     unsigned enabled : 1;
@@ -271,9 +313,6 @@ typedef struct ALGUI_NODE {
 
     ///active flag; if the node contains the focus (but it is not focused itself).
     unsigned active : 1;
-
-    ///if the node has currently the mouse or not
-    unsigned has_mouse : 1;
 } ALGUI_NODE;
 
 
@@ -400,6 +439,30 @@ ALGUI_NODE* algui_find_child_node_at_point(ALGUI_NODE* node, float x, float y);
  * @return result of operation.
  */
 ALGUI_RESULT algui_dispatch_event(ALGUI_NODE* node, ALLEGRO_EVENT* event);
+
+
+/**
+ * Returns the current node that has the focus.
+ * @return the current node that has the focus, or NULL if no node has the focus.
+ */
+ALGUI_NODE* algui_get_node_with_focus();
+
+
+/**
+ * Sets the focus to the given node or removes the focus from the current node.
+ * @param node node to set the focus to; if null, then the focus is removed from the currently focused node.
+ * @return result of operation.
+ */
+ALGUI_RESULT algui_set_focus_to_node(ALGUI_NODE* node);
+
+
+/**
+ * Checks if a node tree contains a node.
+ * @param root root of the node.
+ * @param node node to check if it belongs in the tree starting from root.
+ * @return true if found, false otherwise.
+ */
+ALGUI_RESULT algui_node_tree_contains_node(ALGUI_NODE* root, ALGUI_NODE* node);
 
 
 #endif //ALGUI_NODE_H

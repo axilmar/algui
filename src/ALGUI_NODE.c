@@ -2,6 +2,10 @@
 #include "ALGUI_NODE.h"
 
 
+//global node with focus
+static ALGUI_NODE* focused_node = NULL;
+
+
 //init a node
 static ALGUI_RESULT node_init(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_INIT* data) {
     node->proc = data->proc;
@@ -16,15 +20,15 @@ static ALGUI_RESULT node_init(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_INIT* data) {
     node->position.bottom = 0;
     node->data = data->data;
     node->heap_allocated = data->heap_allocated;
-    node->visible = 1;
     node->has_click = 0;
+    node->has_mouse = 0;
+    node->visible = 1;
     node->enabled = 1;
     node->highlighted = 0;
     node->focused = 0;
     node->pressed = 0;
     node->selected = 0;
     node->active = 0;
-    node->has_mouse = 0;
     return ALGUI_RESULT_OK;
 }
 
@@ -34,6 +38,12 @@ static ALGUI_RESULT node_cleanup(ALGUI_NODE* node) {
     //if the node is still a child, remove it from its parent
     if (node->parent) {
         algui_remove_child_node(node->parent, node);
+    }
+
+    //if the node is the focused node, then the focused node is reset
+    if (node == focused_node) {
+        focused_node = NULL;
+        node->focused = 0;
     }
 
     //remove and cleanup the children
@@ -112,6 +122,14 @@ static ALGUI_RESULT node_remove_child(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_REMOV
     //check the child parent
     if (child->parent != node) {
         return ALGUI_RESULT_ERROR_CHILD_INVALID_PARENT;
+    }
+
+    //if the removed tree contained the focus, then remove try and the focus from it
+    if (focused_node && algui_node_tree_contains_node(child, focused_node)) {
+        const ALGUI_RESULT result = algui_send_message_to_node(focused_node, ALGUI_MESSAGE_DEFOCUS, NULL);
+        if (result != ALGUI_RESULT_OK) {
+            return result;
+        }
     }
 
     //disconnect the child from the ui tree
@@ -604,6 +622,96 @@ static ALGUI_RESULT node_click(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_EVENT* data)
 }
 
 
+//focus node
+static ALGUI_RESULT node_focus(ALGUI_NODE* node) {
+    //if the node already has the focus, do nothing else
+    if (node->focused) {
+        return ALGUI_RESULT_OK;
+    }
+
+    //if there is another node with the focus, ask it to defocus
+    if (focused_node) {
+        const ALGUI_RESULT result = algui_send_message_to_node(focused_node, ALGUI_MESSAGE_DEFOCUS, NULL);
+        if (result != ALGUI_RESULT_OK) {
+            return result;
+        }
+    }
+
+    //focus set successfully
+    focused_node = node;
+    node->focused = 1;
+
+    //activate parent
+    if (node->parent) {
+        algui_send_message_to_node(node->parent, ALGUI_MESSAGE_ACTIVATE, NULL);
+    }
+
+    //success
+    return ALGUI_RESULT_OK;
+}
+
+
+//defocus
+static ALGUI_RESULT node_defocus(ALGUI_NODE* node) {
+    //if node not focused
+    if (!node->focused) {
+        return ALGUI_RESULT_OK;
+    }
+
+    //lose the focus
+    focused_node = NULL;
+    node->focused = 0;
+
+    //deactivate parent
+    if (node->parent) {
+        algui_send_message_to_node(node->parent, ALGUI_MESSAGE_DEACTIVATE, NULL);
+    }
+
+    //success
+    return ALGUI_RESULT_OK;
+}
+
+
+//activate node
+static ALGUI_RESULT node_activate(ALGUI_NODE* node) {
+    //if node already active
+    if (node->active) {
+        return ALGUI_RESULT_OK;
+    }
+
+    //activate node
+    node->active = 1;
+
+    //activate parent
+    if (node->parent) {
+        algui_send_message_to_node(node->parent, ALGUI_MESSAGE_ACTIVATE, NULL);
+    }
+
+    //success
+    return ALGUI_RESULT_OK;
+}
+
+
+//deactivate node
+static ALGUI_RESULT node_deactivate(ALGUI_NODE* node) {
+    //if node already not active
+    if (!node->active) {
+        return ALGUI_RESULT_OK;
+    }
+
+    //deactivate node
+    node->active = 0;
+
+    //deactivate parent
+    if (node->parent) {
+        algui_send_message_to_node(node->parent, ALGUI_MESSAGE_DEACTIVATE, NULL);
+    }
+
+    //success
+    return ALGUI_RESULT_OK;
+}
+
+
 //default proc
 ALGUI_RESULT algui_node_proc(ALGUI_NODE* node, int id, void* data) {
     switch (id) {
@@ -645,6 +753,18 @@ ALGUI_RESULT algui_node_proc(ALGUI_NODE* node, int id, void* data) {
 
         case ALGUI_MESSAGE_CLICK:
             return node_click(node, (ALGUI_MESSAGE_DATA_EVENT*)data);
+
+        case ALGUI_MESSAGE_FOCUS:
+            return node_focus(node);
+
+        case ALGUI_MESSAGE_DEFOCUS:
+            return node_defocus(node);
+
+        case ALGUI_MESSAGE_ACTIVATE:
+            return node_activate(node);
+
+        case ALGUI_MESSAGE_DEACTIVATE:
+            return node_deactivate(node);
     }
 
     return ALGUI_RESULT_UNKNOWN;
@@ -834,4 +954,47 @@ ALGUI_NODE* algui_find_child_node_at_point(ALGUI_NODE* node, float x, float y) {
 //dispatch event
 ALGUI_RESULT algui_dispatch_event(ALGUI_NODE* node, ALLEGRO_EVENT* event) {
     return algui_send_message_to_node(node, ALGUI_MESSAGE_DISPATCH_EVENT, event);
+}
+
+
+//get the node with the focus
+ALGUI_NODE* algui_get_node_with_focus() {
+    return focused_node;
+}
+
+
+//sets/resets the focus
+ALGUI_RESULT algui_set_focus_to_node(ALGUI_NODE* node) {
+    if (node) {
+        return algui_send_message_to_node(node, ALGUI_MESSAGE_FOCUS, NULL);
+    }
+    if (focused_node) {
+        return algui_send_message_to_node(focused_node, ALGUI_MESSAGE_DEFOCUS, NULL);
+    }
+    return ALGUI_RESULT_UNKNOWN;
+}
+
+
+
+//check if node tree contains a node
+ALGUI_RESULT algui_node_tree_contains_node(ALGUI_NODE* root, ALGUI_NODE* node) {
+    //check root
+    if (!root) {
+        return ALGUI_RESULT_ERROR_NULL_ROOT;
+    }
+
+    //check node
+    if (!node) {
+        return ALGUI_RESULT_ERROR_NULL_NODE;
+    }
+
+    //starting from node, go up and check if node equals root
+    for (; node; node = node->parent) {
+        if (node == root) {
+            return ALGUI_RESULT_TRUE;
+        }
+    }
+
+    //not found
+    return ALGUI_RESULT_FALSE;
 }

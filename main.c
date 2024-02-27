@@ -52,8 +52,8 @@ static ALGUI_RESULT test_paint(TEST* test, ALGUI_MESSAGE_DATA_PAINT* data) {
         fg = al_map_rgb(0, 0, 0);
     }
     else if (data->active) {
-        bg = al_map_rgb(255, 128, 128);
-        fg = al_map_rgb(0, 0, 0);
+        bg = al_map_rgb(255, 255, 255);
+        fg = al_map_rgb(255, 128, 128);
     }
     else {
         bg = al_map_rgb(255, 255, 255);
@@ -146,6 +146,7 @@ static ALGUI_RESULT test_proc(ALGUI_NODE* node, int id, void* data) {
         case ALGUI_MESSAGE_MOUSE_BUTTON_DOWN:
             ((TEST*)node)->messages[3] = "ButtonDown";
             ((TEST*)node)->colors[3] = random_color();
+            algui_set_focus_to_node(node);
             return algui_node_proc(node, id, data);
 
         case ALGUI_MESSAGE_MOUSE_BUTTON_UP:
@@ -156,6 +157,16 @@ static ALGUI_RESULT test_proc(ALGUI_NODE* node, int id, void* data) {
         case ALGUI_MESSAGE_CLICK:
             ((TEST*)node)->messages[5] = "Click";
             ((TEST*)node)->colors[5] = random_color();
+            return algui_node_proc(node, id, data);
+
+        case ALGUI_MESSAGE_FOCUS:
+            ((TEST*)node)->messages[6] = "Focused";
+            ((TEST*)node)->colors[6] = random_color();
+            return algui_node_proc(node, id, data);
+
+        case ALGUI_MESSAGE_DEFOCUS:
+            ((TEST*)node)->messages[7] = "Defocused";
+            ((TEST*)node)->colors[7] = random_color();
             return algui_node_proc(node, id, data);
     }
 
