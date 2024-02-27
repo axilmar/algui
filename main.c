@@ -168,6 +168,16 @@ static ALGUI_RESULT test_proc(ALGUI_NODE* node, int id, void* data) {
             ((TEST*)node)->messages[7] = "Defocused";
             ((TEST*)node)->colors[7] = random_color();
             return algui_node_proc(node, id, data);
+
+        case ALGUI_MESSAGE_KEY_CHAR:
+            ((TEST*)node)->messages[8] = "Keychar";
+            ((TEST*)node)->colors[8] = random_color();
+            return algui_node_proc(node, id, data);
+
+        case ALGUI_MESSAGE_UNUSED_KEY_CHAR:
+            ((TEST*)node)->messages[9] = "Unused Keychar";
+            ((TEST*)node)->colors[9] = random_color();
+            return algui_node_proc(node, id, data);
     }
 
     return algui_node_proc(node, id, data);

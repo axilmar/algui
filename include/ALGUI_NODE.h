@@ -122,6 +122,43 @@ typedef enum ALGUI_MESSAGE {
      * The default implementation sends the message to the parent.
      */
     ALGUI_MESSAGE_DEACTIVATE,
+
+    /**
+     * Sent to the node with the input focus.
+     * The default implementation sends the event to the parent.
+     */
+    ALGUI_MESSAGE_KEY_DOWN,
+
+    /**
+     * Sent to the node with the input focus.
+     * The default implementation sends the event to the parent.
+     */
+    ALGUI_MESSAGE_KEY_UP,
+
+    /**
+     * Sent to the node with the input focus.
+     * The default implementation sends the event to the parent.
+     */
+    ALGUI_MESSAGE_KEY_CHAR,
+
+    /**
+     * Sent to a node from root if there is no focused node or the focused node does not process the event.
+     * The default implementation sends the event to the parent.
+     */
+    ALGUI_MESSAGE_UNUSED_KEY_DOWN,
+
+    /**
+     * Sent to a node from root if there is no focused node or the focused node does not process the event.
+     * The default implementation sends the event to the parent.
+     */
+    ALGUI_MESSAGE_UNUSED_KEY_UP,
+
+    /**
+     * Sent to a node from root if there is no focused node or the focused node does not process the event.
+     * The default implementation sends the event to the parent.
+     */
+    ALGUI_MESSAGE_UNUSED_KEY_CHAR,
+
 } ALGUI_MESSAGE;
 
 
@@ -248,10 +285,10 @@ typedef struct ALGUI_MESSAGE_DATA_PAINT {
  * Event data.
  */
 typedef struct ALGUI_MESSAGE_DATA_EVENT {
-    //the associated allegro event
+    //the associated allegro event.
     ALLEGRO_EVENT* event;
 
-    ///screen rectangle of the node
+    ///screen rectangle of the node; valid only with mouse-related messages or other messages that node screen coordinates are needed.
     ALGUI_RECT position;
 } ALGUI_MESSAGE_DATA_EVENT;
 
@@ -463,6 +500,14 @@ ALGUI_RESULT algui_set_focus_to_node(ALGUI_NODE* node);
  * @return true if found, false otherwise.
  */
 ALGUI_RESULT algui_node_tree_contains_node(ALGUI_NODE* root, ALGUI_NODE* node);
+
+
+/**
+ * Checks if a node belongs to an enabled node tree.
+ * @param node node to check.
+ * @return true if the node belongs to an enabled tree, false otherwise.
+ */
+ALGUI_RESULT algui_is_enabled_node_tree(ALGUI_NODE* node);
 
 
 #endif //ALGUI_NODE_H

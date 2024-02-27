@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include "ALGUI_NODE.h"
 
 
@@ -367,10 +368,45 @@ static ALGUI_RESULT node_dispatch_mouse_button_up_event(ALGUI_NODE* node, ALLEGR
 }
 
 
+//get message for keyboard event
+static ALGUI_RESULT get_keyboard_message(ALLEGRO_EVENT* event) {
+    switch (event->type) {
+        case ALLEGRO_EVENT_KEY_DOWN:
+            return ALGUI_MESSAGE_KEY_DOWN;
+        case ALLEGRO_EVENT_KEY_UP:
+            return ALGUI_MESSAGE_KEY_UP;
+        case ALLEGRO_EVENT_KEY_CHAR:
+            return ALGUI_MESSAGE_KEY_CHAR;
+    }
+    fprintf(stderr, "Unknown allegro keyboard event type. Exiting...");
+    exit(-1);
+}
+
+
+//dispatch keyboard event
+static ALGUI_RESULT node_dispatch_keyboard_event(ALGUI_NODE* node, ALLEGRO_EVENT* event) {
+    ALGUI_MESSAGE_DATA_EVENT data = { event };
+    const unsigned keyboard_message = get_keyboard_message(event);
+
+    //send the event to the focused node, if it exists and it is enabled
+    if (focused_node && 
+        algui_is_enabled_node_tree(focused_node) && 
+        algui_send_message_to_node(focused_node, keyboard_message, &data) == ALGUI_RESULT_OK)
+    {
+        return ALGUI_RESULT_OK;
+    }
+
+    const unsigned unused_keyboard_message = keyboard_message + ALGUI_MESSAGE_UNUSED_KEY_DOWN - ALGUI_MESSAGE_KEY_DOWN;
+
+    //keyboard event not processed; sent the unused keyboard event to the node
+    return algui_send_message_to_node(node, unused_keyboard_message, &data);
+}
+
+
 //dispatch event
 static ALGUI_RESULT node_dispatch_event(ALGUI_NODE* node, ALLEGRO_EVENT* event) {
     //if node is disabled, it cannot handle events
-    if (!node->enabled) {
+    if (!algui_is_enabled_node_tree(node)) {
         return ALGUI_RESULT_ERROR_DISABLED_NODE;
     }
 
@@ -384,6 +420,11 @@ static ALGUI_RESULT node_dispatch_event(ALGUI_NODE* node, ALLEGRO_EVENT* event) 
 
         case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
             return node_dispatch_mouse_button_up_event(node, event);
+
+        case ALLEGRO_EVENT_KEY_DOWN:
+        case ALLEGRO_EVENT_KEY_UP:
+        case ALLEGRO_EVENT_KEY_CHAR:
+            return node_dispatch_keyboard_event(node, event);
     }
 
     return ALGUI_RESULT_UNKNOWN;
@@ -392,6 +433,11 @@ static ALGUI_RESULT node_dispatch_event(ALGUI_NODE* node, ALLEGRO_EVENT* event) 
 
 //mouse enter event
 static ALGUI_RESULT node_mouse_enter(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_EVENT* data) {
+    //node must be enabled
+    if (!node->enabled) {
+        return ALGUI_RESULT_ERROR_DISABLED_NODE;
+    }
+
     //find the child under mouse coordinates
     ALGUI_NODE* child_under_mouse = algui_find_child_node_at_point(node, data->event->mouse.x - data->position.left, data->event->mouse.y - data->position.top);
 
@@ -429,6 +475,11 @@ static ALGUI_NODE* find_child_with_mouse(ALGUI_NODE* node) {
 
 //mouse move event
 static ALGUI_RESULT node_mouse_move(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_EVENT* data) {
+    //node must be enabled
+    if (!node->enabled) {
+        return ALGUI_RESULT_ERROR_DISABLED_NODE;
+    }
+
     //find child under mouse coordinates
     ALGUI_NODE* child_under_mouse = algui_find_child_node_at_point(node, data->event->mouse.x - data->position.left, data->event->mouse.y - data->position.top);
 
@@ -494,6 +545,11 @@ static ALGUI_RESULT node_mouse_move(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_EVENT* 
 
 //mouse leave event
 static ALGUI_RESULT node_mouse_leave(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_EVENT* data) {
+    //node must be enabled
+    if (!node->enabled) {
+        return ALGUI_RESULT_ERROR_DISABLED_NODE;
+    }
+
     //find child that has the mouse
     ALGUI_NODE* child_with_mouse = find_child_with_mouse(node);
 
@@ -520,6 +576,11 @@ static ALGUI_RESULT node_mouse_leave(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_EVENT*
 
 //mouse button down event
 static ALGUI_RESULT node_mouse_button_down(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_EVENT* data) {
+    //node must be enabled
+    if (!node->enabled) {
+        return ALGUI_RESULT_ERROR_DISABLED_NODE;
+    }
+
     //find the child under the mouse coordinates
     ALGUI_NODE* child_under_mouse = algui_find_child_node_at_point(node, data->event->mouse.x - data->position.left, data->event->mouse.y - data->position.top);
 
@@ -546,6 +607,11 @@ static ALGUI_RESULT node_mouse_button_down(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_
 
 //mouse button up event
 static ALGUI_RESULT node_mouse_button_up(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_EVENT* data) {
+    //node must be enabled
+    if (!node->enabled) {
+        return ALGUI_RESULT_ERROR_DISABLED_NODE;
+    }
+
     //find the child under the mouse coordinates
     ALGUI_NODE* child_under_mouse = algui_find_child_node_at_point(node, data->event->mouse.x - data->position.left, data->event->mouse.y - data->position.top);
 
@@ -624,6 +690,11 @@ static ALGUI_RESULT node_click(ALGUI_NODE* node, ALGUI_MESSAGE_DATA_EVENT* data)
 
 //focus node
 static ALGUI_RESULT node_focus(ALGUI_NODE* node) {
+    //node must be enabled
+    if (!algui_is_enabled_node_tree(node)) {
+        return ALGUI_RESULT_ERROR_DISABLED_NODE;
+    }
+
     //if the node already has the focus, do nothing else
     if (node->focused) {
         return ALGUI_RESULT_OK;
@@ -712,6 +783,25 @@ static ALGUI_RESULT node_deactivate(ALGUI_NODE* node) {
 }
 
 
+//dispatch unused keyboard event to children
+static ALGUI_RESULT node_unused_keyboard_event(ALGUI_NODE* node, int id, ALGUI_MESSAGE_DATA_EVENT* data) {
+    //node must be enabled
+    if (!node->enabled) {
+        return ALGUI_RESULT_ERROR_DISABLED_NODE;
+    }
+
+    //pass it down to children in topmost to bottom order
+    for (ALGUI_NODE* child = node->last; child; child = child->prev) {
+        if (child->enabled && algui_send_message_to_node(child, id, data) == ALGUI_RESULT_OK) {
+            return ALGUI_RESULT_OK;
+        }
+    }
+
+    //not used
+    return ALGUI_RESULT_UNKNOWN;
+}
+
+
 //default proc
 ALGUI_RESULT algui_node_proc(ALGUI_NODE* node, int id, void* data) {
     switch (id) {
@@ -765,6 +855,11 @@ ALGUI_RESULT algui_node_proc(ALGUI_NODE* node, int id, void* data) {
 
         case ALGUI_MESSAGE_DEACTIVATE:
             return node_deactivate(node);
+
+        case ALGUI_MESSAGE_UNUSED_KEY_DOWN:
+        case ALGUI_MESSAGE_UNUSED_KEY_UP:
+        case ALGUI_MESSAGE_UNUSED_KEY_CHAR:
+            return node_unused_keyboard_event(node, id, (ALGUI_MESSAGE_DATA_EVENT*)data);
     }
 
     return ALGUI_RESULT_UNKNOWN;
@@ -997,4 +1092,23 @@ ALGUI_RESULT algui_node_tree_contains_node(ALGUI_NODE* root, ALGUI_NODE* node) {
 
     //not found
     return ALGUI_RESULT_FALSE;
+}
+
+
+//check enabled tree
+ALGUI_RESULT algui_is_enabled_node_tree(ALGUI_NODE* node) {
+    //check the node
+    if (!node) {
+        return ALGUI_RESULT_ERROR_NULL_NODE;
+    }
+
+    //go up the tree and stop on disabled node
+    for (; node; node = node->parent) {
+        if (!node->enabled) {
+            return ALGUI_RESULT_FALSE;
+        }
+    }
+
+    //success; all nodes up to root are enabled
+    return ALGUI_RESULT_TRUE;
 }
