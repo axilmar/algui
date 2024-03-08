@@ -1062,16 +1062,6 @@ int algui_set_widget_focused(ALGUI_WIDGET* wgt, int focused) {
 }
 
 
-void algui_focus_widget(ALGUI_WIDGET* wgt) {
-    algui_set_widget_focused(wgt, 1);
-}
-
-
-void algui_blur_widget(ALGUI_WIDGET* wgt) {
-    algui_set_widget_focused(wgt, 0);
-}
-
-
 void algui_set_widget_pressed(ALGUI_WIDGET* wgt, int pressed) {
     assert(wgt);
     if (wgt->pressed != pressed) {

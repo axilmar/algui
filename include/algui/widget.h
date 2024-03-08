@@ -247,12 +247,6 @@ void algui_set_widget_enabled(ALGUI_WIDGET* wgt, int enabled);
 int algui_set_widget_focused(ALGUI_WIDGET* wgt, int focused);
 
 
-void algui_focus_widget(ALGUI_WIDGET* wgt);
-
-
-void algui_blur_widget(ALGUI_WIDGET* wgt);
-
-
 void algui_set_widget_pressed(ALGUI_WIDGET* wgt, int pressed);
 
 
