@@ -2,868 +2,559 @@
 #include "algui/widget.h"
 
 
-//currently focused widget
+/**********************************************************************************************************************
+    PRIVATE
+ **********************************************************************************************************************/
+
+
+//find max
+#define __MAX__(A, B) ((A) > (B) ? (A) : (B)) 
+
+
+#define FOR_EACH_CHILD(WGT, CHILD)\
+    for(ALGUI_WIDGET* CHILD = WGT->first; CHILD != NULL; CHILD = CHILD->next) 
+
+
 static ALGUI_WIDGET* focused_widget = NULL;
 
 
-//updates a child's rect
-static void update_child_rect(ALGUI_WIDGET* wgt) {
+static int doing_layout = 0;
+
+
+static int do_widget_message(ALGUI_WIDGET * wgt, int id, void* data) {
+    return wgt->proc(wgt, id, data);
+}
+
+
+static void do_ancestor_message(ALGUI_WIDGET * wgt, int id, void* data) {
+    for(wgt = wgt->parent; wgt != NULL; wgt = wgt->parent) {
+        do_widget_message(wgt, id, data);
+    }
+}
+
+
+static int widget_tree_contains(ALGUI_WIDGET * root, ALGUI_WIDGET * wgt) {
+    for(; wgt != NULL; wgt = wgt->parent) {
+        if (wgt == root) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+
+static int is_widget_focused(ALGUI_WIDGET* wgt) {
+    return wgt == focused_widget;
+}
+
+
+static int widget_contains_focus(ALGUI_WIDGET* wgt) {
+    return focused_widget ? widget_tree_contains(wgt, focused_widget) : 0;
+}
+
+
+static void compute_child_tree_rect_x1(ALGUI_WIDGET* wgt) {
     wgt->x1 = wgt->x + wgt->parent->x1;
+    wgt->x2 = wgt->x1 + wgt->width;
+}
+
+
+static void compute_child_tree_rect_y1(ALGUI_WIDGET* wgt) {
     wgt->y1 = wgt->y + wgt->parent->y1;
-    wgt->x2 = wgt->x1 + wgt->width;
     wgt->y2 = wgt->y1 + wgt->height;
 }
 
 
-//updates the child's state
-static void update_child(ALGUI_WIDGET* wgt) {
-    update_child_rect(wgt);
+static void compute_child_tree_rect(ALGUI_WIDGET* wgt) {
+    compute_child_tree_rect_x1(wgt);
+    compute_child_tree_rect_y1(wgt);
+}
+
+
+static void compute_child_tree_visible(ALGUI_WIDGET* wgt) {
     wgt->tree_visible = wgt->visible && wgt->parent->tree_visible;
+}
+
+
+static void compute_child_tree_enabled(ALGUI_WIDGET* wgt) {
     wgt->tree_enabled = wgt->enabled && wgt->parent->tree_enabled;
-    wgt->tree_has_mouse = wgt->has_mouse || wgt->parent->tree_has_mouse;
-    wgt->tree_has_focus = wgt->has_focus || wgt->parent->tree_has_focus;
+}
+
+
+static void compute_child_tree_highlighted(ALGUI_WIDGET* wgt) {
+    wgt->tree_highlighted = wgt->highlighted || wgt->parent->tree_highlighted;
+}
+
+
+static void compute_child_tree_pressed(ALGUI_WIDGET* wgt) {
     wgt->tree_pressed = wgt->pressed || wgt->parent->tree_pressed;
+}
+
+
+static void compute_child_tree_selected(ALGUI_WIDGET* wgt) {
     wgt->tree_selected = wgt->selected || wgt->parent->tree_selected;
+}
+
+
+static void compute_child_tree_active(ALGUI_WIDGET* wgt) {
     wgt->tree_active = wgt->active || wgt->parent->tree_active;
 }
 
 
-//updates the root's global rect
-static void update_root_rect(ALGUI_WIDGET* wgt) {
-    wgt->x1 = wgt->x;
-    wgt->y1 = wgt->y;
-    wgt->x2 = wgt->x1 + wgt->width;
-    wgt->y2 = wgt->y1 + wgt->height;
+static void compute_child_tree_error(ALGUI_WIDGET* wgt) {
+    wgt->tree_error = wgt->error || wgt->parent->tree_error;
 }
 
 
-//update the root's state
-static void update_root(ALGUI_WIDGET* wgt) {
-    update_root_rect(wgt);
-    wgt->tree_visible = wgt->visible;
-    wgt->tree_enabled = wgt->enabled;
-    wgt->tree_has_mouse = wgt->has_mouse;
-    wgt->tree_has_focus = wgt->has_focus;
-    wgt->tree_pressed = wgt->pressed;
-    wgt->tree_selected = wgt->selected;
-    wgt->tree_active = wgt->active;
+static void compute_child_tree_focused(ALGUI_WIDGET* wgt) {
+    wgt->tree_focused = is_widget_focused(wgt) || wgt->parent->tree_focused;
 }
 
 
-//updates a child's tree rect
+static void update_child_tree_rect_x1(ALGUI_WIDGET* wgt) {
+    compute_child_tree_rect_x1(wgt);
+    FOR_EACH_CHILD(wgt, child) {
+        update_child_tree_rect_x1(child);
+    }
+}
+
+
+static void update_child_tree_rect_y1(ALGUI_WIDGET* wgt) {
+    compute_child_tree_rect_y1(wgt);
+    FOR_EACH_CHILD(wgt, child) {
+        update_child_tree_rect_y1(child);
+    }
+}
+
+
 static void update_child_tree_rect(ALGUI_WIDGET* wgt) {
-    //if locked, don't update
-    if (wgt->lock_count > 0) {
-        return;
-    }
-
-    //update child rect
-    update_child_rect(wgt);
-
-    //update children
-    for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; child = child->next_sibling) {
+    compute_child_tree_rect(wgt);
+    FOR_EACH_CHILD(wgt, child) {
         update_child_tree_rect(child);
     }
 }
 
 
-//update root's tree rect
-static void update_root_tree_rect(ALGUI_WIDGET* wgt) {
-    //if locked, don't update
-    if (wgt->lock_count > 0) {
-        return;
-    }
-
-    //update rect
-    update_root_rect(wgt);
-
-    //update children
-    for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; child = child->next_sibling) {
-        update_child_tree_rect(child);
-    }
-}
-
-
-//if the widget is not locked for updating, then it updates the global position of the widget
-static void update_tree_rect(ALGUI_WIDGET* wgt) {
-    if (wgt->parent) {
-        update_child_tree_rect(wgt);
-    }
-    else {
-        update_root_tree_rect(wgt);
-    }
-}
-
-
-//update child tree visible
 static void update_child_tree_visible(ALGUI_WIDGET* wgt) {
-    if (wgt->lock_count > 0) {
-        return;
-    }
-    wgt->tree_visible = wgt->visible && wgt->parent->tree_visible;
-    for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; child = child->next_sibling) {
+    compute_child_tree_visible(wgt);
+    FOR_EACH_CHILD(wgt, child) {
         update_child_tree_visible(child);
     }
 }
 
 
-//update root tree visible
-static void update_root_tree_visible(ALGUI_WIDGET* wgt) {
-    if (wgt->lock_count > 0) {
-        return;
-    }
-    wgt->tree_visible = wgt->visible;
-    for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; child = child->next_sibling) {
-        update_child_tree_visible(child);
-    }
-}
-
-
-//update tree visible
-static void update_tree_visible(ALGUI_WIDGET* wgt) {
-    if (wgt->parent) {
-        update_child_tree_visible(wgt);
-    }
-    else {
-        update_root_tree_visible(wgt);
-    }
-}
-
-
-//update child tree enabled
 static void update_child_tree_enabled(ALGUI_WIDGET* wgt) {
-    if (wgt->lock_count > 0) {
-        return;
-    }
-    wgt->tree_enabled = wgt->enabled && wgt->parent->tree_enabled;
-    for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; child = child->next_sibling) {
+    compute_child_tree_enabled(wgt);
+    compute_child_tree_highlighted(wgt);
+    compute_child_tree_pressed(wgt);
+    compute_child_tree_active(wgt);
+    compute_child_tree_error(wgt);
+    FOR_EACH_CHILD(wgt, child) {
         update_child_tree_enabled(child);
     }
 }
 
 
-//update root tree enabled
-static void update_root_tree_enabled(ALGUI_WIDGET* wgt) {
-    if (wgt->lock_count > 0) {
-        return;
-    }
-    wgt->tree_enabled = wgt->enabled;
-    for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; child = child->next_sibling) {
-        update_child_tree_enabled(child);
+static void update_child_tree_highlighted(ALGUI_WIDGET* wgt) {
+    compute_child_tree_highlighted(wgt);
+    FOR_EACH_CHILD(wgt, child) {
+        update_child_tree_highlighted(child);
     }
 }
 
 
-//update tree enabled
-static void update_tree_enabled(ALGUI_WIDGET* wgt) {
-    if (wgt->parent) {
-        update_child_tree_enabled(wgt);
-    }
-    else {
-        update_root_tree_enabled(wgt);
-    }
-}
-
-
-//update child tree has_mouse
-static void update_child_tree_has_mouse(ALGUI_WIDGET* wgt) {
-    if (wgt->lock_count > 0) {
-        return;
-    }
-    wgt->tree_has_mouse = wgt->has_mouse || wgt->parent->tree_has_mouse;
-    for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; child = child->next_sibling) {
-        update_child_tree_has_mouse(child);
-    }
-}
-
-
-//update root tree has_mouse
-static void update_root_tree_has_mouse(ALGUI_WIDGET* wgt) {
-    if (wgt->lock_count > 0) {
-        return;
-    }
-    wgt->tree_has_mouse = wgt->has_mouse;
-    for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; child = child->next_sibling) {
-        update_child_tree_has_mouse(child);
-    }
-}
-
-
-//update tree has_mouse
-static void update_tree_has_mouse(ALGUI_WIDGET* wgt) {
-    if (wgt->parent) {
-        update_child_tree_has_mouse(wgt);
-    }
-    else {
-        update_root_tree_has_mouse(wgt);
-    }
-}
-
-
-//update child tree has_focus
-static void update_child_tree_has_focus(ALGUI_WIDGET* wgt) {
-    if (wgt->lock_count > 0) {
-        return;
-    }
-    wgt->tree_has_focus = wgt->has_focus || wgt->parent->tree_has_focus;
-    for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; child = child->next_sibling) {
-        update_child_tree_has_focus(child);
-    }
-}
-
-
-//update root tree has_focus
-static void update_root_tree_has_focus(ALGUI_WIDGET* wgt) {
-    if (wgt->lock_count > 0) {
-        return;
-    }
-    wgt->tree_has_focus = wgt->has_focus;
-    for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; child = child->next_sibling) {
-        update_child_tree_has_focus(child);
-    }
-}
-
-
-//update tree has_focus
-static void update_tree_has_focus(ALGUI_WIDGET* wgt) {
-    if (wgt->parent) {
-        update_child_tree_has_focus(wgt);
-    }
-    else {
-        update_root_tree_has_focus(wgt);
-    }
-}
-
-
-//update child tree pressed
 static void update_child_tree_pressed(ALGUI_WIDGET* wgt) {
-    if (wgt->lock_count > 0) {
-        return;
-    }
-    wgt->tree_pressed = wgt->pressed || wgt->parent->tree_pressed;
-    for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; child = child->next_sibling) {
+    compute_child_tree_pressed(wgt);
+    FOR_EACH_CHILD(wgt, child) {
         update_child_tree_pressed(child);
     }
 }
 
 
-//update root tree pressed
-static void update_root_tree_pressed(ALGUI_WIDGET* wgt) {
-    if (wgt->lock_count > 0) {
-        return;
-    }
-    wgt->tree_pressed = wgt->pressed;
-    for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; child = child->next_sibling) {
-        update_child_tree_pressed(child);
-    }
-}
-
-
-//update tree pressed
-static void update_tree_pressed(ALGUI_WIDGET* wgt) {
-    if (wgt->parent) {
-        update_child_tree_pressed(wgt);
-    }
-    else {
-        update_root_tree_pressed(wgt);
-    }
-}
-
-
-//update child tree selected
 static void update_child_tree_selected(ALGUI_WIDGET* wgt) {
-    if (wgt->lock_count > 0) {
-        return;
-    }
-    wgt->tree_selected = wgt->selected || wgt->parent->tree_selected;
-    for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; child = child->next_sibling) {
+    compute_child_tree_selected(wgt);
+    FOR_EACH_CHILD(wgt, child) {
         update_child_tree_selected(child);
     }
 }
 
 
-//update root tree selected
-static void update_root_tree_selected(ALGUI_WIDGET* wgt) {
-    if (wgt->lock_count > 0) {
-        return;
-    }
-    wgt->tree_selected = wgt->selected;
-    for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; child = child->next_sibling) {
-        update_child_tree_selected(child);
-    }
-}
-
-
-//update tree selected
-static void update_tree_selected(ALGUI_WIDGET* wgt) {
-    if (wgt->parent) {
-        update_child_tree_selected(wgt);
-    }
-    else {
-        update_root_tree_selected(wgt);
-    }
-}
-
-
-//update child tree active
 static void update_child_tree_active(ALGUI_WIDGET* wgt) {
-    if (wgt->lock_count > 0) {
-        return;
-    }
-    wgt->tree_active = wgt->active || wgt->parent->tree_active;
-    for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; child = child->next_sibling) {
+    compute_child_tree_active(wgt);
+    FOR_EACH_CHILD(wgt, child) {
         update_child_tree_active(child);
     }
 }
 
 
-//update root tree active
-static void update_root_tree_active(ALGUI_WIDGET* wgt) {
-    if (wgt->lock_count > 0) {
-        return;
+static void update_child_tree_error(ALGUI_WIDGET* wgt) {
+    compute_child_tree_error(wgt);
+    FOR_EACH_CHILD(wgt, child) {
+        update_child_tree_error(child);
     }
+}
+
+
+static void update_child_tree_focused(ALGUI_WIDGET* wgt) {
+    compute_child_tree_focused(wgt);
+    FOR_EACH_CHILD(wgt, child) {
+        update_child_tree_focused(child);
+    }
+}
+
+
+static void update_child_tree(ALGUI_WIDGET* wgt) {
+    compute_child_tree_visible(wgt);
+    compute_child_tree_enabled(wgt);
+    compute_child_tree_highlighted(wgt);
+    compute_child_tree_pressed(wgt);
+    compute_child_tree_selected(wgt);
+    compute_child_tree_active(wgt);
+    compute_child_tree_error(wgt);
+    compute_child_tree_focused(wgt);
+    FOR_EACH_CHILD(wgt, child) {
+        update_child_tree(child);
+    }
+}
+
+
+static void compute_root_tree_rect_x1(ALGUI_WIDGET* wgt) {
+    wgt->x1 = wgt->x;
+    wgt->x2 = wgt->x1 + wgt->width;
+}
+
+
+static void compute_root_tree_rect_y1(ALGUI_WIDGET* wgt) {
+    wgt->y1 = wgt->y;
+    wgt->y2 = wgt->y1 + wgt->height;
+}
+
+
+static void compute_root_tree_rect(ALGUI_WIDGET* wgt) {
+    compute_root_tree_rect_x1(wgt);
+    compute_root_tree_rect_y1(wgt);
+}
+
+
+static void compute_root_tree_visible(ALGUI_WIDGET* wgt) {
+    wgt->tree_visible = wgt->visible;
+}
+
+
+static void compute_root_tree_enabled(ALGUI_WIDGET* wgt) {
+    wgt->tree_enabled = wgt->enabled;
+}
+
+
+static void compute_root_tree_highlighted(ALGUI_WIDGET* wgt) {
+    wgt->tree_highlighted = wgt->highlighted;
+}
+
+
+static void compute_root_tree_pressed(ALGUI_WIDGET* wgt) {
+    wgt->tree_pressed = wgt->pressed;
+}
+
+
+static void compute_root_tree_selected(ALGUI_WIDGET* wgt) {
+    wgt->tree_selected = wgt->selected;
+}
+
+
+static void compute_root_tree_active(ALGUI_WIDGET* wgt) {
     wgt->tree_active = wgt->active;
-    for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; child = child->next_sibling) {
+}
+
+
+static void compute_root_tree_error(ALGUI_WIDGET* wgt) {
+    wgt->tree_error = wgt->error;
+}
+
+
+static void compute_root_tree_focused(ALGUI_WIDGET* wgt) {
+    wgt->tree_focused = is_widget_focused(wgt);
+}
+
+
+static void update_root_tree_rect_x1(ALGUI_WIDGET* wgt) {
+    compute_root_tree_rect_x1(wgt);
+    FOR_EACH_CHILD(wgt, child) {
+        update_child_tree_rect_x1(child);
+    }
+}
+
+
+static void update_root_tree_rect_y1(ALGUI_WIDGET* wgt) {
+    compute_root_tree_rect_y1(wgt);
+    FOR_EACH_CHILD(wgt, child) {
+        update_child_tree_rect_y1(child);
+    }
+}
+
+
+static void update_root_tree_rect(ALGUI_WIDGET* wgt) {
+    compute_root_tree_rect(wgt);
+    FOR_EACH_CHILD(wgt, child) {
+        update_child_tree_rect(child);
+    }
+}
+
+
+static void update_root_tree_visible(ALGUI_WIDGET* wgt) {
+    compute_root_tree_visible(wgt);
+    FOR_EACH_CHILD(wgt, child) {
+        update_child_tree_visible(child);
+    }
+}
+
+
+static void update_root_tree_enabled(ALGUI_WIDGET* wgt) {
+    compute_root_tree_enabled(wgt);
+    compute_root_tree_highlighted(wgt);
+    compute_root_tree_pressed(wgt);
+    compute_root_tree_active(wgt);
+    compute_root_tree_error(wgt);
+    FOR_EACH_CHILD(wgt, child) {
+        update_child_tree_enabled(child);
+    }
+}
+
+
+static void update_root_tree_highlighted(ALGUI_WIDGET* wgt) {
+    compute_root_tree_highlighted(wgt);
+    FOR_EACH_CHILD(wgt, child) {
+        update_child_tree_highlighted(child);
+    }
+}
+
+
+static void update_root_tree_pressed(ALGUI_WIDGET* wgt) {
+    compute_root_tree_pressed(wgt);
+    FOR_EACH_CHILD(wgt, child) {
+        update_child_tree_pressed(child);
+    }
+}
+
+
+static void update_root_tree_selected(ALGUI_WIDGET* wgt) {
+    compute_root_tree_selected(wgt);
+    FOR_EACH_CHILD(wgt, child) {
+        update_child_tree_selected(child);
+    }
+}
+
+
+static void update_root_tree_active(ALGUI_WIDGET* wgt) {
+    compute_root_tree_active(wgt);
+    FOR_EACH_CHILD(wgt, child) {
         update_child_tree_active(child);
     }
 }
 
 
-//update tree active
+static void update_root_tree_error(ALGUI_WIDGET* wgt) {
+    compute_root_tree_error(wgt);
+    FOR_EACH_CHILD(wgt, child) {
+        update_child_tree_error(child);
+    }
+}
+
+
+static void update_root_tree_focused(ALGUI_WIDGET* wgt) {
+    compute_root_tree_focused(wgt);
+    FOR_EACH_CHILD(wgt, child) {
+        update_child_tree_focused(child);
+    }
+}
+
+
+static void update_root_tree(ALGUI_WIDGET* wgt) {
+    compute_root_tree_visible(wgt);
+    compute_root_tree_enabled(wgt);
+    compute_root_tree_highlighted(wgt);
+    compute_root_tree_pressed(wgt);
+    compute_root_tree_selected(wgt);
+    compute_root_tree_active(wgt);
+    compute_root_tree_error(wgt);
+    compute_root_tree_focused(wgt);
+    FOR_EACH_CHILD(wgt, child) {
+        update_child_tree(child);
+    }
+}
+
+
+static void update_tree_rect_x1(ALGUI_WIDGET* wgt) {
+    wgt->parent ? update_child_tree_rect_x1(wgt) : update_root_tree_rect_x1(wgt);
+}
+
+
+static void update_tree_rect_y1(ALGUI_WIDGET* wgt) {
+    wgt->parent ? update_child_tree_rect_y1(wgt) : update_root_tree_rect_y1(wgt);
+}
+
+
+static void update_tree_rect(ALGUI_WIDGET* wgt) {
+    wgt->parent ? update_child_tree_rect(wgt) : update_root_tree_rect(wgt);
+}
+
+
+static void update_tree_visible(ALGUI_WIDGET* wgt) {
+    wgt->parent ? update_child_tree_visible(wgt) : update_root_tree_visible(wgt);
+}
+
+
+static void update_tree_enabled(ALGUI_WIDGET* wgt) {
+    wgt->parent ? update_child_tree_enabled(wgt) : update_root_tree_enabled(wgt);
+}
+
+
+static void update_tree_highlighted(ALGUI_WIDGET* wgt) {
+    wgt->parent ? update_child_tree_highlighted(wgt) : update_root_tree_highlighted(wgt);
+}
+
+
+static void update_tree_pressed(ALGUI_WIDGET* wgt) {
+    wgt->parent ? update_child_tree_pressed(wgt) : update_root_tree_pressed(wgt);
+}
+
+
+static void update_tree_selected(ALGUI_WIDGET* wgt) {
+    wgt->parent ? update_child_tree_selected(wgt) : update_root_tree_selected(wgt);
+}
+
+
 static void update_tree_active(ALGUI_WIDGET* wgt) {
-    if (wgt->parent) {
-        update_child_tree_active(wgt);
+    wgt->parent ? update_child_tree_active(wgt) : update_root_tree_active(wgt);
+}
+
+
+static void update_tree_error(ALGUI_WIDGET* wgt) {
+    wgt->parent ? update_child_tree_error(wgt) : update_root_tree_error(wgt);
+}
+
+
+static void update_tree_focused(ALGUI_WIDGET* wgt) {
+    wgt->parent ? update_child_tree_focused(wgt) : update_root_tree_focused(wgt);
+}
+
+
+static void update_tree(ALGUI_WIDGET* wgt) {
+    wgt->parent ? update_child_tree(wgt) : update_root_tree(wgt);
+}
+
+
+static void do_widget_init_layout(ALGUI_WIDGET* wgt) {
+    FOR_EACH_CHILD(wgt, child) {
+        do_widget_init_layout(child);
     }
-    else {
-        update_root_tree_active(wgt);
+    do_widget_message(wgt, ALGUI_MESSAGE_INIT_LAYOUT, NULL);
+}
+
+
+static void do_widget_commit_layout(ALGUI_WIDGET* wgt) {
+    do_widget_message(wgt, ALGUI_MESSAGE_COMMIT_LAYOUT, NULL);
+    FOR_EACH_CHILD(wgt, child) {
+        do_widget_commit_layout(child);
     }
 }
 
 
-//adjusts the lock count of every widget in the tree, by the given amount
-static void adjust_tree_lock_count(ALGUI_WIDGET* wgt, int lock_count_adjustment) {
-    wgt->lock_count += lock_count_adjustment;
-    for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; child = child->next_sibling) {
-        adjust_tree_lock_count(child, lock_count_adjustment);
-    }
+static void do_widget_lost_focus(ALGUI_WIDGET* wgt) {
+    focused_widget = NULL;
+    update_tree_focused(wgt);
+    do_widget_message(wgt, ALGUI_MESSAGE_LOST_FOCUS, NULL);
+    do_ancestor_message(wgt, ALGUI_MESSAGE_DESCENTANT_LOST_FOCUS, NULL);
 }
 
 
-//updates a child's tree rect and also adjust lock count
-static void update_child_tree_rect_adjust_lock_count(ALGUI_WIDGET* wgt, int lock_count_adjustment) {
-    wgt->lock_count += lock_count_adjustment;
+/**********************************************************************************************************************
+    PUBLIC
+ **********************************************************************************************************************/
 
-    //if locked, don't update
-    if (wgt->lock_count > 0) {
-        for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; child = child->next_sibling) {
-            adjust_tree_lock_count(child, lock_count_adjustment);
-        }
-        return;
+
+int algui_widget_proc(ALGUI_WIDGET* wgt, int id, void* data) {
+    assert(wgt);
+    switch (id) {
     }
-
-    //update child rect
-    update_child_rect(wgt);
-
-    //update children
-    for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; child = child->next_sibling) {
-        update_child_tree_rect_adjust_lock_count(child, lock_count_adjustment);
-    }
-}
-
-
-//update root's tree rect and also adjust lock count
-static void update_root_tree_rect_adjust_lock_count(ALGUI_WIDGET* wgt, int lock_count_adjustment) {
-    wgt->lock_count += lock_count_adjustment;
-
-    //if locked, don't update
-    if (wgt->lock_count > 0) {
-        for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; child = child->next_sibling) {
-            adjust_tree_lock_count(child, lock_count_adjustment);
-        }
-        return;
-    }
-
-    //update rect
-    update_root_rect(wgt);
-
-    //update children
-    for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; child = child->next_sibling) {
-        update_child_tree_rect_adjust_lock_count(child, lock_count_adjustment);
-    }
-}
-
-
-//if the widget is not locked for updating, then it updates the global position of the widget; also adjusts lock count
-static void update_tree_rect_adjust_lock_count(ALGUI_WIDGET* wgt, int lock_count_adjustment) {
-    if (wgt->parent) {
-        update_child_tree_rect_adjust_lock_count(wgt, lock_count_adjustment);
-    }
-    else {
-        update_root_tree_rect_adjust_lock_count(wgt, lock_count_adjustment);
-    }
-}
-
-
-//if the widget is not locked for updating, then it updates the global position and state of the widget
-static void update_child_tree_adjust_lock_count(ALGUI_WIDGET* wgt, int lock_count_adjustment) {
-    //adjust the lock count
-    wgt->lock_count += lock_count_adjustment;
-
-    //if locked, don't update
-    if (wgt->lock_count > 0) {
-        for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; child = child->next_sibling) {
-            adjust_tree_lock_count(child, lock_count_adjustment);
-        }
-        return;
-    }
-
-    //update child position/state
-    update_child(wgt);
-
-    //update children
-    for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; child = child->next_sibling) {
-        update_child_tree_adjust_lock_count(child, lock_count_adjustment);
-    }
-}
-
-
-//if the widget is not locked for updating, then it updates the global position and state of the widget
-static void update_root_tree_adjust_lock_count(ALGUI_WIDGET* wgt, int lock_count_adjustment) {
-    //adjust the lock count
-    wgt->lock_count += lock_count_adjustment;
-
-    //if locked, don't update
-    if (wgt->lock_count > 0) {
-        for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; child = child->next_sibling) {
-            adjust_tree_lock_count(child, lock_count_adjustment);
-        }
-        return;
-    }
-
-    //update root position/state
-    update_root(wgt);
-
-    //update children
-    for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; child = child->next_sibling) {
-        update_child_tree_adjust_lock_count(child, lock_count_adjustment);
-    }
-}
-
-
-//update tree
-static void update_tree_adjust_lock_count(ALGUI_WIDGET* wgt, int lock_count_adjustment) {
-    if (wgt->parent) {
-        update_child_tree_adjust_lock_count(wgt, lock_count_adjustment);
-    }
-    else {
-        update_root_tree_adjust_lock_count(wgt, lock_count_adjustment);
-    }
-}
-
-
-ALGUI_WIDGET_PROC algui_get_widget_proc(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->proc;
+    return 0;
 }
 
 
 ALGUI_WIDGET* algui_get_parent_widget(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
+    assert(wgt);
     return wgt->parent;
 }
 
 
 ALGUI_WIDGET* algui_get_prev_sibling_widget(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->prev_sibling;
+    assert(wgt);
+    return wgt->prev;
 }
 
 
 ALGUI_WIDGET* algui_get_next_sibling_widget(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->next_sibling;
+    assert(wgt);
+    return wgt->next;
 }
 
 
 ALGUI_WIDGET* algui_get_first_child_widget(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->first_child;
+    assert(wgt);
+    return wgt->first;
 }
 
 
 ALGUI_WIDGET* algui_get_last_child_widget(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->last_child;
-}
-
-
-void algui_get_widget_geometry(ALGUI_WIDGET* wgt, float* x, float* y, float* width, float* height) {
-    assert(wgt != NULL);
-    assert(x != NULL);
-    assert(y != NULL);
-    assert(width != NULL);
-    assert(height != NULL);
-    *x = wgt->x;
-    *y = wgt->y;
-    *width = wgt->width;
-    *height = wgt->height;
-}
-
-
-void algui_get_widget_position(ALGUI_WIDGET* wgt, float* x, float* y) {
-    assert(wgt != NULL);
-    assert(x != NULL);
-    assert(y != NULL);
-    *x = wgt->x;
-    *y = wgt->y;
-}
-
-
-void algui_get_widget_size(ALGUI_WIDGET* wgt, float* width, float* height) {
-    assert(wgt != NULL);
-    assert(width != NULL);
-    assert(height != NULL);
-    *width = wgt->width;
-    *height = wgt->height;
-}
-
-
-float algui_get_widget_x(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->x;
-}
-
-
-float algui_get_widget_y(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->y;
-}
-
-
-float algui_get_widget_width(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->width;
-}
-
-
-float algui_get_widget_height(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->height;
-}
-
-
-void algui_get_widget_rect(ALGUI_WIDGET* wgt, float* x1, float* y1, float* x2, float* y2) {
-    assert(wgt != NULL);
-    assert(x1 != NULL);
-    assert(y1 != NULL);
-    assert(x2 != NULL);
-    assert(y2 != NULL);
-    *x1 = wgt->x1;
-    *y1 = wgt->y1;
-    *x2 = wgt->x2;
-    *y2 = wgt->y2;
-}
-
-
-float algui_get_widget_x1(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->x1;
-}
-
-
-float algui_get_widget_y1(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->y1;
-}
-
-
-float algui_get_widget_x2(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->x2;
-}
-
-
-float algui_get_widget_y2(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->y2;
-}
-
-
-void* algui_get_widget_user_data(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->user_data;
-}
-
-
-int algui_get_widget_lock_count(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->lock_count;
-}
-
-
-int algui_is_widget_heap_allocated(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->heap_allocated;
-}
-
-
-int algui_widget_is_visible(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->visible;
-}
-
-
-int algui_widget_is_enabled(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->enabled;
-}
-
-
-int algui_widget_has_mouse(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->has_mouse;
-}
-
-
-int algui_widget_has_focus(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->has_focus;
-}
-
-
-int algui_widget_is_pressed(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->pressed;
-}
-
-
-int algui_widget_is_selected(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->selected;
-}
-
-
-int algui_widget_is_active(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->active;
-}
-
-
-int algui_widget_tree_is_visible(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->tree_visible;
-}
-
-
-int algui_widget_tree_is_enabled(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->tree_enabled;
-}
-
-
-int algui_widget_tree_has_mouse(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->tree_has_mouse;
-}
-
-
-int algui_widget_tree_has_focus(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->tree_has_focus;
-}
-
-
-int algui_widget_tree_is_pressed(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->tree_pressed;
-}
-
-
-int algui_widget_tree_is_selected(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->tree_selected;
-}
-
-
-int algui_widget_tree_is_active(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    return wgt->tree_active;
+    assert(wgt);
+    return wgt->last;
 }
 
 
 int algui_is_widget_in_tree(ALGUI_WIDGET* root, ALGUI_WIDGET* wgt) {
-    assert(root != NULL);
-    assert(wgt != NULL);
-
-    //found the widget
-    if (wgt == root) {
-        return 1;
-    }
-
-    //search children
-    for (ALGUI_WIDGET* child = root->first_child; child != NULL; child = child->next_sibling) {
-        if (algui_is_widget_in_tree(child, wgt)) {
-            return 1;
-        }
-    }
-
-    //not found
-    return 0;
-}
-
-
-ALGUI_WIDGET* algui_get_focused_widget() {
-    return focused_widget;
-}
-
-
-ALGUI_WIDGET* algui_get_child_widget_at_z_order(ALGUI_WIDGET* parent, int z_order) {
-    assert(parent != NULL);
-    ALGUI_WIDGET* child;
-    if (z_order >= 0) {
-        for (child = parent->first_child; child != NULL && z_order > 0; child = child->next_sibling, --z_order) {
-        }
-    }
-    else {
-        for (child = parent->last_child; child != NULL && z_order < -1; child = child->prev_sibling, ++z_order) {
-        }
-    }
-    return child;
-}
-
-
-int algui_widget_proc(ALGUI_WIDGET* wgt, int msgId, void* msgData) {
-    switch (msgId) {
-        //cleanup
-        case ALGUI_MESSAGE_CLEANUP:
-            //remove widget from its parent
-            algui_detach_widget(wgt);
-
-            //if the widget is the focus widget, then reset the focus widget
-            if (wgt == focused_widget) {
-                focused_widget = NULL;
-                algui_do_widget_message(wgt, ALGUI_MESSAGE_LOST_FOCUS, NULL);
-            }
-
-            //cleanup children
-            for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; ) {
-                ALGUI_WIDGET* next_child = child->next_sibling;
-                algui_cleanup_widget(child);
-                child = next_child;
-            }
-
-            //free memory if needed
-            if (wgt->heap_allocated) {
-                free(wgt);
-            }
-            return 1;
-
-        //layout; pass message to children
-        case ALGUI_MESSAGE_LAYOUT:
-            for (ALGUI_WIDGET* child = wgt->first_child; child != NULL; ) {
-                ALGUI_WIDGET* next_child = child->next_sibling;
-                algui_do_widget_layout(child);
-                child = next_child;
-            }
-            return 1;
-
-        //descentant got/lost focus; allow the message to bubble up
-        case ALGUI_MESSAGE_DESCENTANT_GOT_FOCUS:
-        case ALGUI_MESSAGE_DESCENTANT_LOST_FOCUS:
-            return 1;
-    }
-    return 0;
-}
-
-
-int algui_do_widget_message(ALGUI_WIDGET* wgt, int msgId, void* msgData) {
-    assert(wgt != NULL);
-    assert(wgt->proc != NULL);
-    return wgt->proc(wgt, msgId, msgData);
-}
-
-
-void algui_init_widget(ALGUI_WIDGET* wgt, ALGUI_WIDGET_PROC proc, void* user_data, int heap_allocated) {
-    assert(wgt != NULL);
-    assert(proc != NULL);
-    wgt->proc = proc;
-    wgt->parent = NULL;
-    wgt->prev_sibling = NULL;
-    wgt->next_sibling = NULL;
-    wgt->first_child = NULL;
-    wgt->last_child = NULL;
-    wgt->x = 0;
-    wgt->y = 0;
-    wgt->width = 0;
-    wgt->height = 0;
-    wgt->user_data = user_data;
-    wgt->lock_count = 0;
-    wgt->heap_allocated = heap_allocated;
-    wgt->visible = 1;
-    wgt->enabled = 1;
-    wgt->has_mouse = 0;
-    wgt->has_focus = 0;
-    wgt->pressed = 0;
-    wgt->selected = 0;
-    wgt->active = 0;
-    wgt->tree_visible = 1;
-    wgt->tree_enabled = 1;
-    wgt->tree_has_mouse = 0;
-    wgt->tree_has_focus = 0;
-    wgt->tree_pressed = 0;
-    wgt->tree_selected = 0;
-    wgt->tree_active = 0;
-}
-
-
-void algui_set_widget_proc(ALGUI_WIDGET* wgt, ALGUI_WIDGET_PROC proc) {
-    assert(wgt != NULL);
-    assert(proc != NULL);
-    wgt->proc = proc;
-}
-
-void algui_cleanup_widget(ALGUI_WIDGET* wgt) {
-    algui_do_widget_message(wgt, ALGUI_MESSAGE_CLEANUP, NULL);
+    assert(root);
+    assert(wgt);
+    return widget_tree_contains(root, wgt);
 }
 
 
 void algui_insert_widget(ALGUI_WIDGET* parent, ALGUI_WIDGET* wgt, int z_order) {
-    assert(parent != NULL);
-    assert(wgt != NULL);
+    assert(parent);
+    assert(wgt);
     assert(wgt->parent == NULL);
-    assert(!algui_is_widget_in_tree(parent, wgt));
+    assert(algui_is_widget_in_tree(wgt, parent) == 0);
 
-    //find previous/next sibling
-    ALGUI_WIDGET* prev_sibling = NULL;
-    ALGUI_WIDGET* next_sibling = NULL;
+    ALGUI_WIDGET* prev;
+    ALGUI_WIDGET* next;
+
     if (z_order >= 0) {
-        for (next_sibling = parent->first_child; next_sibling != NULL && z_order > 0; next_sibling = next_sibling->next_sibling, --z_order) {
+        for (next = parent->first; next != NULL && z_order > 0; next = next->next, --z_order) {
         }
+        prev = next != NULL ? next->prev : NULL;
     }
     else {
-        for (prev_sibling = parent->last_child; prev_sibling != NULL && z_order < -1; prev_sibling = prev_sibling->prev_sibling, ++z_order) {
+        for (prev = parent->last; prev != NULL && z_order < -1; prev = prev->prev, ++z_order) {
         }
+        next = prev != NULL ? prev->next : NULL;
     }
 
-    //connect the widget to the tree
+    if (prev) {
+        prev->next = wgt;
+    }
+    else {
+        parent->first = wgt;
+    }
+    if (next) {
+        next->prev = wgt;
+    }
+    else {
+        parent->last = wgt;
+    }
+
     wgt->parent = parent;
-    wgt->prev_sibling = prev_sibling;
-    wgt->next_sibling = next_sibling;
-    if (prev_sibling) {
-        prev_sibling->next_sibling = wgt;
-    }
-    else {
-        parent->first_child = wgt;
-    }
-    if (next_sibling) {
-        next_sibling->prev_sibling = wgt;
-    }
-    else {
-        parent->last_child = wgt;
-    }
+    wgt->prev = prev;
+    wgt->next = next;
 
-    //update the newly inserted widget tree
-    update_child_tree_adjust_lock_count(wgt, parent->lock_count);
+    update_child_tree(wgt);
 }
 
 
@@ -873,41 +564,103 @@ void algui_add_widget(ALGUI_WIDGET* parent, ALGUI_WIDGET* wgt) {
 
 
 void algui_remove_widget(ALGUI_WIDGET* parent, ALGUI_WIDGET* wgt) {
-    assert(parent != NULL);
-    assert(wgt != NULL);
+    assert(parent);
+    assert(wgt);
     assert(wgt->parent == parent);
 
-    //remove the child
-    if (wgt->prev_sibling != NULL) {
-        wgt->prev_sibling->next_sibling = wgt->next_sibling;
+    if (wgt->prev) {
+        wgt->prev->next = wgt->next;
     }
     else {
-        parent->first_child = wgt->next_sibling;
+        parent->first = wgt->next;
     }
-    if (wgt->next_sibling != NULL) {
-        wgt->next_sibling->prev_sibling = wgt->prev_sibling;
+    if (wgt->next) {
+        wgt->next->prev = wgt->prev;
     }
     else {
-        parent->last_child = wgt->prev_sibling;
+        parent->last = wgt->prev;
     }
-    wgt->prev_sibling = wgt->next_sibling = wgt->parent = NULL;
 
-    //update widget state
-    update_root_tree_adjust_lock_count(wgt, -parent->lock_count);
+    wgt->parent = NULL;
+    wgt->prev = NULL;
+    wgt->next = NULL;
+
+    update_root_tree(wgt);
 }
 
 
 void algui_detach_widget(ALGUI_WIDGET* wgt) {
-    assert(wgt != NULL);
-    if (wgt->parent != NULL) {
+    assert(wgt);
+    if (wgt->parent) {
         algui_remove_widget(wgt->parent, wgt);
     }
 }
 
 
+void algui_get_widget_geometry(ALGUI_WIDGET* wgt, float* x, float* y, float* width, float* height) {
+    assert(wgt);
+    assert(x);
+    assert(y);
+    assert(width);
+    assert(height);
+    *x = wgt->x;
+    *y = wgt->y;
+    *width = wgt->width;
+    *height = wgt->height;
+}
+
+
+void algui_get_widget_position(ALGUI_WIDGET* wgt, float* x, float* y) {
+    assert(wgt);
+    assert(x);
+    assert(y);
+    *x = wgt->x;
+    *y = wgt->y;
+}
+
+
+float algui_get_widget_x(ALGUI_WIDGET* wgt) {
+    assert(wgt);
+    return wgt->x;
+}
+
+
+float algui_get_widget_y(ALGUI_WIDGET* wgt) {
+    assert(wgt);
+    return wgt->y;
+}
+
+
+void algui_get_widget_size(ALGUI_WIDGET* wgt, float* width, float* height) {
+    assert(wgt);
+    assert(width);
+    assert(height);
+    *width = wgt->width;
+    *height = wgt->height;
+}
+
+
+float algui_get_widget_width(ALGUI_WIDGET* wgt) {
+    assert(wgt);
+    return wgt->width;
+}
+
+
+float algui_get_widget_height(ALGUI_WIDGET* wgt) {
+    assert(wgt);
+    return wgt->height;
+}
+
+
 void algui_set_widget_geometry(ALGUI_WIDGET* wgt, float x, float y, float width, float height) {
     assert(wgt);
-    if (x != wgt->x || y != wgt->y || width != wgt->width || height != wgt->height) {
+    if (doing_layout > 0) {
+        wgt->x = x;
+        wgt->y = y;
+        wgt->width = __MAX__(width, 0);
+        wgt->height = __MAX__(height, 0);
+    }
+    else if (x != wgt->x || y != wgt->y || width != wgt->width || height != wgt->height) {
         wgt->x = x;
         wgt->y = y;
         wgt->width = width;
@@ -923,12 +676,6 @@ void algui_set_widget_position(ALGUI_WIDGET* wgt, float x, float y) {
 }
 
 
-void algui_set_widget_size(ALGUI_WIDGET* wgt, float width, float height) {
-    assert(wgt);
-    algui_set_widget_geometry(wgt, wgt->x, wgt->y, width, height);
-}
-
-
 void algui_set_widget_x(ALGUI_WIDGET* wgt, float x) {
     assert(wgt);
     algui_set_widget_geometry(wgt, x, wgt->y, wgt->width, wgt->height);
@@ -937,7 +684,13 @@ void algui_set_widget_x(ALGUI_WIDGET* wgt, float x) {
 
 void algui_set_widget_y(ALGUI_WIDGET* wgt, float y) {
     assert(wgt);
-    algui_set_widget_geometry(wgt, wgt->x, y, wgt->width, wgt->height);
+    algui_set_widget_geometry(wgt, wgt->x, wgt->y, wgt->width, wgt->height);
+}
+
+
+void algui_set_widget_size(ALGUI_WIDGET* wgt, float width, float height) {
+    assert(wgt);
+    algui_set_widget_geometry(wgt, wgt->x, wgt->y, width, height);
 }
 
 
@@ -953,150 +706,250 @@ void algui_set_widget_height(ALGUI_WIDGET* wgt, float height) {
 }
 
 
+void algui_get_widget_rect(ALGUI_WIDGET* wgt, float* x1, float* y1, float* x2, float* y2) {
+    assert(wgt);
+    assert(x1);
+    assert(y1);
+    assert(x2);
+    assert(y2);
+    *x1 = wgt->x1;
+    *y1 = wgt->y1;
+    *x2 = wgt->x2;
+    *y2 = wgt->y2;
+}
+
+
 void algui_do_widget_layout(ALGUI_WIDGET* wgt) {
-    algui_lock_widget(wgt);
-    algui_do_widget_message(wgt, ALGUI_MESSAGE_LAYOUT, NULL);
-    update_tree_rect_adjust_lock_count(wgt, -1);
+    assert(wgt);
+    ++doing_layout;
+    do_widget_init_layout(wgt);
+    do_widget_commit_layout(wgt);
+    --doing_layout;
+    update_tree_rect(wgt);
 }
 
 
-void algui_set_widget_user_data(ALGUI_WIDGET* wgt, void* user_data) {
+int algui_is_widget_visible(ALGUI_WIDGET* wgt) {
     assert(wgt);
-    wgt->user_data = user_data;
+    return wgt->visible;
 }
 
 
-void algui_lock_widget(ALGUI_WIDGET* wgt) {
+int algui_is_widget_in_visible_tree(ALGUI_WIDGET* wgt) {
     assert(wgt);
-    adjust_tree_lock_count(wgt, 1);
-}
-
-
-void algui_unlock_widget(ALGUI_WIDGET* wgt) {
-    assert(wgt);
-    assert(wgt->lock_count > 0);
-    update_tree_adjust_lock_count(wgt, -1);
+    return wgt->tree_visible;
 }
 
 
 void algui_set_widget_visible(ALGUI_WIDGET* wgt, int visible) {
     assert(wgt);
-    if (wgt->visible != visible) {
-        wgt->visible = visible;
+    if ((visible != 0) != wgt->visible) {
+        wgt->visible = visible != 0;
         update_tree_visible(wgt);
     }
 }
 
 
+int algui_is_widget_enabled(ALGUI_WIDGET* wgt) {
+    assert(wgt);
+    return wgt->enabled;
+}
+
+
+int algui_is_widget_in_enabled_tree(ALGUI_WIDGET* wgt) {
+    assert(wgt);
+    return wgt->tree_enabled;
+}
+
+
 void algui_set_widget_enabled(ALGUI_WIDGET* wgt, int enabled) {
     assert(wgt);
-    if (wgt->enabled != enabled ) {
-        wgt->enabled = enabled;
-        update_tree_enabled(wgt);
+
+    //enable
+    if (enabled) {
+        if (!wgt->enabled) {
+            wgt->enabled = 1;
+            update_tree_enabled(wgt);
+        }
+    }
+
+    //else disable; if it contains the focus, then lose the focus
+    else {
+        if (wgt->enabled) {
+            if (widget_contains_focus(wgt)) {
+                do_widget_lost_focus(focused_widget);
+            }
+            wgt->enabled = 0;
+            update_tree_enabled(wgt);
+        }
     }
 }
 
 
-int algui_set_widget_focused(ALGUI_WIDGET* wgt, int focused) {
+int algui_is_widget_highlighted(ALGUI_WIDGET* wgt) {
     assert(wgt);
+    return wgt->highlighted;
+}
 
-    //focus
-    if (focused) {
-        //if the widget already has the focus, do nothing else
-        if (wgt->has_focus) {
-            return 1;
-        }
 
-        //if the widget doesn't want the focus, do nothing else
-        if (!algui_do_widget_message(wgt, ALGUI_MESSAGE_GET_FOCUS, NULL)) {
-            return 0;
-        }
+int algui_is_widget_in_highlighted_tree(ALGUI_WIDGET* wgt) {
+    assert(wgt);
+    return wgt->tree_highlighted;
+}
 
-        //if the previously focused widget does not want to lose the focus, do nothing else
-        if (focused_widget && !algui_set_widget_focused(focused_widget, 0)) {
-            return 0;
-        }
 
-        //the widget got the focus
-        focused_widget = wgt;
-        wgt->has_focus = 1;
-        update_tree_has_focus(wgt);
-        algui_do_widget_message(wgt, ALGUI_MESSAGE_GOT_FOCUS, NULL);
-
-        //notify the ancestors that a descentant got the focus
-        for (ALGUI_WIDGET* ancestor = wgt->parent; ancestor != NULL; ancestor = ancestor->parent) {
-            if (!algui_do_widget_message(ancestor, ALGUI_MESSAGE_DESCENTANT_GOT_FOCUS, NULL)) {
-                break;
-            }
-        }
+void algui_set_widget_highlighted(ALGUI_WIDGET* wgt, int highlighted) {
+    assert(wgt);
+    if ((highlighted != 0) != wgt->highlighted) {
+        wgt->highlighted = highlighted != 0;
+        update_tree_highlighted(wgt);
     }
+}
 
-    //else blur 
-    else {
-        //if the widget doesn't have the focus, do nothing else
-        if (!wgt->has_focus) {
-            return 1;
-        }
 
-        //if the widget doesn't want to lose the focus, do nothing else
-        if (!algui_do_widget_message(wgt, ALGUI_MESSAGE_LOSE_FOCUS, NULL)) {
-            return 0;
-        }
+int algui_is_widget_pressed(ALGUI_WIDGET* wgt) {
+    assert(wgt);
+    return wgt->pressed;
+}
 
-        //the widget lost the focus
-        focused_widget = NULL;
-        wgt->has_focus = 0;
-        update_tree_has_focus(wgt);
-        algui_do_widget_message(wgt, ALGUI_MESSAGE_LOST_FOCUS, NULL);
 
-        //notify the ancestors that a descentant lost the focus
-        for (ALGUI_WIDGET* ancestor = wgt->parent; ancestor != NULL; ancestor = ancestor->parent) {
-            if (!algui_do_widget_message(ancestor, ALGUI_MESSAGE_DESCENTANT_LOST_FOCUS, NULL)) {
-                break;
-            }
-        }
-    }
-
-    //success
-    return 1;
+int algui_is_widget_in_pressed_tree(ALGUI_WIDGET* wgt) {
+    assert(wgt);
+    return wgt->tree_pressed;
 }
 
 
 void algui_set_widget_pressed(ALGUI_WIDGET* wgt, int pressed) {
     assert(wgt);
-    if (wgt->pressed != pressed) {
-        wgt->pressed = pressed;
+    if ((pressed != 0) != wgt->pressed) {
+        wgt->pressed = pressed != 0;
         update_tree_pressed(wgt);
     }
 }
 
 
+int algui_is_widget_selected(ALGUI_WIDGET* wgt) {
+    assert(wgt);
+    return wgt->selected;
+}
+
+
+int algui_is_widget_in_selected_tree(ALGUI_WIDGET* wgt) {
+    assert(wgt);
+    return wgt->tree_selected;
+}
+
+
 void algui_set_widget_selected(ALGUI_WIDGET* wgt, int selected) {
     assert(wgt);
-    if (wgt->selected != selected) {
-        wgt->selected = selected;
+    if ((selected != 0) != wgt->selected) {
+        wgt->selected = selected != 0;
         update_tree_selected(wgt);
     }
 }
 
 
+int algui_is_widget_active(ALGUI_WIDGET* wgt) {
+    assert(wgt);
+    return wgt->active;
+}
+
+
+int algui_is_widget_in_active_tree(ALGUI_WIDGET* wgt) {
+    assert(wgt);
+    return wgt->tree_active;
+}
+
+
 void algui_set_widget_active(ALGUI_WIDGET* wgt, int active) {
     assert(wgt);
-    if (wgt->active != active) {
-        wgt->active = active;
+    if ((active != 0) != wgt->active) {
+        wgt->active = active != 0;
         update_tree_active(wgt);
     }
 }
 
 
-void algui_paint_widget(ALGUI_WIDGET* wgt) {
+int algui_is_widget_error(ALGUI_WIDGET* wgt) {
     assert(wgt);
-    if (wgt->tree_visible) {
-        algui_do_widget_message(wgt, ALGUI_MESSAGE_PAINT, NULL);
-        for (ALGUI_WIDGET* child = wgt->first_child; child; ) {
-            ALGUI_WIDGET* next_sibling = child->next_sibling;
-            algui_paint_widget(child);
-            child = next_sibling;
-        }
+    return wgt->error;
+}
+
+
+int algui_is_widget_in_error_tree(ALGUI_WIDGET* wgt) {
+    assert(wgt);
+    return wgt->tree_error;
+}
+
+
+void algui_set_widget_error(ALGUI_WIDGET* wgt, int error) {
+    assert(wgt);
+    if ((error != 0) != wgt->error) {
+        wgt->error = error != 0;
+        update_tree_error(wgt);
     }
 }
+
+
+int algui_is_widget_focused(ALGUI_WIDGET* wgt) {
+    assert(wgt);
+    return is_widget_focused(wgt);
+}
+
+
+int algui_is_widget_in_focused_tree(ALGUI_WIDGET* wgt) {
+    assert(wgt);
+    return wgt->tree_focused;
+}
+
+
+int algui_set_widget_focused(ALGUI_WIDGET* wgt, int focused) {
+    assert(wgt);
+    assert(wgt->proc);
+
+    if (focused) {
+        //if the widget is disabled, it cannot get the focus
+        if (!wgt->tree_enabled) {
+            return 0;
+        }
+
+        //if the widget already has the focus, there is no need to get it
+        if (is_widget_focused(wgt)) {
+            return 1;
+        }
+
+        //if the widget does not accept the focus, do nothing else
+        if (!do_widget_message(wgt, ALGUI_MESSAGE_GET_FOCUS, NULL)) {
+            return 0;
+        }
+
+        //if there is already a focused widget and doesn't want to lose the focus, do nothing else
+        if (focused_widget && !algui_set_widget_focused(focused_widget, 0)) {
+            return 0;
+        }
+
+        //widget can be focused
+        focused_widget = wgt;
+        update_tree_focused(wgt);
+        do_widget_message(wgt, ALGUI_MESSAGE_GOT_FOCUS, NULL);
+        do_ancestor_message(wgt, ALGUI_MESSAGE_DESCENTANT_GOT_FOCUS, NULL);
+    }
+    else {
+        //if the widget doesn't have the focus, do nothing else
+        if (!is_widget_focused(wgt)) {
+            return 1;
+        }
+
+        //if the widget does not want to lose the focus, do nothing else
+        if (!do_widget_message(wgt, ALGUI_MESSAGE_LOSE_FOCUS, NULL)) {
+            return 0;
+        }
+
+        //widget can lose the focus
+        do_widget_lost_focus(wgt);
+    }
+
+    return 1;
+}
+
+
