@@ -36,13 +36,71 @@ enum ALGUI_MESSAGE_ID {
 
     /**
      * The draw message.
+     * It is different from the paint message: the draw message does checks and preparations for the paint message.
+     * The paint message is used to simply paint the screen using Allegro.
      */
     ALGUI_MESSAGE_DRAW,
 
     /**
      * The paint message.
+     * It is different from the draw message: the draw message does checks and preparations for the paint message.
+     * The paint message is used to simply to paint the screen using Allegro.
      */
     ALGUI_MESSAGE_PAINT,
+
+    /**
+     * Sets the geometry of a node.
+     */
+    ALGUI_MESSAGE_SET_GEOMETRY,
+
+    /**
+     * Initialize a node's size.
+     * Sent to a node to compute its size based on its content.
+     */
+    ALGUI_MESSAGE_INIT_SIZE,
+
+    /**
+     * Position children according to preferred layout.
+     * Send to a node to allow it to position its children according to some layout algorithm.
+     * The message data point to an ALGUI_LAYOUT_OPERATION structure,
+     * which contains the interior size of a node, as scaled by its horizontal and vertical scaling parameters.
+     */
+    ALGUI_MESSAGE_DO_LAYOUT,
+
+    /**
+     * Shows or hides a node.
+     */
+    ALGUI_MESSAGE_SET_VISIBLE,
+
+    /**
+     * Enable or disable a node.
+     */
+    ALGUI_MESSAGE_SET_ENABLED,
+
+    /**
+     * Set a node as highlighted or not highlighted.
+     */
+    ALGUI_MESSAGE_SET_HIGHLIGHTED,
+
+    /**
+     * Set a node as pressed or not pressed.
+     */
+    ALGUI_MESSAGE_SET_PRESSED,
+
+    /**
+     * Set a node as selected or not selected.
+     */
+    ALGUI_MESSAGE_SET_SELECTED,
+
+    /**
+     * Set a node as active or not active.
+     */
+    ALGUI_MESSAGE_SET_ACTIVE,
+
+    /**
+     * Set a node to be in error status or not in error status.
+     */
+    ALGUI_MESSAGE_SET_ERROR,
 
     /**
      * First available message for external libraries.
@@ -181,28 +239,39 @@ struct ALGUI_NODE {
 
     /** 
      * if true, the paint area for the node is restricted to the node's screen rectangle;
-     * If false (the default), the node can paint outside of its area, restricted only by the clipping of its ancestors.
+     * If false (the default), the node can paint outside of its area, restricted only by the clipping of its ancestors
+     * and the requested clip area.
      */
     int clipped : 1;
+
+    /**
+     * Flag to indicate that the node needs updating.
+     */
+    int dirty : 1;
+
+    /**
+     * Flag to indicate that a descentant node needs updating.
+     */
+    int tree_dirty : 1;
 };
 
 
 /**
  * Message data for insert node, remove node and change node z-order messages.
  */
-typedef struct ALGUI_NODE_TREE_OPERATION {
+typedef struct ALGUI_TREE_OPERATION {
     ///child to be inserted/removed.
     ALGUI_NODE* child;
 
     ///z-order.
     int z_order;
-} ALGUI_NODE_TREE_OPERATION;
+} ALGUI_TREE_OPERATION;
 
 
 /**
  * Message data for drawing a node tree.
  */
-typedef struct ALGUI_NODE_DRAW_OPERATION {
+typedef struct ALGUI_DRAW_OPERATION {
     ///left clip coordinate.
     int clip_x1;
 
@@ -214,7 +283,46 @@ typedef struct ALGUI_NODE_DRAW_OPERATION {
 
     ///bottom clip coordinate.
     int clip_y2;
-} ALGUI_NODE_DRAW_OPERATION;
+} ALGUI_DRAW_OPERATION;
+
+
+/**
+ * Data sent for ALGUI_MESSAGE_SET_GEOMETRY message.
+ */
+typedef struct ALGUI_GEOMETRY_OPERATION {
+    ///left side coordinate relative to parent.
+    float x;
+
+    ///top side coordinate relative to parent.
+    float y;
+
+    ///width.
+    float width;
+
+    ///height.
+    float height;
+} ALGUI_GEOMETRY_OPERATION;
+
+
+/**
+ * Data sent for ALGUI_MESSAGE_INIT_SIZE and ALGUI_MESSAGE_DO_LAYOUT.
+ */
+typedef struct ALGUI_LAYOUT_OPERATION {
+    ///interior width of a node, i.e. the node's width multiplied by its horizontal scaling.
+    float width;
+
+    ///interior height of a node, i.e. the node's width multiplied by its vertical scaling.
+    float height;
+} ALGUI_LAYOUT_OPERATION;
+
+
+/**
+ * Data sent for setting enabled, highlighted, pressed, selected, active and error states.
+ */
+typedef struct ALGUI_STATE_OPERATION {
+    ///the current state value.
+    int state;
+} ALGUI_STATE_OPERATION;
 
 
 /**
@@ -236,20 +344,48 @@ typedef struct ALGUI_NODE_DRAW_OPERATION {
  *      d) sends the message to children.
  * 
  *  3) ALGUI_MESSAGE_INSERT_NODE:
- *      It inserts a child node at a specific z-order. Message data should be of type ALGUI_NODE_TREE_OPERATION.
+ *      It inserts a child node at a specific z-order. The message data should be of type ALGUI_TREE_OPERATION.
  * 
  *  4) ALGUI_MESSAGE_SET_NODE_Z_ORDER:
- *      It modifies a child node's z-order. Message data should be of type ALGUI_NODE_TREE_OPERATION.
+ *      It modifies a child node's z-order. The message data should be of type ALGUI_TREE_OPERATION.
  *
  *  5) ALGUI_MESSAGE_REMOVE_NODE:
- *      It removes a child node. Message data should be of type ALGUI_NODE_TREE_OPERATION.
+ *      It removes a child node. The message data should be of type ALGUI_TREE_OPERATION.
  * 
  *  6) ALGUI_MESSAGE_DRAW:
+ *      Handles drawing of a node. The message data should be of type ALGUI_DRAW_OPERATION.
  *      a) sets the clipping rectangle, if needed.
  *      b) sends the paint message to the node.
  *      c) draws the children.
  *      d) restores the clipping rectangle, if it was previously set.
  * 
+ *  7) ALGUI_MESSAGE_SET_GEOMETRY:
+ *      Handles updating the geometry of a node. The message data should be of type ALGUI_GEOMETRY_OPERATION.
+ *      a) copies the position and size to the node structure.
+ *      b) sets the node as dirty so as that it can be updated from the main loop.
+ * 
+ *  8) ALGUI_MESSAGE_SET_VISIBLE:
+ *      Shows or hides the node. The message data should of be of type ALGUI_STATE_OPERATION.
+ *
+ *  9) ALGUI_MESSAGE_SET_ENABLED:
+ *      Enables or disables the node. The message data should of be of type ALGUI_STATE_OPERATION.
+ * 
+ *  10) ALGUI_MESSAGE_SET_HIGHLIGHTED:
+ *      Sets the node as highlighted or not highlighted. The message data should of be of type ALGUI_STATE_OPERATION.
+ *
+ *  11) ALGUI_MESSAGE_SET_PRESSED:
+ *      Sets the node as pressed or not pressed. The message data should of be of type ALGUI_STATE_OPERATION.
+ *
+ *  11) ALGUI_MESSAGE_SET_SELECTED:
+ *      Sets the node as selected or not selected. The message data should of be of type ALGUI_STATE_OPERATION.
+ *
+ *  12) ALGUI_MESSAGE_SET_ACTIVE:
+ *      a) Sets the node as active or not active. The message data should of be of type ALGUI_STATE_OPERATION.
+ *      b) Sets the ancestor as active.
+ *
+ *  13) ALGUI_MESSAGE_SET_ERROR:
+ *      Sets the node's error status. The message data should of be of type ALGUI_STATE_OPERATION.
+ *
  * @param node target node.
  * @param msg_id id of message.
  * @param msg_data message data.
@@ -300,6 +436,7 @@ void algui_update_node(ALGUI_NODE* node);
 
 /**
  * Sends the insert node message to parent.
+ * The child node is set to dirty, so as that it can be updated from the main loop.
  * @param parent parent node.
  * @param node node to insert.
  * @param z_order the node's z-order; 
@@ -311,7 +448,7 @@ void algui_insert_node(ALGUI_NODE* parent, ALGUI_NODE* node, int z_order);
 
 /**
  * Shortcut for inserting a node as the top child of another node.
- * Equal to algui_insert_node(parent, node, -1).
+ * Same as algui_insert_node(parent, node, -1).
  * @param parent parent node.
  * @param node node to insert.
  */
@@ -354,6 +491,155 @@ void algui_draw_node_clipped(ALGUI_NODE* node, int clip_x, int clip_y, int clip_
  * @param node target node.
  */
 void algui_draw_node(ALGUI_NODE* node);
+
+
+/**
+ * Sets the node as dirty, so as that it can be updated from the main loop if dirty.
+ * @param node target node.
+ */
+void algui_set_node_dirty(ALGUI_NODE* node);
+
+
+/**
+ * Updates the nodes that were marked as dirty.
+ * @param root root of the node tree that contains dirty nodes.
+ */
+void algui_update_dirty_nodes(ALGUI_NODE* root);
+
+
+/**
+ * Sets the position and size of a node.
+ * The node receives a ALGUI_MESSAGE_SET_GEOMETRY message, and the ALGUI_GEOMETRY_OPERATION struct.
+ * The node is set to dirty, so as that it can be updated from the main loop.
+ * @param node target node.
+ * @param x left coordinate relative to parent.
+ * @param y top coordinate relative to parent.
+ * @param width width.
+ * @param height height.
+ */
+void algui_set_node_geometry(ALGUI_NODE* node, float x, float y, float width, float height);
+
+
+/**
+ * Sets the position of a node.
+ * Same as algui_set_node_geometry(node, x, y, node->width, node->height).
+ * @param node target node.
+ * @param x left coordinate relative to parent.
+ * @param y top coordinate relative to parent.
+ */
+void algui_set_node_position(ALGUI_NODE* node, float x, float y);
+
+
+/**
+ * Sets the size of a node.
+ * Same as algui_set_node_geometry(node, node->x, node->y, width, height).
+ * @param node target node.
+ * @param width width.
+ * @param height height.
+ */
+void algui_set_node_size(ALGUI_NODE* node, float width, float height);
+
+
+/**
+ * Allows a node and its descentants to be placed at specific positions,
+ * that depend on specific layout algorithms implemented by nodes.
+ * 
+ * The procedure has two steps:
+ * 
+ * 1) all nodes receive an ALGUI_MESSAGE_INIT_SIZE, in order to allow themselves to get their optimal size.
+ *    This message is sent to children first, then to parents, to allow parents to size themselves based on their children.
+ * 
+ * 2) all nodes receive an ALGUI_MESSAGE_DO_LAYOUT, in order to position their children to the appropriate positions
+ *    according to the layout algorithms they prefer. This message is sent to parents first, then to children.
+ *    The message data are of type ALGUI_LAYOUT_OPERATION.
+ *
+ * Nodes shall use the function algui_set_node_geometry or any related function to set the geometry of their children or their size.
+ * The function algui_set_node_geometry does not recompute the global geometry of a node immediately, but sets the node to be dirty,
+ * and then the global geometry of the nodes can be computed from the main loop using the function algui_update_dirty_nodes.
+ * 
+ * @param node root of tree to manage the layout of.
+ */
+void algui_manage_node_layout(ALGUI_NODE* node);
+
+
+/**
+ * Sets the horizontal and vertical scaling of the node.
+ * The node is set to dirty.
+ * @param node target node.
+ * @param h_scaling the horizontal scaling factor.
+ * @param v_scaling the vertical scaling factor.
+ */
+void algui_set_node_scaling(ALGUI_NODE* node, float h_scaling, float v_scaling);
+
+
+/**
+ * Sets a node's visible state.
+ * Sends the ALGUI_MESSAGE_SET_VISIBLE message to the node.
+ * The node is set to dirty.
+ * @param node target node.
+ * @param visible the new visible state.
+ */
+void algui_set_node_visible(ALGUI_NODE* node, int visible);
+
+
+/**
+ * Sets a node's enabled state.
+ * Sends the ALGUI_MESSAGE_SET_ENABLED message to the node.
+ * The node is set to dirty.
+ * @param node target node.
+ * @param enabled the new enabled state.
+ */
+void algui_set_node_enabled(ALGUI_NODE* node, int enabled);
+
+
+/**
+ * Sets a node's highlighted state.
+ * Sends the ALGUI_MESSAGE_SET_HIGHLIGHTED message to the node.
+ * The node is set to dirty.
+ * @param node target node.
+ * @param highlighted the new highlighted state.
+ */
+void algui_set_node_highlighted(ALGUI_NODE* node, int highlighted);
+
+
+/**
+ * Sets a node's pressed state.
+ * Sends the ALGUI_MESSAGE_SET_PRESSED message to the node.
+ * The node is set to dirty.
+ * @param node target node.
+ * @param pressed the new pressed state.
+ */
+void algui_set_node_pressed(ALGUI_NODE* node, int pressed);
+
+
+/**
+ * Sets a node's selected state.
+ * Sends the ALGUI_MESSAGE_SET_SELECTED message to the node.
+ * The node is set to dirty.
+ * @param node target node.
+ * @param selected the new selected state.
+ */
+void algui_set_node_selected(ALGUI_NODE* node, int selected);
+
+
+/**
+ * Sets a node's active state.
+ * Sends the ALGUI_MESSAGE_SET_ACTIVE message to the node.
+ * The node is set to dirty.
+ * @param node target node.
+ * @param active the new active state.
+ */
+void algui_set_node_active(ALGUI_NODE* node, int active);
+
+
+/**
+ * Sets a node's error state.
+ * Sends the ALGUI_MESSAGE_SET_ERROR message to the node.
+ * The node is set to dirty.
+ * @param node target node.
+ * @param error the new error state.
+ */
+void algui_set_node_error(ALGUI_NODE* node, int error);
 
 
 #endif //ALGUI_NODE_H

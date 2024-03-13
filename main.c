@@ -90,7 +90,7 @@ int main(int argc, const char* argv[])
     TEST* btn2 = create_test(&form2->node, 70, 60, 50, 40);
     TEST* btn3 = create_test(&form2->node, 90, 80, 50, 40);
 
-    algui_update_node(&root->node);
+    //algui_update_node(&root->node);
 
     while (1) {
         ALLEGRO_EVENT event;
@@ -113,6 +113,7 @@ int main(int argc, const char* argv[])
         if (redraw) {
             redraw = false;
             //al_clear_to_color(al_map_rgb_f(0, 0, 0));
+            algui_update_dirty_nodes(&root->node);
             algui_draw_node(&root->node);
             al_flip_display();
         }
