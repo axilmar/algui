@@ -103,6 +103,29 @@ enum ALGUI_MESSAGE_ID {
     ALGUI_MESSAGE_SET_ERROR,
 
     /**
+     * Sets the input focus to a node.
+     */
+    ALGUI_MESSAGE_GET_FOCUS,
+
+    /**
+     * Removes the input focus from a node.
+     */
+    ALGUI_MESSAGE_LOSE_FOCUS,
+
+    /**
+     * The node received the input focus.
+     */
+    ALGUI_MESSAGE_GOT_FOCUS,
+
+    /**
+     * The node lost the input focus.
+     * Sent to a node when it loses the focus if it becomes disabled,
+     * or when blurred, 
+     * or when destroyed and has the input focus.
+     */
+    ALGUI_MESSAGE_LOST_FOCUS,
+
+    /**
      * First available message for external libraries.
      */
     ALGUI_MESSAGE_USER = 10000,
@@ -385,6 +408,15 @@ typedef struct ALGUI_STATE_OPERATION {
  *
  *  13) ALGUI_MESSAGE_SET_ERROR:
  *      Sets the node's error status. The message data should of be of type ALGUI_STATE_OPERATION.
+ * 
+ *  14) ALGUI_MESSAGE_GET_FOCUS:
+ *      Sets the focus to the node, if it is not diabled.
+ *      a) if there is a currently focused node, then it asks the currently focused node to blur;
+ *         if the currently focused node denies the blur, then the operation is interrupted and 0 is returned.
+ *      b) Sets the input focus to the node.
+ * 
+ *  15) ALGUI_MESSAGE_LOSE_FOCUS:
+ *      Removes the focus from the node, if the node had the focus.
  *
  * @param node target node.
  * @param msg_id id of message.
@@ -640,6 +672,36 @@ void algui_set_node_active(ALGUI_NODE* node, int active);
  * @param error the new error state.
  */
 void algui_set_node_error(ALGUI_NODE* node, int error);
+
+
+/**
+ * Returns the node with the focus.
+ * @return the node with the focus.
+ */
+ALGUI_NODE* algui_get_focused_node();
+
+
+/**
+ * Sets the input focus to the given node.
+ * The node receives an ALGUI_MESSAGE_GET_FOCUS message.
+ * If another node has the focus, it is first asked to be blurred.
+ * Then the focus is set to the given node.
+ * The node must be enabled in order to get the focus.
+ * If the node already has the focus, then nothing happens and non-zero is returned.
+ * @param node node to get the input focus.
+ * @return non-zero if the focus was successfully set, zero otherwise.
+ */
+int algui_focus_node(ALGUI_NODE* node);
+
+
+/**
+ * Removes the input focus from the given node.
+ * The node receives an ALGUI_MESSAGE_LOSE_FOCUS message.
+ * If the node already does not have the focus, then nothing happens and non-zero is returned.
+ * @param node node to get the input focus.
+ * @return non-zero if the focus was successfully reset, zero otherwise.
+ */
+int algui_blur_node(ALGUI_NODE* node);
 
 
 #endif //ALGUI_NODE_H

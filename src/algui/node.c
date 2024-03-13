@@ -10,6 +10,10 @@
 #define _MAX(A, B) ((A) > (B) ? (A) : (B))
 
 
+//the currently focused node
+static ALGUI_NODE* focused_node = NULL;
+
+
 //check if given node is in the given tree
 static int node_in_tree(ALGUI_NODE* tree, ALGUI_NODE* node) {
     for (; node; node = node->parent) {
@@ -183,6 +187,39 @@ static void do_state_message(ALGUI_NODE* node, int msg_id, int value) {
 }
 
 
+//checks if all nodes, up to root, are enabled
+static int is_enabled_tree(ALGUI_NODE* node) {
+    for (; node; node = node->parent) {
+        if (!node->enabled) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+
+//node got focus
+static void got_focus(ALGUI_NODE* node) {
+    focused_node = node;
+    node->focused = 1;
+    algui_do_node_message(node, ALGUI_MESSAGE_GOT_FOCUS, NULL);
+    if (node->parent) {
+        algui_set_node_active(node->parent, 1);
+    }
+}
+
+
+//node lost focus
+static void lost_focus(ALGUI_NODE* node) {
+    focused_node = NULL;
+    node->focused = 0;
+    algui_do_node_message(node, ALGUI_MESSAGE_LOST_FOCUS, NULL);
+    if (node->parent) {
+        algui_set_node_active(node->parent, 0);
+    }
+}
+
+
 //the default node proc
 int algui_default_node_proc(ALGUI_NODE* node, int msg_id, void* msg_data) {
     ALGUI_TREE_OPERATION* op_mod;
@@ -197,6 +234,11 @@ int algui_default_node_proc(ALGUI_NODE* node, int msg_id, void* msg_data) {
         case ALGUI_MESSAGE_CLEANUP:
             //remove from parent
             algui_remove_node(node);
+
+            //reset the focused node, if the node is the focused node
+            if (node == focused_node) {
+                lost_focus(node);
+            }
 
             //cleanup children
             for (ALGUI_NODE* child = node->last_child; child; ) {
@@ -315,6 +357,9 @@ int algui_default_node_proc(ALGUI_NODE* node, int msg_id, void* msg_data) {
             if (node->enabled != op_state->state) {
                 node->enabled = op_state->state;
                 algui_set_node_dirty(node);
+                if (!node->enabled && node->focused) {
+                    lost_focus(node);
+                }
             }
             return 1;
 
@@ -359,6 +404,28 @@ int algui_default_node_proc(ALGUI_NODE* node, int msg_id, void* msg_data) {
                 node->error = op_state->state;
                 algui_set_node_dirty(node);
             }
+            return 1;
+
+        case ALGUI_MESSAGE_GET_FOCUS:
+            if (node->focused) {
+                return 1;
+            }
+            if (!is_enabled_tree(node)) {
+                return 0;
+            }
+            if (focused_node && !algui_blur_node(focused_node)) {
+                return 0;
+            }
+            algui_set_node_dirty(node);
+            got_focus(node);
+            return 1;
+
+        case ALGUI_MESSAGE_LOSE_FOCUS:
+            if (!node->focused) {
+                return 1;
+            }
+            algui_set_node_dirty(node);
+            lost_focus(node);
             return 1;
     }
 
@@ -605,4 +672,22 @@ void algui_set_node_active(ALGUI_NODE* node, int value) {
 //set node error
 void algui_set_node_error(ALGUI_NODE* node, int value) {
     do_state_message(node, ALGUI_MESSAGE_SET_ERROR, value);
+}
+
+
+//returns the focused node.
+ALGUI_NODE* algui_get_focused_node() {
+    return focused_node;
+}
+
+
+//focus node
+int algui_focus_node(ALGUI_NODE* node) {
+    return algui_do_node_message(node, ALGUI_MESSAGE_GET_FOCUS, NULL);
+}
+
+
+//Removes the input focus from the given node.
+int algui_blur_node(ALGUI_NODE* node) {
+    return algui_do_node_message(node, ALGUI_MESSAGE_LOSE_FOCUS, NULL);
 }
