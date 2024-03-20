@@ -4,7 +4,7 @@
 #include "allegro5/allegro_primitives.h"
 #include "allegro5/allegro_font.h"
 #include <allegro5/allegro_ttf.h>
-#include "algui/node.h"
+#include "algui/widget.h"
 
 
 static ALLEGRO_FONT* test_font;
@@ -21,35 +21,32 @@ ALLEGRO_COLOR random_color() {
 
 
 typedef struct TEST {
-    ALGUI_NODE node;
+    ALG_WIDGET widget;
 } TEST;
 
 
-int test_proc(ALGUI_NODE* node, int msgId, void* msgData) {
-    switch (msgId) {
-        case ALGUI_MESSAGE_PAINT:
-            al_draw_filled_rectangle(node->x1, node->y1, node->x2, node->y2, al_map_rgb(255, 255, 255));
-            al_draw_rectangle(node->x1, node->y1, node->x2, node->y2, al_map_rgb(0, 0, 0), 2);
-            return 1;
-    }
-    return algui_default_node_proc(node, msgId, msgData);
+static void test_paint(ALG_WIDGET* wgt, ALG_DATA_PAINT* data) {
+    al_draw_filled_rectangle(data->x1, data->y1, data->x2, data->y2, al_map_rgb(255, 255, 255));
+    al_draw_rectangle(data->x1, data->y1, data->x2, data->y2, al_map_rgb(0, 0, 0), 1);
 }
 
 
-TEST* create_test(ALGUI_NODE* parent, float x, float y, float w, float h) {
-    TEST* test = (TEST*)malloc(sizeof(TEST));
-    algui_init_node(&test->node, 1);
-    
-    test->node.proc = test_proc;
-    test->node.x = x;
-    test->node.y = y;
-    test->node.width = w;
-    test->node.height = h;
+uintptr_t test_proc(ALG_WIDGET* wgt, int id, void* data) {
+    switch (id) {
+        case ALG_MSG_MALLOC:
+            return (uintptr_t)malloc(sizeof(TEST));
 
-    if (parent) {
-        algui_add_node(parent, &test->node);
+        case ALG_MSG_PAINT:
+            test_paint(wgt, (ALG_DATA_PAINT*)data);
+            return 1;
     }
-    return test;
+
+    return alg_widget_proc(wgt, id, data);
+}
+
+
+ALG_WIDGET* create_test(ALG_WIDGET* parent, int x, int y, int w, int h) {
+    return alg_create_child_widget(parent, test_proc, ALG_PROP_X, x, ALG_PROP_Y, y, ALG_PROP_WIDTH, w, ALG_PROP_HEIGHT, h, 0);
 }
 
 
@@ -82,15 +79,13 @@ int main(int argc, const char* argv[])
 
     test_font = al_load_ttf_font("SourceSansPro-Regular.ttf", -12, 0);
 
-    TEST* root = create_test(NULL, 0, 0, 800, 600);
-    TEST* form1 = create_test(&root->node, 100, 50, 250, 200);
-    TEST* form2 = create_test(&root->node, 200, 150, 250, 200);
-    TEST* form3 = create_test(&root->node, 300, 250, 250, 200);
-    TEST* btn1 = create_test(&form2->node, 50, 40, 50, 40);
-    TEST* btn2 = create_test(&form2->node, 70, 60, 50, 40);
-    TEST* btn3 = create_test(&form2->node, 90, 80, 50, 40);
-
-    //algui_update_node(&root->node);
+    ALG_WIDGET* root = create_test(NULL, 0, 0, 800, 600);
+    ALG_WIDGET* form1 = create_test(root, 100, 50, 250, 200);
+    ALG_WIDGET* form2 = create_test(root, 200, 150, 250, 200);
+    ALG_WIDGET* form3 = create_test(root, 300, 250, 250, 200);
+    ALG_WIDGET* btn1 = create_test(form2, 50, 40, 50, 40);
+    ALG_WIDGET* btn2 = create_test(form2, 70, 60, 50, 40);
+    ALG_WIDGET* btn3 = create_test(form2, 90, 80, 50, 40);
 
     while (1) {
         ALLEGRO_EVENT event;
@@ -113,13 +108,12 @@ int main(int argc, const char* argv[])
         if (redraw) {
             redraw = false;
             //al_clear_to_color(al_map_rgb_f(0, 0, 0));
-            algui_update_dirty_nodes(&root->node);
-            algui_draw_node(&root->node);
+            alg_paint_widget(root);
             al_flip_display();
         }
     }
 
-    algui_cleanup_node(&root->node);
+    alg_destroy_widget(root);
 
     return 0;
 }
