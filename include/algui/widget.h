@@ -32,6 +32,21 @@ enum ALG_MSG {
     ///paint widget.
     ALG_MSG_PAINT,
 
+    ///if widget wants the focus.
+    ALG_MSG_WANT_FOCUS,
+
+    ///widget got the focus.
+    ALG_MSG_GOT_FOCUS,
+
+    ///descentant got the focus.
+    ALG_MSG_DESC_GOT_FOCUS,
+
+    ///lost the focus.
+    ALG_MSG_LOST_FOCUS,
+
+    ///descentant lost the focus.
+    ALG_MSG_DESC_LOST_FOCUS,
+
     ///first available message for apps.
     ALG_MSG_USER = 10000
 };
@@ -217,6 +232,8 @@ typedef struct ALG_DATA_PAINT {
  *  -free: frees the widget structure using the free() function.
  *  -get prop: returns one of the widget properties.
  *  -set prop: sets one of the widget properties.
+ *  - want focus: returns 1 (true).
+ *  - descentant got/lost focus: sets/resets the active flag for the widget.
  * @param wgt target widget.
  * @param id message id.
  * @param data message data.
@@ -352,6 +369,23 @@ void alg_remove_widget(ALG_WIDGET* wgt);
  * @param wgt wgt to paint.
  */
 void alg_paint_widget(ALG_WIDGET* wgt);
+
+
+/**
+ * Returns the focused widget.
+ * @return the focused widget.
+ */
+ALG_WIDGET* alg_get_focused_widget();
+
+
+/**
+ * Set the focus to/remove the focus from the given widget.
+ * Sets the focused property of the widget.
+ * @param wgt widget.
+ * @param focused the focused flag.
+ * @return non-zero if the widget lost/got the focus, zero otherwise.
+ */
+int alg_focus_widget(ALG_WIDGET* wgt, int focused);
 
 
 #endif //ALGUI_WIDGET_H

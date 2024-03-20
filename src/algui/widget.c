@@ -3,6 +3,10 @@
 #include "algui/widget.h"
 
 
+//the currently focused widget
+static ALG_WIDGET* focused_widget = NULL;
+
+
 //init widget
 static void init(ALG_WIDGET* wgt, ALG_DATA_INIT* data) {
     alg_init_tree(&wgt->tree);
@@ -28,12 +32,65 @@ static void cleanup(ALG_WIDGET* wgt) {
     //remove widget from parent
     alg_remove_widget(wgt);
 
+    //reset focused widget
+    if (wgt == focused_widget) {
+        focused_widget = NULL;
+    }
+
     //destroy children
     for (ALG_WIDGET* child = alg_get_first_child_widget(wgt); child; ) {
         ALG_WIDGET* next = alg_get_next_sibling_widget(child);
         alg_destroy_widget(child);
         child = next;
     }
+}
+
+
+//set/reset focus
+static int set_focused(ALG_WIDGET* wgt, int focused) {
+    //check for change
+    if (wgt->focused == focused) {
+        return 1;
+    }
+
+    //focus
+    if (focused) {
+        //ask wigdet if it wants the focus
+        if (!alg_send_message(wgt, ALG_MSG_WANT_FOCUS, NULL)) {
+            return 0;
+        }
+
+        //unfocus focused widget
+        if (focused_widget) {
+            alg_focus_widget(focused_widget, 0);
+        }
+
+        //got focus
+        wgt->focused = 1;
+        focused_widget = wgt;
+        alg_send_message(wgt, ALG_MSG_GOT_FOCUS, NULL);
+
+        //inform ancestors
+        for (ALG_WIDGET* anc = alg_get_parent_widget(wgt); anc; anc = alg_get_parent_widget(anc)) {
+            alg_send_message(wgt, ALG_MSG_DESC_GOT_FOCUS, NULL);
+        }
+    }
+
+    //else unfocus
+    else {
+        //lost focus
+        wgt->focused = 0;
+        focused_widget = NULL;
+        alg_send_message(wgt, ALG_MSG_LOST_FOCUS, NULL);
+
+        //inform ancestors
+        for (ALG_WIDGET* anc = alg_get_parent_widget(wgt); anc; anc = alg_get_parent_widget(anc)) {
+            alg_send_message(wgt, ALG_MSG_DESC_LOST_FOCUS, NULL);
+        }
+    }
+
+    //success
+    return 1;
 }
 
 
@@ -147,9 +204,8 @@ static int set_prop(ALG_WIDGET* wgt, ALG_DATA_PROP* prop) {
             wgt->error = *(int*)prop->value;
             return 1;
 
-        case ALG_PROP_FOCUSED:
-            //TODO
-            return 1;
+        case ALG_PROP_FOCUSED:            
+            return set_focused(wgt, *(int*)prop->value);
     }
     return 0;
 }
@@ -283,6 +339,17 @@ uintptr_t alg_widget_proc(ALG_WIDGET* wgt, int id, void* data) {
 
         case ALG_MSG_SET_PROP:
             return set_prop(wgt, (ALG_DATA_PROP*)data);
+
+        case ALG_MSG_WANT_FOCUS:
+            return 1;
+
+        case ALG_MSG_DESC_GOT_FOCUS:
+            wgt->active = 1;
+            return 1;
+
+        case ALG_MSG_DESC_LOST_FOCUS:
+            wgt->active = 0;
+            return 1;
     }
 
     return 0;
@@ -443,4 +510,18 @@ void alg_paint_widget(ALG_WIDGET* wgt) {
 
     //paint the widget
     paint_widget(wgt, &data);
+}
+
+
+//Returns the focused widget.
+ALG_WIDGET* alg_get_focused_widget() {
+    return focused_widget;
+}
+
+
+//set the focus property of the widget
+int alg_focus_widget(ALG_WIDGET* wgt, int focused) {
+    assert(wgt);
+    alg_set_widget_props(wgt, ALG_PROP_FOCUSED, focused, ALG_PROP_NULL);
+    return wgt->focused == focused;
 }
