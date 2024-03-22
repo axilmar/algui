@@ -1,53 +1,59 @@
-#include <assert.h>
 #include <stdlib.h>
-#include <string.h>
 #include "algui/props.h"
+#include "algui/enum.h"
+#include "algui/static_init.h"
 
 
-typedef struct PROPERTY {
-    int id;
-    const char* name;
-} PROPERTY;
+//property enumeration
+static ALG_ENUM prop_enum;
 
 
-static PROPERTY property[] = {
-    { ALG_PROP_PROC       , "proc"        },
-    { ALG_PROP_X          , "x"           },
-    { ALG_PROP_Y          , "y"           },
-    { ALG_PROP_WIDTH      , "width"       },
-    { ALG_PROP_HEIGHT     , "height"      },
-    { ALG_PROP_DATA       , "data"        },
-    { ALG_PROP_ID         , "id"          },
-    { ALG_PROP_VISIBLE    , "visible"     },
-    { ALG_PROP_ENABLED    , "enabled"     },
-    { ALG_PROP_HIGHLIGHTED, "highlighted" },
-    { ALG_PROP_PRESSED    , "pressed"     },
-    { ALG_PROP_SELECTED   , "selected"    },
-    { ALG_PROP_ACTIVE     , "active"      },
-    { ALG_PROP_ERROR      , "error"       },
-    { ALG_PROP_FOCUSED    , "focused"     },
-    { ALG_PROP_NULL       , NULL          }
-};
-
-
-//Returns the name of a property.
-const char* alg_get_prop_name(int prop_id) {
-    for (int i = 0; property[i].id; ++i) {
-        if (prop_id == property[i].id) {
-            return property[i].name;
-        }
-    }
-    return NULL;
+//cleanup the enumeration at exit
+static void cleanup(void) {
+    alg_cleanup_enum(&prop_enum);
 }
 
 
-//get prop id
-int alg_get_prop_id(const char* name) {
-    assert(name);
-    for (int i = 0; property[i].id; ++i) {
-        if (strcmp(property[i].name, name) == 0) {
-            return property[i].id;
-        }
-    }
-    return 0;
+//initialize the property enumeration
+static void init() {
+    ALG_STATIC_INIT({
+        alg_init_enum(&prop_enum);
+        atexit(cleanup);
+        alg_add_enum_value(&prop_enum, ALG_PROP_PROC       , "ALG_PROP_PROC"       );
+        alg_add_enum_value(&prop_enum, ALG_PROP_X          , "ALG_PROP_X"          );
+        alg_add_enum_value(&prop_enum, ALG_PROP_Y          , "ALG_PROP_Y"          );
+        alg_add_enum_value(&prop_enum, ALG_PROP_WIDTH      , "ALG_PROP_WIDTH"      );
+        alg_add_enum_value(&prop_enum, ALG_PROP_HEIGHT     , "ALG_PROP_HEIGHT"     );
+        alg_add_enum_value(&prop_enum, ALG_PROP_DATA       , "ALG_PROP_DATA"       );
+        alg_add_enum_value(&prop_enum, ALG_PROP_ID         , "ALG_PROP_ID"         );
+        alg_add_enum_value(&prop_enum, ALG_PROP_VISIBLE    , "ALG_PROP_VISIBLE"    );
+        alg_add_enum_value(&prop_enum, ALG_PROP_ENABLED    , "ALG_PROP_ENABLED"    );
+        alg_add_enum_value(&prop_enum, ALG_PROP_HIGHLIGHTED, "ALG_PROP_HIGHLIGHTED");
+        alg_add_enum_value(&prop_enum, ALG_PROP_PRESSED    , "ALG_PROP_PRESSED"    );
+        alg_add_enum_value(&prop_enum, ALG_PROP_SELECTED   , "ALG_PROP_SELECTED"   );
+        alg_add_enum_value(&prop_enum, ALG_PROP_ACTIVE     , "ALG_PROP_ACTIVE"     );
+        alg_add_enum_value(&prop_enum, ALG_PROP_ERROR      , "ALG_PROP_ERROR"      );
+        alg_add_enum_value(&prop_enum, ALG_PROP_FOCUSED    , "ALG_PROP_FOCUSED"    );
+    });
+}
+
+
+//Returns a property id from property name.
+int alg_get_property_id(const char* name) {
+    init();
+    return alg_get_enum_id(&prop_enum, name);
+}
+
+
+//Returns a property name from a property id.
+const char* alg_get_property_name(int id) {
+    init();
+    return alg_get_enum_name(&prop_enum, id);
+}
+
+
+//Adds a property.
+int alg_add_property_enum(int id, const char* name) {
+    init();
+    return alg_add_enum_value(&prop_enum, id, name);
 }

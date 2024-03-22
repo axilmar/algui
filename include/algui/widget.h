@@ -1,70 +1,10 @@
-#ifndef ALGUI_WIDGET_H
-#define ALGUI_WIDGET_H
+#ifndef ALG_WIDGET_H
+#define ALG_WIDGET_H
 
 
-#include <stdint.h>
-#include <stdarg.h>
-#include "tree.h"
-#include "bitvector.h"
 #include "props.h"
-
-
-/**
- * ALGUI messages for widgets.
- */
-enum ALG_MSG {
-    ///allocate widget structure.
-    ALG_MSG_MALLOC,
-
-    ///free widget structure.
-    ALG_MSG_FREE,
-
-    ///initialize widget structure.
-    ALG_MSG_INIT,
-
-    ///cleanup widget structure.
-    ALG_MSG_CLEANUP,
-
-    ///get prop.
-    ALG_MSG_GET_PROP,
-
-    ///set prop.
-    ALG_MSG_SET_PROP,
-
-    ///props changed message.
-    ALG_MSG_PROPS_CHANGED,
-
-    ///paint widget.
-    ALG_MSG_PAINT,
-
-    ///if widget wants the focus.
-    ALG_MSG_WANT_FOCUS,
-
-    ///widget got the focus.
-    ALG_MSG_GOT_FOCUS,
-
-    ///descentant got the focus.
-    ALG_MSG_DESC_GOT_FOCUS,
-
-    ///lost the focus.
-    ALG_MSG_LOST_FOCUS,
-
-    ///descentant lost the focus.
-    ALG_MSG_DESC_LOST_FOCUS,
-
-    ///first available message for apps.
-    ALG_MSG_USER = 10000
-};
-
-
-/**
- * Widget procedure type.
- * @param wgt target widget.
- * @param id message id.
- * @param data message data.
- * @return depends on message.
- */
-typedef uintptr_t (*ALG_WIDGET_PROC)(struct ALG_WIDGET* wgt, int id, void* data);
+#include "msgs.h"
+#include "tree.h"
 
 
 /**
@@ -119,81 +59,6 @@ typedef struct ALG_WIDGET {
     ///if widget has the focus.
     int focused : 1;
 } ALG_WIDGET;
-
-
-/**
- * Data for the init message.
- */
-typedef struct ALG_DATA_INIT {
-    ///widget proc.
-    ALG_WIDGET_PROC proc;
-} ALG_DATA_INIT;
-
-
-/**
- * Data for the props changed message.
- */
-typedef struct ALG_DATA_PROPS_CHANGED {
-    ///bit vector; one bit set for each property that is changed.
-    ALG_BITVECTOR props_changed_bits;
-
-    ///number of changed props.
-    int props_changed_count;
-} ALG_DATA_PROPS_CHANGED;
-
-
-/**
- * Data for the get/set property messages.
- */
-typedef struct ALG_DATA_PROP {
-    ///id of the prop.
-    int id;
-
-    ///pointer to the value of the prop.
-    void* value;
-
-    ///valid only for set prop message.
-    ALG_DATA_PROPS_CHANGED* props_changed;
-} ALG_DATA_PROP;
-
-
-/**
- * Data for the paint message.
- */
-typedef struct ALG_DATA_PAINT {
-    ///left coordinate of the widget, relative to the target bitmap.
-    int x1;
-
-    ///top coordinate of the widget, relative to the target bitmap.
-    int y1;
-
-    ///right coordinate of the widget, relative to the target bitmap.
-    int x2;
-
-    ///bottom coordinate of the widget, relative to the target bitmap.
-    int y2;
-
-    ///if the widget belongs to an enabled widget tree.
-    int enabled : 1;
-
-    ///if the widget belongs to a highlighted widget tree.
-    int highlighted : 1;
-
-    ///if the widget belongs to a pressed widget tree.
-    int pressed : 1;
-
-    ///if the widget belongs to a selected widget tree.
-    int selected : 1;
-
-    ///if the widget belongs to an active widget tree.
-    int active : 1;
-
-    ///if the widget belongs to an error widget tree.
-    int error : 1;
-
-    ///if the widget belongs to a focused widget tree.
-    int focused : 1;
-} ALG_DATA_PAINT;
 
 
 /**
@@ -258,7 +123,7 @@ void alg_destroy_widget(ALG_WIDGET* wgt);
  * @param wgt widget to get the properties.
  * @param null-terminated list of property ids and value pointer pairs.
  */
-void alg_get_widget_props(ALG_WIDGET* wgt, ...);
+void alg_get_widget_properties(ALG_WIDGET* wgt, ...);
 
 
 /**
@@ -267,7 +132,7 @@ void alg_get_widget_props(ALG_WIDGET* wgt, ...);
  * @param wgt widget to aet the properties.
  * @param null-terminated list of property ids and value pairs.
  */
-void alg_set_widget_props(ALG_WIDGET* wgt, ...);
+void alg_set_widget_properties(ALG_WIDGET* wgt, ...);
 
 
 /**
@@ -634,4 +499,4 @@ int alg_is_widget_focused(ALG_WIDGET* wgt);
 int alg_set_widget_focused(ALG_WIDGET* wgt, int focused);
 
 
-#endif //ALGUI_WIDGET_H
+#endif //ALG_WIDGET_H

@@ -60,19 +60,28 @@ enum ALG_PROP {
 
 
 /**
- * Returns the name of a property.
- * @param prop_id id of property.
- * @return name of property.
+ * Returns a property id from property name.
+ * @param name property name.
+ * @return id of property or 0 if not found.
  */
-const char* alg_get_prop_name(int prop_id);
+int alg_get_property_id(const char* name);
 
 
 /**
- * Returns the id of a property.
- * @param name property name.
- * @return the id of a property or 0 if not found.
+ * Returns a property name from a property id.
+ * @param id property id.
+ * @return property name or null if not found.
  */
-int alg_get_prop_id(const char* name);
+const char* alg_get_property_name(int id);
+
+
+/**
+ * Adds a property.
+ * @param id property id; should not be 0.
+ * @param name property name; should not be null.
+ * @return non-zero on success, zero on reallocation error or if id is 0 or if name is null.
+ */
+int alg_add_property_enum(int id, const char* name);
 
 
 #endif //ALG_PROPS_H

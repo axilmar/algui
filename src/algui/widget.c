@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include "algui/widget.h"
 
 
@@ -496,7 +497,7 @@ void alg_destroy_widget(ALG_WIDGET* wgt) {
 
 
 //get props
-void alg_get_widget_props(ALG_WIDGET* wgt, ...) {
+void alg_get_widget_properties(ALG_WIDGET* wgt, ...) {
     va_list props;
     va_start(props, wgt);
     get_props(wgt, props);
@@ -505,7 +506,7 @@ void alg_get_widget_props(ALG_WIDGET* wgt, ...) {
 
 
 //set props
-void alg_set_widget_props(ALG_WIDGET* wgt, ...) {
+void alg_set_widget_properties(ALG_WIDGET* wgt, ...) {
     va_list props;
     va_start(props, wgt);
     set_props(wgt, props);
@@ -614,76 +615,76 @@ void alg_paint_widget(ALG_WIDGET* wgt) {
 //get the widget proc.
 ALG_WIDGET_PROC alg_get_widget_proc(ALG_WIDGET* wgt) {
     ALG_WIDGET_PROC proc;
-    alg_get_widget_props(wgt, ALG_PROP_PROC, &proc, ALG_PROP_NULL);
+    alg_get_widget_properties(wgt, ALG_PROP_PROC, &proc, ALG_PROP_NULL);
     return proc;
 }
 
 
 //Sets the proc of a widget.
 void alg_set_widget_proc(ALG_WIDGET* wgt, ALG_WIDGET_PROC proc) {
-    alg_set_widget_props(wgt, ALG_PROP_PROC, proc, ALG_PROP_NULL);
+    alg_set_widget_properties(wgt, ALG_PROP_PROC, proc, ALG_PROP_NULL);
 }
 
 
 //Returns the x coordinate of a widget.
 int alg_get_widget_x(ALG_WIDGET* wgt) {
     int value;
-    alg_get_widget_props(wgt, ALG_PROP_X, &value, ALG_PROP_NULL);
+    alg_get_widget_properties(wgt, ALG_PROP_X, &value, ALG_PROP_NULL);
     return value;
 }
 
 
 //Sets the x coordinate of a widget.
 void alg_set_widget_x(ALG_WIDGET* wgt, int x) {
-    alg_set_widget_props(wgt, ALG_PROP_X, x, ALG_PROP_NULL);
+    alg_set_widget_properties(wgt, ALG_PROP_X, x, ALG_PROP_NULL);
 }
 
 
 //Returns the y coordinate of a widget.
 int alg_get_widget_y(ALG_WIDGET* wgt) {
     int value;
-    alg_get_widget_props(wgt, ALG_PROP_Y, &value, ALG_PROP_NULL);
+    alg_get_widget_properties(wgt, ALG_PROP_Y, &value, ALG_PROP_NULL);
     return value;
 }
 
 
 //Sets the y coordinate of a widget.
 void alg_set_widget_y(ALG_WIDGET* wgt, int y) {
-    alg_set_widget_props(wgt, ALG_PROP_Y, y, ALG_PROP_NULL);
+    alg_set_widget_properties(wgt, ALG_PROP_Y, y, ALG_PROP_NULL);
 }
 
 
 //Returns the width of a widget.
 int alg_get_widget_width(ALG_WIDGET* wgt) {
     int value;
-    alg_get_widget_props(wgt, ALG_PROP_WIDTH, &value, ALG_PROP_NULL);
+    alg_get_widget_properties(wgt, ALG_PROP_WIDTH, &value, ALG_PROP_NULL);
     return value;
 }
 
 
 //Sets the width of a widget.
 void alg_set_widget_width(ALG_WIDGET* wgt, int width) {
-    alg_set_widget_props(wgt, ALG_PROP_WIDTH, width, ALG_PROP_NULL);
+    alg_set_widget_properties(wgt, ALG_PROP_WIDTH, width, ALG_PROP_NULL);
 }
 
 
 //Returns the height of a widget.
 int alg_get_widget_height(ALG_WIDGET* wgt) {
     int value;
-    alg_get_widget_props(wgt, ALG_PROP_HEIGHT, &value, ALG_PROP_NULL);
+    alg_get_widget_properties(wgt, ALG_PROP_HEIGHT, &value, ALG_PROP_NULL);
     return value;
 }
 
 
 //Sets the height of a widget.
 void alg_set_widget_height(ALG_WIDGET* wgt, int height) {
-    alg_set_widget_props(wgt, ALG_PROP_HEIGHT, height, ALG_PROP_NULL);
+    alg_set_widget_properties(wgt, ALG_PROP_HEIGHT, height, ALG_PROP_NULL);
 }
 
 
 //Retrieves the x and y coordinates of a widget.
 void alg_get_widget_position(ALG_WIDGET* wgt, int* x, int* y) {
-    alg_get_widget_props(wgt,
+    alg_get_widget_properties(wgt,
         ALG_PROP_X, x,
         ALG_PROP_Y, y,
         ALG_PROP_NULL);
@@ -692,7 +693,7 @@ void alg_get_widget_position(ALG_WIDGET* wgt, int* x, int* y) {
 
 //Sets the x and y coordinates of a widget.
 void alg_set_widget_position(ALG_WIDGET* wgt, int x, int y) {
-    alg_set_widget_props(wgt,
+    alg_set_widget_properties(wgt,
         ALG_PROP_X, x,
         ALG_PROP_Y, y,
         ALG_PROP_NULL);
@@ -701,7 +702,7 @@ void alg_set_widget_position(ALG_WIDGET* wgt, int x, int y) {
 
 //Retrieves the size of a widget.
 void alg_get_widget_size(ALG_WIDGET* wgt, int* width, int* height) {
-    alg_get_widget_props(wgt,
+    alg_get_widget_properties(wgt,
         ALG_PROP_WIDTH, width,
         ALG_PROP_HEIGHT, height,
         ALG_PROP_NULL);
@@ -710,7 +711,7 @@ void alg_get_widget_size(ALG_WIDGET* wgt, int* width, int* height) {
 
 //Sets the size of a widget.
 void alg_set_widget_size(ALG_WIDGET* wgt, int width, int height) {
-    alg_set_widget_props(wgt,
+    alg_set_widget_properties(wgt,
         ALG_PROP_WIDTH, width,
         ALG_PROP_HEIGHT, height,
         ALG_PROP_NULL);
@@ -719,7 +720,7 @@ void alg_set_widget_size(ALG_WIDGET* wgt, int width, int height) {
 
 //Retrieves the position and size of a widget.
 void alg_get_widget_position_and_size(ALG_WIDGET* wgt, int* x, int* y, int* width, int* height) {
-    alg_get_widget_props(wgt,
+    alg_get_widget_properties(wgt,
         ALG_PROP_X, x,
         ALG_PROP_Y, y,
         ALG_PROP_WIDTH, width,
@@ -730,7 +731,7 @@ void alg_get_widget_position_and_size(ALG_WIDGET* wgt, int* x, int* y, int* widt
 
 //Sets the position and size of a widget.
 void alg_set_widget_position_and_size(ALG_WIDGET* wgt, int x, int y, int width, int height) {
-    alg_set_widget_props(wgt, 
+    alg_set_widget_properties(wgt, 
         ALG_PROP_X, x,
         ALG_PROP_Y, y,
         ALG_PROP_WIDTH, width,
@@ -742,112 +743,112 @@ void alg_set_widget_position_and_size(ALG_WIDGET* wgt, int x, int y, int width, 
 //Retrieves a widget's data.
 void* alg_get_widget_data(ALG_WIDGET* wgt) {
     void* value;
-    alg_get_widget_props(wgt, ALG_PROP_DATA, &value, ALG_PROP_NULL);
+    alg_get_widget_properties(wgt, ALG_PROP_DATA, &value, ALG_PROP_NULL);
     return value;
 }
 
 
 //Sets a widget's data.
 void alg_set_widget_data(ALG_WIDGET* wgt, void* data) {
-    alg_set_widget_props(wgt, ALG_PROP_DATA, data, ALG_PROP_NULL);
+    alg_set_widget_properties(wgt, ALG_PROP_DATA, data, ALG_PROP_NULL);
 }
 
 
 //Retrieves a widget's id.
 uintptr_t alg_get_widget_id(ALG_WIDGET* wgt) {
     uintptr_t value;
-    alg_get_widget_props(wgt, ALG_PROP_ID, &value, ALG_PROP_NULL);
+    alg_get_widget_properties(wgt, ALG_PROP_ID, &value, ALG_PROP_NULL);
     return value;
 }
 
 
 //Sets a widget's id.
 void alg_set_widget_id(ALG_WIDGET* wgt, uintptr_t id) {
-    alg_set_widget_props(wgt, ALG_PROP_ID, id, ALG_PROP_NULL);
+    alg_set_widget_properties(wgt, ALG_PROP_ID, id, ALG_PROP_NULL);
 }
 
 
 //Returns the visible property of a widget.
 int alg_is_widget_visible(ALG_WIDGET* wgt) {
     int value;
-    alg_get_widget_props(wgt, ALG_PROP_VISIBLE, &value, ALG_PROP_NULL);
+    alg_get_widget_properties(wgt, ALG_PROP_VISIBLE, &value, ALG_PROP_NULL);
     return value;
 }
 
 
 //Sets the visible property of a widget.
 void alg_set_widget_visible(ALG_WIDGET* wgt, int value) {
-    alg_set_widget_props(wgt, ALG_PROP_VISIBLE, value, ALG_PROP_NULL);
+    alg_set_widget_properties(wgt, ALG_PROP_VISIBLE, value, ALG_PROP_NULL);
 }
 
 
 //Returns the enabled property of a widget.
 int alg_is_widget_enabled(ALG_WIDGET* wgt) {
     int value;
-    alg_get_widget_props(wgt, ALG_PROP_ENABLED, &value, ALG_PROP_NULL);
+    alg_get_widget_properties(wgt, ALG_PROP_ENABLED, &value, ALG_PROP_NULL);
     return value;
 }
 
 
 //Sets the enabled property of a widget.
 void alg_set_widget_enabled(ALG_WIDGET* wgt, int value) {
-    alg_set_widget_props(wgt, ALG_PROP_ENABLED, value, ALG_PROP_NULL);
+    alg_set_widget_properties(wgt, ALG_PROP_ENABLED, value, ALG_PROP_NULL);
 }
 
 
 //Returns the highlighted property of a widget.
 int alg_is_widget_highlighted(ALG_WIDGET* wgt) {
     int value;
-    alg_get_widget_props(wgt, ALG_PROP_HIGHLIGHTED, &value, ALG_PROP_NULL);
+    alg_get_widget_properties(wgt, ALG_PROP_HIGHLIGHTED, &value, ALG_PROP_NULL);
     return value;
 }
 
 
 //Sets the highlighted property of a widget.
 void alg_set_widget_highlighted(ALG_WIDGET* wgt, int value) {
-    alg_set_widget_props(wgt, ALG_PROP_HIGHLIGHTED, value, ALG_PROP_NULL);
+    alg_set_widget_properties(wgt, ALG_PROP_HIGHLIGHTED, value, ALG_PROP_NULL);
 }
 
 
 //Returns the pressed property of a widget.
 int alg_is_widget_pressed(ALG_WIDGET* wgt) {
     int value;
-    alg_get_widget_props(wgt, ALG_PROP_PRESSED, &value, ALG_PROP_NULL);
+    alg_get_widget_properties(wgt, ALG_PROP_PRESSED, &value, ALG_PROP_NULL);
     return value;
 }
 
 
 //Sets the pressed property of a widget.
 void alg_set_widget_pressed(ALG_WIDGET* wgt, int value) {
-    alg_set_widget_props(wgt, ALG_PROP_PRESSED, value, ALG_PROP_NULL);
+    alg_set_widget_properties(wgt, ALG_PROP_PRESSED, value, ALG_PROP_NULL);
 }
 
 
 //Returns the active property of a widget.
 int alg_is_widget_active(ALG_WIDGET* wgt) {
     int value;
-    alg_get_widget_props(wgt, ALG_PROP_ACTIVE, &value, ALG_PROP_NULL);
+    alg_get_widget_properties(wgt, ALG_PROP_ACTIVE, &value, ALG_PROP_NULL);
     return value;
 }
 
 
 //Sets the active property of a widget.
 void alg_set_widget_active(ALG_WIDGET* wgt, int value) {
-    alg_set_widget_props(wgt, ALG_PROP_ACTIVE, value, ALG_PROP_NULL);
+    alg_set_widget_properties(wgt, ALG_PROP_ACTIVE, value, ALG_PROP_NULL);
 }
 
 
 //Returns the error property of a widget.
 int alg_is_widget_error(ALG_WIDGET* wgt) {
     int value;
-    alg_get_widget_props(wgt, ALG_PROP_ERROR, &value, ALG_PROP_NULL);
+    alg_get_widget_properties(wgt, ALG_PROP_ERROR, &value, ALG_PROP_NULL);
     return value;
 }
 
 
 //Sets the error property of a widget.
 void alg_set_widget_error(ALG_WIDGET* wgt, int value) {
-    alg_set_widget_props(wgt, ALG_PROP_ERROR, value, ALG_PROP_NULL);
+    alg_set_widget_properties(wgt, ALG_PROP_ERROR, value, ALG_PROP_NULL);
 }
 
 
@@ -860,7 +861,7 @@ ALG_WIDGET* alg_get_focused_widget() {
 //Returns the focused property of a widget.
 int alg_is_widget_focused(ALG_WIDGET* wgt) {
     int value;
-    alg_get_widget_props(wgt, ALG_PROP_FOCUSED, &value, ALG_PROP_NULL);
+    alg_get_widget_properties(wgt, ALG_PROP_FOCUSED, &value, ALG_PROP_NULL);
     return value;
 }
 
@@ -868,7 +869,7 @@ int alg_is_widget_focused(ALG_WIDGET* wgt) {
 //set the focus property of the widget
 int alg_set_widget_focused(ALG_WIDGET* wgt, int focused) {
     assert(wgt);
-    alg_set_widget_props(wgt, ALG_PROP_FOCUSED, focused, ALG_PROP_NULL);
+    alg_set_widget_properties(wgt, ALG_PROP_FOCUSED, focused, ALG_PROP_NULL);
     return wgt->focused == focused;
 }
 

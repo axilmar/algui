@@ -39,7 +39,7 @@ static void test_props_changed(ALG_WIDGET* wgt, ALG_DATA_PROPS_CHANGED* data) {
             if (c > 0) {
                 printf(", ");
             }
-            printf(alg_get_prop_name(i));
+            printf(alg_get_property_name(i));
             ++c;
         }
     }
