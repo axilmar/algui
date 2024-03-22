@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include "tree.h"
+#include "bitvector.h"
+#include "props.h"
 
 
 /**
@@ -29,6 +31,9 @@ enum ALG_MSG {
     ///set prop.
     ALG_MSG_SET_PROP,
 
+    ///props changed message.
+    ALG_MSG_PROPS_CHANGED,
+
     ///paint widget.
     ALG_MSG_PAINT,
 
@@ -49,57 +54,6 @@ enum ALG_MSG {
 
     ///first available message for apps.
     ALG_MSG_USER = 10000
-};
-
-
-/**
- * Properties enumeration.
- */
-enum ALG_PROP {
-    ///null property used for terminating the property list.
-    ALG_PROP_NULL,
-
-    ///x property.
-    ALG_PROP_X,
-
-    ///y property.
-    ALG_PROP_Y,
-
-    ///width of widget.
-    ALG_PROP_WIDTH,
-
-    ///height of widget.
-    ALG_PROP_HEIGHT,
-
-    ///user data of widget.
-    ALG_PROP_DATA,
-
-    ///visible state of widget.
-    ALG_PROP_VISIBLE,
-
-    ///enabled state of widget.
-    ALG_PROP_ENABLED,
-
-    ///highlighted state of widget.
-    ALG_PROP_HIGHLIGHTED,
-
-    ///pressed state of widget.
-    ALG_PROP_PRESSED,
-
-    ///selected state of widget.
-    ALG_PROP_SELECTED,
-
-    ///active state of widget.
-    ALG_PROP_ACTIVE,
-
-    ///error state of widget.
-    ALG_PROP_ERROR,
-
-    ///focused state of widget.
-    ALG_PROP_FOCUSED,
-
-    ///first available prop id for apps.
-    ALG_PROP_USER = 10000
 };
 
 
@@ -138,6 +92,9 @@ typedef struct ALG_WIDGET {
     ///user data.
     void* data;
 
+    ///id.
+    uintptr_t id;
+
     ///if widget is visible.
     int visible : 1;
 
@@ -174,7 +131,19 @@ typedef struct ALG_DATA_INIT {
 
 
 /**
- * Data for the property messages.
+ * Data for the props changed message.
+ */
+typedef struct ALG_DATA_PROPS_CHANGED {
+    ///bit vector; one bit set for each property that is changed.
+    ALG_BITVECTOR props_changed_bits;
+
+    ///number of changed props.
+    int props_changed_count;
+} ALG_DATA_PROPS_CHANGED;
+
+
+/**
+ * Data for the get/set property messages.
  */
 typedef struct ALG_DATA_PROP {
     ///id of the prop.
@@ -182,6 +151,9 @@ typedef struct ALG_DATA_PROP {
 
     ///pointer to the value of the prop.
     void* value;
+
+    ///valid only for set prop message.
+    ALG_DATA_PROPS_CHANGED* props_changed;
 } ALG_DATA_PROP;
 
 
@@ -372,10 +344,284 @@ void alg_paint_widget(ALG_WIDGET* wgt);
 
 
 /**
+ * Returns the current proc of the widget.
+ * @param wgt widget to thet the proc of.
+ * @return the widget's proc.
+ */
+ALG_WIDGET_PROC alg_get_widget_proc(ALG_WIDGET* wgt);
+
+
+/**
+ * Sets the proc of a widget.
+ * @param wgt widget to set the proc of.
+ * @param proc the widget proc.
+ */
+void alg_set_widget_proc(ALG_WIDGET* wgt, ALG_WIDGET_PROC proc);
+
+
+/**
+ * Returns the x coordinate of a widget.
+ * @param wgt widget to get the x coordinate of.
+ * @return the x coordinate of the widget.
+ */
+int alg_get_widget_x(ALG_WIDGET* wgt);
+
+
+/**
+ * Sets the x coordinate of a widget.
+ * @param wgt widget to set the x coordinate of.
+ * @param x the x coordinate of a widget.
+ */
+void alg_set_widget_x(ALG_WIDGET* wgt, int x);
+
+
+/**
+ * Returns the y coordinate of a widget.
+ * @param wgt widget to get the y coordinate of.
+ * @return the y coordinate of the widget.
+ */
+int alg_get_widget_y(ALG_WIDGET* wgt);
+
+
+/**
+ * Sets the y coordinate of a widget.
+ * @param wgt widget to set the y coordinate of.
+ * @param y the y coordinate of a widget.
+ */
+void alg_set_widget_y(ALG_WIDGET* wgt, int y);
+
+
+/**
+ * Returns the width of a widget.
+ * @param wgt widget to get the width of.
+ * @return the width of the widget.
+ */
+int alg_get_widget_width(ALG_WIDGET* wgt);
+
+
+/**
+ * Sets the width of a widget.
+ * @param wgt widget to set the width of.
+ * @param width the width of a widget.
+ */
+void alg_set_widget_width(ALG_WIDGET* wgt, int width);
+
+
+/**
+ * Returns the height of a widget.
+ * @param wgt widget to get the height of.
+ * @return the height of the widget.
+ */
+int alg_get_widget_height(ALG_WIDGET* wgt);
+
+
+/**
+ * Sets the height of a widget.
+ * @param wgt widget to set the height of.
+ * @param height the height of a widget.
+ */
+void alg_set_widget_height(ALG_WIDGET* wgt, int height);
+
+
+/**
+ * Retrieves the x and y coordinates of a widget.
+ * @param wgt widget to get the coordinates of.
+ * @param x variable to store the x coordinate.
+ * @param y variable to store the y coordinate.
+ */
+void alg_get_widget_position(ALG_WIDGET* wgt, int* x, int* y);
+
+
+/**
+ * Sets the x and y coordinates of a widget.
+ * @param wgt widget to get the coordinates of.
+ * @param x the x coordinate.
+ * @param y the y coordinate.
+ */
+void alg_set_widget_position(ALG_WIDGET* wgt, int x, int y);
+
+
+/**
+ * Retrieves the size of a widget.
+ * @param wgt widget to get the coordinates of.
+ * @param width variable to store the width.
+ * @param height variable to store the height.
+ */
+void alg_get_widget_size(ALG_WIDGET* wgt, int* width, int* height);
+
+
+/**
+ * Sets the size of a widget.
+ * @param wgt widget to get the size of.
+ * @param width the width.
+ * @param height the height.
+ */
+void alg_set_widget_size(ALG_WIDGET* wgt, int width, int height);
+
+
+/**
+ * Retrieves the position and size of a widget.
+ * @param wgt widget to get the position and size of.
+ * @param x variable to store the x coordinate.
+ * @param y variable to store the y coordinate.
+ * @param width variable to store the width.
+ * @param height variable to store the height.
+ */
+void alg_get_widget_position_and_size(ALG_WIDGET* wgt, int* x, int* y, int* width, int* height);
+
+
+/**
+ * Sets the position and size of a widget.
+ * @param wgt widget to get the position and size of.
+ * @param x the x coordinate.
+ * @param y the y coordinate.
+ * @param width the width.
+ * @param height the height.
+ */
+void alg_set_widget_position_and_size(ALG_WIDGET* wgt, int x, int y, int width, int height);
+
+
+/**
+ * Retrieves a widget's data.
+ * @param wgt widget to get the data of.
+ * @return the widget's data.
+ */
+void* alg_get_widget_data(ALG_WIDGET* wgt);
+
+
+/**
+ * Sets a widget's data.
+ * @param wgt widget to set the data of.
+ * @param data the widget's data.
+ */
+void alg_set_widget_data(ALG_WIDGET* wgt, void* data);
+
+
+/**
+ * Retrieves a widget's id.
+ * @param wgt widget to get the id of.
+ * @return the widget's id.
+ */
+uintptr_t alg_get_widget_id(ALG_WIDGET* wgt);
+
+
+/**
+ * Sets a widget's id.
+ * @param wgt widget to set the id of.
+ * @param id the widget's id.
+ */
+void alg_set_widget_id(ALG_WIDGET* wgt, uintptr_t id);
+
+
+/**
+ * Returns the visible property of a widget.
+ * @param wgt widget to get the property of.
+ * @return the property value.
+ */
+int alg_is_widget_visible(ALG_WIDGET* wgt);
+
+
+/**
+ * Sets the visible property of a widget.
+ * @param wgt widget to set the property of.
+ * @param value the property value.
+ */
+void alg_set_widget_visible(ALG_WIDGET* wgt, int value);
+
+
+/**
+ * Returns the enabled property of a widget.
+ * @param wgt widget to get the property of.
+ * @return the property value.
+ */
+int alg_is_widget_enabled(ALG_WIDGET* wgt);
+
+
+/**
+ * Sets the enabled property of a widget.
+ * @param wgt widget to set the property of.
+ * @param value the property value.
+ */
+void alg_set_widget_enabled(ALG_WIDGET* wgt, int value);
+
+
+/**
+ * Returns the highlighted property of a widget.
+ * @param wgt widget to get the property of.
+ * @return the property value.
+ */
+int alg_is_widget_highlighted(ALG_WIDGET* wgt);
+
+
+/**
+ * Sets the highlighted property of a widget.
+ * @param wgt widget to set the property of.
+ * @param value the property value.
+ */
+void alg_set_widget_highlighted(ALG_WIDGET* wgt, int value);
+
+
+/**
+ * Returns the pressed property of a widget.
+ * @param wgt widget to get the property of.
+ * @return the property value.
+ */
+int alg_is_widget_pressed(ALG_WIDGET* wgt);
+
+
+/**
+ * Sets the pressed property of a widget.
+ * @param wgt widget to set the property of.
+ * @param value the property value.
+ */
+void alg_set_widget_pressed(ALG_WIDGET* wgt, int value);
+
+
+/**
+ * Returns the active property of a widget.
+ * @param wgt widget to get the property of.
+ * @return the property value.
+ */
+int alg_is_widget_active(ALG_WIDGET* wgt);
+
+
+/**
+ * Sets the active property of a widget.
+ * @param wgt widget to set the property of.
+ * @param value the property value.
+ */
+void alg_set_widget_active(ALG_WIDGET* wgt, int value);
+
+
+/**
+ * Returns the error property of a widget.
+ * @param wgt widget to get the property of.
+ * @return the property value.
+ */
+int alg_is_widget_error(ALG_WIDGET* wgt);
+
+
+/**
+ * Sets the error property of a widget.
+ * @param wgt widget to set the property of.
+ * @param value the property value.
+ */
+void alg_set_widget_error(ALG_WIDGET* wgt, int value);
+
+
+/**
  * Returns the focused widget.
  * @return the focused widget.
  */
 ALG_WIDGET* alg_get_focused_widget();
+
+
+/**
+ * Returns the focused property of a widget.
+ * @param wgt widget to get the property of.
+ * @return the property value.
+ */
+int alg_is_widget_focused(ALG_WIDGET* wgt);
 
 
 /**
@@ -385,7 +631,7 @@ ALG_WIDGET* alg_get_focused_widget();
  * @param focused the focused flag.
  * @return non-zero if the widget lost/got the focus, zero otherwise.
  */
-int alg_focus_widget(ALG_WIDGET* wgt, int focused);
+int alg_set_widget_focused(ALG_WIDGET* wgt, int focused);
 
 
 #endif //ALGUI_WIDGET_H

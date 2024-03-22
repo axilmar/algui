@@ -3,6 +3,14 @@
 #include "algui/widget.h"
 
 
+//initial props count is 64
+#define INITIAL_PROPS_CHANGED_PROP_COUNT 64
+
+
+//number of words initially allocated for the props changed vector.
+#define INITIAL_PROPS_CHANGED_WORD_COUNT (INITIAL_PROPS_CHANGED_PROP_COUNT / (sizeof(uintptr_t) * 8))
+
+
 //the currently focused widget
 static ALG_WIDGET* focused_widget = NULL;
 
@@ -16,6 +24,7 @@ static void init(ALG_WIDGET* wgt, ALG_DATA_INIT* data) {
     wgt->width = 0;
     wgt->height = 0;
     wgt->data = NULL;
+    wgt->id = 0;
     wgt->visible = 1;
     wgt->enabled = 1;
     wgt->highlighted = 0;
@@ -46,8 +55,15 @@ static void cleanup(ALG_WIDGET* wgt) {
 }
 
 
+//set the given prop as changed
+static void set_prop_changed(ALG_DATA_PROPS_CHANGED* data, int prop_id) {
+    alg_set_bitvector_bit(&data->props_changed_bits, prop_id, 1);
+    ++data->props_changed_count;
+}
+
+
 //set/reset focus
-static int set_focused(ALG_WIDGET* wgt, int focused) {
+static int set_focused(ALG_WIDGET* wgt, int focused, ALG_DATA_PROPS_CHANGED* props_changed) {
     //check for change
     if (wgt->focused == focused) {
         return 1;
@@ -62,12 +78,13 @@ static int set_focused(ALG_WIDGET* wgt, int focused) {
 
         //unfocus focused widget
         if (focused_widget) {
-            alg_focus_widget(focused_widget, 0);
+            alg_set_widget_focused(focused_widget, 0);
         }
 
         //got focus
         wgt->focused = 1;
         focused_widget = wgt;
+        set_prop_changed(props_changed, ALG_PROP_FOCUSED);
         alg_send_message(wgt, ALG_MSG_GOT_FOCUS, NULL);
 
         //inform ancestors
@@ -81,6 +98,7 @@ static int set_focused(ALG_WIDGET* wgt, int focused) {
         //lost focus
         wgt->focused = 0;
         focused_widget = NULL;
+        set_prop_changed(props_changed, ALG_PROP_FOCUSED);
         alg_send_message(wgt, ALG_MSG_LOST_FOCUS, NULL);
 
         //inform ancestors
@@ -96,7 +114,13 @@ static int set_focused(ALG_WIDGET* wgt, int focused) {
 
 //get property
 static int get_prop(ALG_WIDGET* wgt, ALG_DATA_PROP* prop) {
+    assert(prop->value);
+
     switch (prop->id) {
+        case ALG_PROP_PROC:
+            *(ALG_WIDGET_PROC*)prop->value = wgt->proc;
+            return 1;
+
         case ALG_PROP_X:
             *(int*)prop->value = wgt->x;
             return 1;
@@ -155,57 +179,110 @@ static int get_prop(ALG_WIDGET* wgt, ALG_DATA_PROP* prop) {
 
 //set property
 static int set_prop(ALG_WIDGET* wgt, ALG_DATA_PROP* prop) {
+    assert(prop->value);
+    assert(prop->props_changed);
+
     switch (prop->id) {
+        case ALG_PROP_PROC:
+            if (wgt->proc != *(ALG_WIDGET_PROC*)prop->value) {
+                wgt->proc = *(ALG_WIDGET_PROC*)prop->value;
+                set_prop_changed(prop->props_changed, prop->id);
+            }
+            return 1;
+
         case ALG_PROP_X:
-            wgt->x = *(int*)prop->value;
+            if (wgt->x != *(int*)prop->value) {
+                wgt->x = *(int*)prop->value;
+                set_prop_changed(prop->props_changed, prop->id);
+            }
             return 1;
 
         case ALG_PROP_Y:
-            wgt->y = *(int*)prop->value;
+            if (wgt->y != *(int*)prop->value) {
+                wgt->y = *(int*)prop->value;
+                set_prop_changed(prop->props_changed, prop->id);
+            }
             return 1;
 
         case ALG_PROP_WIDTH:
-            wgt->width = *(int*)prop->value;
+            if (wgt->width != *(int*)prop->value) {
+                wgt->width = *(int*)prop->value;
+                set_prop_changed(prop->props_changed, prop->id);
+            }
             return 1;
 
         case ALG_PROP_HEIGHT:
-            wgt->height = *(int*)prop->value;
+            if (wgt->height != *(int*)prop->value) {
+                wgt->height = *(int*)prop->value;
+                set_prop_changed(prop->props_changed, prop->id);
+            }
             return 1;
 
         case ALG_PROP_DATA:
-            wgt->data = *(void**)prop->value;
+            if (wgt->data != *(void**)prop->value) {
+                wgt->data = *(void**)prop->value;
+                set_prop_changed(prop->props_changed, prop->id);
+            }
+            return 1;
+
+        case ALG_PROP_ID:
+            if (wgt->id != *(uintptr_t*)prop->value) {
+                wgt->id = *(uintptr_t*)prop->value;
+                set_prop_changed(prop->props_changed, prop->id);
+            }
             return 1;
 
         case ALG_PROP_VISIBLE:
-            wgt->visible = *(int*)prop->value;
+            if (wgt->visible != *(int*)prop->value) {
+                wgt->visible = *(int*)prop->value;
+                set_prop_changed(prop->props_changed, prop->id);
+            }
             return 1;
 
         case ALG_PROP_ENABLED:
-            wgt->enabled = *(int*)prop->value;
+            if (wgt->enabled != *(int*)prop->value) {
+                wgt->enabled = *(int*)prop->value;
+                set_prop_changed(prop->props_changed, prop->id);
+            }
             return 1;
 
         case ALG_PROP_HIGHLIGHTED:
-            wgt->highlighted = *(int*)prop->value;
+            if (wgt->highlighted != *(int*)prop->value) {
+                wgt->highlighted = *(int*)prop->value;
+                set_prop_changed(prop->props_changed, prop->id);
+            }
             return 1;
 
         case ALG_PROP_PRESSED:
-            wgt->pressed = *(int*)prop->value;
+            if (wgt->pressed != *(int*)prop->value) {
+                wgt->pressed = *(int*)prop->value;
+                set_prop_changed(prop->props_changed, prop->id);
+            }
             return 1;
 
         case ALG_PROP_SELECTED:
-            wgt->selected = *(int*)prop->value;
+            if (wgt->selected != *(int*)prop->value) {
+                wgt->selected = *(int*)prop->value;
+                set_prop_changed(prop->props_changed, prop->id);
+            }
             return 1;
 
         case ALG_PROP_ACTIVE:
-            wgt->active = *(int*)prop->value;
+            if (wgt->active != *(int*)prop->value) {
+                wgt->active = *(int*)prop->value;
+                set_prop_changed(prop->props_changed, prop->id);
+            }
             return 1;
 
         case ALG_PROP_ERROR:
-            wgt->error = *(int*)prop->value;
+            if (wgt->error != *(int*)prop->value) {
+                wgt->error = *(int*)prop->value;
+                set_prop_changed(prop->props_changed, prop->id);
+            }
             return 1;
 
         case ALG_PROP_FOCUSED:            
-            return set_focused(wgt, *(int*)prop->value);
+            return set_focused(wgt, *(int*)prop->value, prop->props_changed);
     }
     return 0;
 }
@@ -239,8 +316,17 @@ static void get_props(ALG_WIDGET* wgt, va_list props) {
 
 //set props
 static void set_props(ALG_WIDGET* wgt, va_list props) {
+    uintptr_t initial_props_changed_storage[INITIAL_PROPS_CHANGED_WORD_COUNT] = { 0 };
+
+    //the props changed message
+    ALG_DATA_PROPS_CHANGED props_changed;
+    alg_init_bitvector(&props_changed.props_changed_bits, initial_props_changed_storage, INITIAL_PROPS_CHANGED_WORD_COUNT, 0);
+    props_changed.props_changed_count = 0;
+
+    //the data message
     ALG_DATA_PROP data;
-    
+    data.props_changed = &props_changed;
+
     for (;;) {
         //get prop id
         data.id = va_arg(props, int);
@@ -250,10 +336,12 @@ static void set_props(ALG_WIDGET* wgt, va_list props) {
 
             //end of list
             case ALG_PROP_NULL:
-                return;
+                goto END;
 
             //property is sizeof(void*)
+            case ALG_PROP_PROC:
             case ALG_PROP_DATA:
+            case ALG_PROP_ID:
                 data.value = &(va_arg(props, void*));
                 break;
 
@@ -265,6 +353,16 @@ static void set_props(ALG_WIDGET* wgt, va_list props) {
         //set prop
         alg_send_message(wgt, ALG_MSG_SET_PROP, &data);
     }
+
+    END:
+
+    //if there are properties that are changed, notify the widget
+    if (props_changed.props_changed_count > 0) {
+        alg_send_message(wgt, ALG_MSG_PROPS_CHANGED, &props_changed);
+    }
+
+    //cleanup
+    alg_cleanup_bitvector(&props_changed.props_changed_bits);
 }
 
 
@@ -513,15 +611,265 @@ void alg_paint_widget(ALG_WIDGET* wgt) {
 }
 
 
+//get the widget proc.
+ALG_WIDGET_PROC alg_get_widget_proc(ALG_WIDGET* wgt) {
+    ALG_WIDGET_PROC proc;
+    alg_get_widget_props(wgt, ALG_PROP_PROC, &proc, ALG_PROP_NULL);
+    return proc;
+}
+
+
+//Sets the proc of a widget.
+void alg_set_widget_proc(ALG_WIDGET* wgt, ALG_WIDGET_PROC proc) {
+    alg_set_widget_props(wgt, ALG_PROP_PROC, proc, ALG_PROP_NULL);
+}
+
+
+//Returns the x coordinate of a widget.
+int alg_get_widget_x(ALG_WIDGET* wgt) {
+    int value;
+    alg_get_widget_props(wgt, ALG_PROP_X, &value, ALG_PROP_NULL);
+    return value;
+}
+
+
+//Sets the x coordinate of a widget.
+void alg_set_widget_x(ALG_WIDGET* wgt, int x) {
+    alg_set_widget_props(wgt, ALG_PROP_X, x, ALG_PROP_NULL);
+}
+
+
+//Returns the y coordinate of a widget.
+int alg_get_widget_y(ALG_WIDGET* wgt) {
+    int value;
+    alg_get_widget_props(wgt, ALG_PROP_Y, &value, ALG_PROP_NULL);
+    return value;
+}
+
+
+//Sets the y coordinate of a widget.
+void alg_set_widget_y(ALG_WIDGET* wgt, int y) {
+    alg_set_widget_props(wgt, ALG_PROP_Y, y, ALG_PROP_NULL);
+}
+
+
+//Returns the width of a widget.
+int alg_get_widget_width(ALG_WIDGET* wgt) {
+    int value;
+    alg_get_widget_props(wgt, ALG_PROP_WIDTH, &value, ALG_PROP_NULL);
+    return value;
+}
+
+
+//Sets the width of a widget.
+void alg_set_widget_width(ALG_WIDGET* wgt, int width) {
+    alg_set_widget_props(wgt, ALG_PROP_WIDTH, width, ALG_PROP_NULL);
+}
+
+
+//Returns the height of a widget.
+int alg_get_widget_height(ALG_WIDGET* wgt) {
+    int value;
+    alg_get_widget_props(wgt, ALG_PROP_HEIGHT, &value, ALG_PROP_NULL);
+    return value;
+}
+
+
+//Sets the height of a widget.
+void alg_set_widget_height(ALG_WIDGET* wgt, int height) {
+    alg_set_widget_props(wgt, ALG_PROP_HEIGHT, height, ALG_PROP_NULL);
+}
+
+
+//Retrieves the x and y coordinates of a widget.
+void alg_get_widget_position(ALG_WIDGET* wgt, int* x, int* y) {
+    alg_get_widget_props(wgt,
+        ALG_PROP_X, x,
+        ALG_PROP_Y, y,
+        ALG_PROP_NULL);
+}
+
+
+//Sets the x and y coordinates of a widget.
+void alg_set_widget_position(ALG_WIDGET* wgt, int x, int y) {
+    alg_set_widget_props(wgt,
+        ALG_PROP_X, x,
+        ALG_PROP_Y, y,
+        ALG_PROP_NULL);
+}
+
+
+//Retrieves the size of a widget.
+void alg_get_widget_size(ALG_WIDGET* wgt, int* width, int* height) {
+    alg_get_widget_props(wgt,
+        ALG_PROP_WIDTH, width,
+        ALG_PROP_HEIGHT, height,
+        ALG_PROP_NULL);
+}
+
+
+//Sets the size of a widget.
+void alg_set_widget_size(ALG_WIDGET* wgt, int width, int height) {
+    alg_set_widget_props(wgt,
+        ALG_PROP_WIDTH, width,
+        ALG_PROP_HEIGHT, height,
+        ALG_PROP_NULL);
+}
+
+
+//Retrieves the position and size of a widget.
+void alg_get_widget_position_and_size(ALG_WIDGET* wgt, int* x, int* y, int* width, int* height) {
+    alg_get_widget_props(wgt,
+        ALG_PROP_X, x,
+        ALG_PROP_Y, y,
+        ALG_PROP_WIDTH, width,
+        ALG_PROP_HEIGHT, height,
+        ALG_PROP_NULL);
+}
+
+
+//Sets the position and size of a widget.
+void alg_set_widget_position_and_size(ALG_WIDGET* wgt, int x, int y, int width, int height) {
+    alg_set_widget_props(wgt, 
+        ALG_PROP_X, x,
+        ALG_PROP_Y, y,
+        ALG_PROP_WIDTH, width,
+        ALG_PROP_HEIGHT, height,
+        ALG_PROP_NULL);
+}
+
+
+//Retrieves a widget's data.
+void* alg_get_widget_data(ALG_WIDGET* wgt) {
+    void* value;
+    alg_get_widget_props(wgt, ALG_PROP_DATA, &value, ALG_PROP_NULL);
+    return value;
+}
+
+
+//Sets a widget's data.
+void alg_set_widget_data(ALG_WIDGET* wgt, void* data) {
+    alg_set_widget_props(wgt, ALG_PROP_DATA, data, ALG_PROP_NULL);
+}
+
+
+//Retrieves a widget's id.
+uintptr_t alg_get_widget_id(ALG_WIDGET* wgt) {
+    uintptr_t value;
+    alg_get_widget_props(wgt, ALG_PROP_ID, &value, ALG_PROP_NULL);
+    return value;
+}
+
+
+//Sets a widget's id.
+void alg_set_widget_id(ALG_WIDGET* wgt, uintptr_t id) {
+    alg_set_widget_props(wgt, ALG_PROP_ID, id, ALG_PROP_NULL);
+}
+
+
+//Returns the visible property of a widget.
+int alg_is_widget_visible(ALG_WIDGET* wgt) {
+    int value;
+    alg_get_widget_props(wgt, ALG_PROP_VISIBLE, &value, ALG_PROP_NULL);
+    return value;
+}
+
+
+//Sets the visible property of a widget.
+void alg_set_widget_visible(ALG_WIDGET* wgt, int value) {
+    alg_set_widget_props(wgt, ALG_PROP_VISIBLE, value, ALG_PROP_NULL);
+}
+
+
+//Returns the enabled property of a widget.
+int alg_is_widget_enabled(ALG_WIDGET* wgt) {
+    int value;
+    alg_get_widget_props(wgt, ALG_PROP_ENABLED, &value, ALG_PROP_NULL);
+    return value;
+}
+
+
+//Sets the enabled property of a widget.
+void alg_set_widget_enabled(ALG_WIDGET* wgt, int value) {
+    alg_set_widget_props(wgt, ALG_PROP_ENABLED, value, ALG_PROP_NULL);
+}
+
+
+//Returns the highlighted property of a widget.
+int alg_is_widget_highlighted(ALG_WIDGET* wgt) {
+    int value;
+    alg_get_widget_props(wgt, ALG_PROP_HIGHLIGHTED, &value, ALG_PROP_NULL);
+    return value;
+}
+
+
+//Sets the highlighted property of a widget.
+void alg_set_widget_highlighted(ALG_WIDGET* wgt, int value) {
+    alg_set_widget_props(wgt, ALG_PROP_HIGHLIGHTED, value, ALG_PROP_NULL);
+}
+
+
+//Returns the pressed property of a widget.
+int alg_is_widget_pressed(ALG_WIDGET* wgt) {
+    int value;
+    alg_get_widget_props(wgt, ALG_PROP_PRESSED, &value, ALG_PROP_NULL);
+    return value;
+}
+
+
+//Sets the pressed property of a widget.
+void alg_set_widget_pressed(ALG_WIDGET* wgt, int value) {
+    alg_set_widget_props(wgt, ALG_PROP_PRESSED, value, ALG_PROP_NULL);
+}
+
+
+//Returns the active property of a widget.
+int alg_is_widget_active(ALG_WIDGET* wgt) {
+    int value;
+    alg_get_widget_props(wgt, ALG_PROP_ACTIVE, &value, ALG_PROP_NULL);
+    return value;
+}
+
+
+//Sets the active property of a widget.
+void alg_set_widget_active(ALG_WIDGET* wgt, int value) {
+    alg_set_widget_props(wgt, ALG_PROP_ACTIVE, value, ALG_PROP_NULL);
+}
+
+
+//Returns the error property of a widget.
+int alg_is_widget_error(ALG_WIDGET* wgt) {
+    int value;
+    alg_get_widget_props(wgt, ALG_PROP_ERROR, &value, ALG_PROP_NULL);
+    return value;
+}
+
+
+//Sets the error property of a widget.
+void alg_set_widget_error(ALG_WIDGET* wgt, int value) {
+    alg_set_widget_props(wgt, ALG_PROP_ERROR, value, ALG_PROP_NULL);
+}
+
+
 //Returns the focused widget.
 ALG_WIDGET* alg_get_focused_widget() {
     return focused_widget;
 }
 
 
+//Returns the focused property of a widget.
+int alg_is_widget_focused(ALG_WIDGET* wgt) {
+    int value;
+    alg_get_widget_props(wgt, ALG_PROP_FOCUSED, &value, ALG_PROP_NULL);
+    return value;
+}
+
+
 //set the focus property of the widget
-int alg_focus_widget(ALG_WIDGET* wgt, int focused) {
+int alg_set_widget_focused(ALG_WIDGET* wgt, int focused) {
     assert(wgt);
     alg_set_widget_props(wgt, ALG_PROP_FOCUSED, focused, ALG_PROP_NULL);
     return wgt->focused == focused;
 }
+
+
