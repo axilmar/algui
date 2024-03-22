@@ -45,6 +45,7 @@ static int manage_storage(ALG_BITVECTOR* vec, int word_addr) {
         if (!new_words) {
             return 0;
         }
+        memset(new_words + vec->count, 0, (new_word_count - vec->count) * sizeof(uintptr_t));
         vec->words = new_words;
     }
 
@@ -55,6 +56,7 @@ static int manage_storage(ALG_BITVECTOR* vec, int word_addr) {
             return 0;
         }
         memcpy(new_words, vec->words, vec->count * sizeof(uintptr_t));
+        memset(new_words + vec->count, 0, (new_word_count - vec->count) * sizeof(uintptr_t));
         vec->words = new_words;
         vec->count = new_word_count;
         vec->owner = 1;
