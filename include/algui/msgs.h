@@ -62,8 +62,8 @@ enum ALG_MSG {
     ///mouse button up event.
     ALG_MSG_MOUSE_UP,
 
-    ///click (differs from button up because click happens only in the widget that the button was pressed).
-    ALG_MSG_CLICK,
+    ///mouse click (differs from button up because click happens only in the widget that the button was pressed).
+    ALG_MOUSE_MOUSE_CLICK,
 
     ///mouse enter.
     ALG_MSG_MOUSE_ENTER,
@@ -130,16 +130,16 @@ typedef struct ALG_DATA_PROP {
  */
 typedef struct ALG_DATA_PAINT {
     ///left coordinate of the widget, relative to the target bitmap.
-    int x1;
+    float x1;
 
     ///top coordinate of the widget, relative to the target bitmap.
-    int y1;
+    float y1;
 
     ///right coordinate of the widget, relative to the target bitmap.
-    int x2;
+    float x2;
 
     ///bottom coordinate of the widget, relative to the target bitmap.
-    int y2;
+    float y2;
 
     ///if the widget belongs to an enabled widget tree.
     int enabled : 1;

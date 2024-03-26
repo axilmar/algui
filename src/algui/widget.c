@@ -395,8 +395,8 @@ static void paint_widget(ALG_WIDGET* wgt, const ALG_DATA_PAINT* parent_data) {
     ALG_DATA_PAINT data;
     data.x1 = parent_data->x1 + wgt->x;
     data.y1 = parent_data->y1 + wgt->y;
-    data.x2 = data.x1 + wgt->width;
-    data.y2 = data.y1 + wgt->height;
+    data.x2 = data.x1 + wgt->width + 0.5f;
+    data.y2 = data.y1 + wgt->height + 0.5f;
     data.enabled = wgt->enabled & parent_data->enabled;
     data.highlighted = wgt->highlighted | parent_data->highlighted;
     data.pressed = wgt->pressed | parent_data->pressed;
@@ -418,11 +418,12 @@ static void paint_widget(ALG_WIDGET* wgt, const ALG_DATA_PAINT* parent_data) {
 
 
 //reset the clicked button member helper
-static void reset_clicked_button_helper(ALG_WIDGET* wgt) {
+static void reset_clicked_helper(ALG_WIDGET* wgt) {
     wgt->clicked_button = 0;
+    wgt->pressed = 0;
     for (ALG_WIDGET* child = alg_get_last_child_widget(wgt); child; child = alg_get_prev_sibling_widget(child)) {
         if (child->clicked_button) {
-            reset_clicked_button_helper(child);
+            reset_clicked_helper(child);
             break;
         }
     }
@@ -430,9 +431,38 @@ static void reset_clicked_button_helper(ALG_WIDGET* wgt) {
 
 
 //reset the clicked button member
-static void reset_clicked_button(ALG_WIDGET* wgt) {
+static void reset_clicked(ALG_WIDGET* wgt) {
     if (wgt->clicked_button) {
-        reset_clicked_button_helper(wgt);
+        reset_clicked_helper(wgt);
+    }
+}
+
+
+//find highlighted child
+static ALG_WIDGET* get_highlighted_child(ALG_WIDGET* wgt) {
+    for (ALG_WIDGET* child = alg_get_last_child_widget(wgt); child; child = alg_get_prev_sibling_widget(child)) {
+        if (child->highlighted) {
+            return child;
+        }
+    }
+    return NULL;
+}
+
+
+//reset highlighted status helper
+static void reset_highlighted_helper(ALG_WIDGET* wgt) {
+    wgt->highlighted = 0;
+    ALG_WIDGET* child = get_highlighted_child(wgt);
+    if (child) {
+        reset_highlighted_helper(child);
+    }
+}
+
+
+//reset highlighted status
+static void reset_highlighted(ALG_WIDGET* wgt) {
+    if (wgt->highlighted) {
+        reset_highlighted_helper(wgt);
     }
 }
 
@@ -479,6 +509,7 @@ uintptr_t alg_widget_proc(ALG_WIDGET* wgt, int id, void* data) {
         case ALG_MSG_MOUSE_DOWN: 
         {
             ALG_DATA_MOUSE* mouse = (ALG_DATA_MOUSE*)data;
+            wgt->pressed = 1;
             ALG_WIDGET* child = alg_get_child_widget_from_point(wgt, mouse->x, mouse->y);
             if (child && child->enabled) {
                 mouse->x -= child->x;
@@ -503,9 +534,10 @@ uintptr_t alg_widget_proc(ALG_WIDGET* wgt, int id, void* data) {
             break;
         }
 
-        case ALG_MSG_CLICK:
+        case ALG_MOUSE_MOUSE_CLICK:
         {
             ALG_DATA_MOUSE* mouse = (ALG_DATA_MOUSE*)data;
+            wgt->pressed = 0;
             ALG_WIDGET* child = alg_get_child_widget_from_point(wgt, mouse->x, mouse->y);
             if (child && child->enabled && child->clicked_button == mouse->button) {
                 mouse->x -= child->x;
@@ -513,7 +545,82 @@ uintptr_t alg_widget_proc(ALG_WIDGET* wgt, int id, void* data) {
                 return alg_send_message(child, id, mouse);
             }
             else {
-                reset_clicked_button(wgt);
+                reset_clicked(wgt);
+            }
+            break;
+        }
+
+        case ALG_MSG_MOUSE_ENTER: {
+            ALG_DATA_MOUSE* mouse = (ALG_DATA_MOUSE*)data;
+            wgt->highlighted = 1;
+            ALG_WIDGET* child = alg_get_child_widget_from_point(wgt, mouse->x, mouse->y);
+            if (child && child->enabled) {
+                mouse->x -= child->x;
+                mouse->y -= child->y;
+                return alg_send_message(child, id, mouse);
+            }
+            break;
+        }
+
+        case ALG_MSG_MOUSE_MOVE: {
+            ALG_DATA_MOUSE* mouse = (ALG_DATA_MOUSE*)data;
+            int org_mouse_x = mouse->x;
+            int org_mouse_y = mouse->y;
+            ALG_WIDGET* new_child = alg_get_child_widget_from_point(wgt, mouse->x, mouse->y);
+            ALG_WIDGET* old_child = get_highlighted_child(wgt);
+
+            //mouse moved over child that already had the mouse
+            if (old_child == new_child) {
+                if (old_child) {
+                    if (old_child->enabled) {
+                        mouse->x = org_mouse_x - old_child->x;
+                        mouse->y = org_mouse_y - old_child->y;
+                        return alg_send_message(old_child, id, mouse);
+                    }
+                    else {
+                        reset_highlighted(old_child);
+                    }
+                }
+                break;
+            }
+
+            int r = 0;
+
+            //mouse left a child
+            if (old_child) {
+                if (old_child->enabled) {
+                    mouse->x = org_mouse_x - old_child->x;
+                    mouse->y = org_mouse_y - old_child->y;
+                    r = alg_send_message(old_child, ALG_MSG_MOUSE_LEAVE, mouse) || r;
+                }
+                else {
+                    reset_highlighted(old_child);
+                }
+            }
+
+            //mouse moved over a new child
+            if (new_child && new_child->enabled) {
+                mouse->x = org_mouse_x - new_child->x;
+                mouse->y = org_mouse_y - new_child->y;
+                r = alg_send_message(new_child, ALG_MSG_MOUSE_ENTER, mouse) || r;
+            }
+
+            return r;
+        }
+
+        case ALG_MSG_MOUSE_LEAVE: {
+            ALG_DATA_MOUSE* mouse = (ALG_DATA_MOUSE*)data;
+            wgt->highlighted = 0;
+            ALG_WIDGET* child = get_highlighted_child(wgt);
+            if (child) {
+                if (child->enabled) {
+                    mouse->x -= child->x;
+                    mouse->y -= child->y;
+                    return alg_send_message(child, id, mouse);
+                }
+                else {
+                    reset_highlighted(child);
+                }
             }
             break;
         }
@@ -1064,20 +1171,92 @@ int alg_dispatch_event(ALG_WIDGET* wgt, ALLEGRO_EVENT* ev) {
                         data.z = ev->mouse.z;
                         data.w = ev->mouse.w;
                         data.button = ev->mouse.button;
-                        r = alg_send_message(wgt, ALG_MSG_CLICK, &data) || r;
+                        r = alg_send_message(wgt, ALG_MOUSE_MOUSE_CLICK, &data) || r;
                     }
                     else {
-                        reset_clicked_button(wgt);
+                        reset_clicked(wgt);
                     }
 
                     return r;
                 }
                 else {
-                    reset_clicked_button(wgt);
+                    reset_clicked(wgt);
                 }
             }
             else {
-                reset_clicked_button(wgt);
+                reset_clicked(wgt);
+            }
+            break;
+
+        case ALLEGRO_EVENT_MOUSE_AXES:
+        case ALLEGRO_EVENT_MOUSE_WARPED:
+            if (alg_test_widget_tree_properties(wgt, ALG_PROP_ENABLED, ALG_PROP_VISIBLE, 0)) {
+                ALG_DATA_HIT_TEST hit_test;
+                alg_translate_point(NULL, ev->mouse.x, ev->mouse.y, wgt, &hit_test.x, &hit_test.y);
+                const is_hit = alg_send_message(wgt, ALG_MSG_HIT_TEST, &hit_test);
+
+                ALG_DATA_MOUSE data;
+                data.event = ev;
+                data.x = hit_test.x;
+                data.y = hit_test.y;
+                data.z = ev->mouse.z;
+                data.w = ev->mouse.w;
+                data.button = ev->mouse.button;
+
+                //mouse move
+                if (wgt->highlighted && is_hit) {
+                    return alg_send_message(wgt, ALG_MSG_MOUSE_MOVE, &data);
+                }
+
+                //mouse enter
+                if (is_hit) {
+                    return alg_send_message(wgt, ALG_MSG_MOUSE_ENTER, &data);
+                }
+
+                //mouse leave
+                if (wgt->highlighted) {
+                    return alg_send_message(wgt, ALG_MSG_MOUSE_LEAVE, &data);
+                }
+            }
+            else {
+                reset_highlighted(wgt);
+            }
+            break;
+
+        case ALLEGRO_EVENT_MOUSE_ENTER_DISPLAY:
+            if (!wgt->highlighted) {
+                if (alg_test_widget_tree_properties(wgt, ALG_PROP_ENABLED, ALG_PROP_VISIBLE, 0)) {
+                    ALG_DATA_HIT_TEST hit_test;
+                    alg_translate_point(NULL, ev->mouse.x, ev->mouse.y, wgt, &hit_test.x, &hit_test.y);
+                    const is_hit = alg_send_message(wgt, ALG_MSG_HIT_TEST, &hit_test);
+                    if (is_hit) {
+                        ALG_DATA_MOUSE data;
+                        data.event = ev;
+                        data.x = hit_test.x;
+                        data.y = hit_test.y;
+                        data.z = ev->mouse.z;
+                        data.w = ev->mouse.w;
+                        data.button = ev->mouse.button;
+                        return alg_send_message(wgt, ALG_MSG_MOUSE_ENTER, &data);
+                    }
+                }
+            }
+            break;
+
+        case ALLEGRO_EVENT_MOUSE_LEAVE_DISPLAY:
+            if (wgt->highlighted) {
+                if (alg_test_widget_tree_properties(wgt, ALG_PROP_ENABLED, ALG_PROP_VISIBLE, 0)) {
+                    ALG_DATA_MOUSE data;
+                    alg_translate_point(NULL, ev->mouse.x, ev->mouse.y, wgt, &data.x, &data.y);
+                    data.event = ev;
+                    data.z = ev->mouse.z;
+                    data.w = ev->mouse.w;
+                    data.button = ev->mouse.button;
+                    return alg_send_message(wgt, ALG_MSG_MOUSE_LEAVE, &data);
+                }
+                else {
+                    reset_highlighted(wgt);
+                }
             }
             break;
     }

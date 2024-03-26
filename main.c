@@ -62,7 +62,10 @@ uintptr_t test_proc(ALG_WIDGET* wgt, int id, void* data) {
 
         case ALG_MSG_MOUSE_DOWN:
         case ALG_MSG_MOUSE_UP: 
-        case ALG_MSG_CLICK:
+        case ALG_MOUSE_MOUSE_CLICK:
+        case ALG_MSG_MOUSE_ENTER:
+        case ALG_MSG_MOUSE_MOVE:
+        case ALG_MSG_MOUSE_LEAVE:
         {
             const ALG_DATA_MOUSE* mouse = (const ALG_DATA_MOUSE*)data;
             printf("Widget %s: mouse event %s: x = %i, y = %i, button = %i\n", (const char*)wgt->id, alg_get_message_name(id), mouse->x, mouse->y, mouse->button);
