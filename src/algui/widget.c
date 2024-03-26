@@ -510,7 +510,7 @@ uintptr_t alg_widget_proc(ALG_WIDGET* wgt, int id, void* data) {
 
         case ALG_MSG_PROPS_CHANGED: {
             ALG_DATA_PROPS_CHANGED* props_changed = (ALG_DATA_PROPS_CHANGED*)data;
-            if (alg_test_bitvector_bits(&props_changed->props_changed_bits, ALG_PROP_X, ALG_PROP_Y, ALG_PROP_WIDTH, ALG_PROP_HEIGHT, 0)) {
+            if (alg_test_bitvector_bits(&props_changed->props_changed_bits, ALG_PROP_WIDTH, ALG_PROP_HEIGHT, 0)) {
                 return alg_send_message(wgt, ALG_MSG_RESIZED, NULL);
             }
             break;
@@ -521,7 +521,24 @@ uintptr_t alg_widget_proc(ALG_WIDGET* wgt, int id, void* data) {
             if (parent) {
                 return alg_send_message(parent, ALG_MSG_CHILD_RESIZED, wgt);
             }
+            else {
+                content_from_size(wgt);
+            }
             break;
+        }
+
+        case ALG_MSG_CHILD_RESIZED: 
+        case ALG_MSG_CHILD_INSERTED:
+        case ALG_MSG_CHILD_REMOVED:
+        case ALG_MSG_CHILD_Z_ORDER_CHANGED:
+        {
+            int w = wgt->width;
+            int h = wgt->height;
+            int r = alg_send_message(wgt, ALG_MSG_SIZE_FROM_CONTENT, data);
+            if (wgt->width == w && wgt->height == h) {
+                content_from_size(wgt);
+            }
+            return r;
         }
 
         case ALG_MSG_WANT_FOCUS:
@@ -770,13 +787,47 @@ void alg_insert_widget(ALG_WIDGET* parent, ALG_WIDGET* child, int z_order) {
     assert(parent);
     assert(child);
     alg_insert_tree(&parent->tree, &child->tree, z_order);
+    alg_send_message(parent, ALG_MSG_CHILD_INSERTED, child);
+}
+
+
+//insert child as top
+void alg_add_widget(ALG_WIDGET* parent, ALG_WIDGET* child) {
+    alg_insert_widget(parent, child, -1);
+}
+
+
+//Returns the z-order of a widget.
+int alg_get_widget_z_order(ALG_WIDGET* wgt) {
+    assert(wgt);
+    return alg_get_tree_position(&wgt->tree);
+}
+
+
+//Sets the z-order of a widget, if it is a child widget.
+void alg_set_widget_z_order(ALG_WIDGET* wgt, int z_order) {
+    assert(wgt);
+    ALG_WIDGET* parent = alg_get_parent_widget(wgt);
+    if (parent) {
+        ALG_WIDGET* prev = alg_get_prev_sibling_widget(wgt);
+        ALG_WIDGET* next = alg_get_next_sibling_widget(wgt);
+        alg_remove_tree(&wgt->tree);
+        alg_insert_tree(&parent->tree, &wgt->tree, z_order);
+        if (alg_get_prev_sibling_widget(wgt) != prev || alg_get_next_sibling_widget(wgt) != next) {
+            alg_send_message(parent, ALG_MSG_CHILD_Z_ORDER_CHANGED, wgt);
+        }
+    }
 }
 
 
 //remove child widget
 void alg_remove_widget(ALG_WIDGET* wgt) {
     assert(wgt);
-    alg_remove_tree(&wgt->tree);
+    ALG_WIDGET* parent = alg_get_parent_widget(wgt);
+    if (parent) {
+        alg_remove_tree(&wgt->tree);
+        alg_send_message(parent, ALG_MSG_CHILD_REMOVED, wgt);
+    }
 }
 
 

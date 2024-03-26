@@ -48,6 +48,13 @@ ALG_TREE* alg_get_root_tree(ALG_TREE* tree);
 
 
 /**
+ * Returns a tree node's position into its parent.
+ * @return the tree node's position into its parent or 0 if the node does not have a parent.
+ */
+int alg_get_tree_position(ALG_TREE* tree);
+
+
+/**
  * Inserts a tree node into another tree node.
  * @param parent parent tree node.
  * @param child child tree node.

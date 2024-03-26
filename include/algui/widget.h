@@ -73,8 +73,12 @@ typedef struct ALG_WIDGET {
  *  -free: frees the widget structure using the free() function.
  *  -get prop: returns one of the widget properties.
  *  -set prop: sets one of the widget properties.
- *  - props changed: dispatches the resized message if any of x, y, width or height changes.
- *  - resized: sends the child resized message to parent, if there is a parent.
+ *  - props changed: dispatches the resized message if any of width or height changes.
+ *  - resized: sends the child resized message to parent, if there is a parent; otherwise, it sends a content from size message to the widget.
+ *  - child resized: sends the size from content message to the widget.
+ *  - child inserted: sends the size from content message to the widget.
+ *  - child removed: sends the size from content message to the widget.
+ *  - child changed z-order: sends the size from content message to the widget.
  *  - want focus: returns 1 (true).
  *  - descentant got/lost focus: sets/resets the active flag for the widget.
  *  - hit test: checks if point within the widget rectangle.
@@ -193,15 +197,41 @@ ALG_WIDGET* alg_get_last_child_widget(ALG_WIDGET* wgt);
 
 /**
  * Inserts a widget into another widget.
+ * The parent gets a child inserted message.
  * @param parent parent widget.
- * @paraqm child child widget.
+ * @param child child widget.
  * @param z_order z-order of the widget; same as tree position.
  */
 void alg_insert_widget(ALG_WIDGET* parent, ALG_WIDGET* child, int z_order);
 
 
 /**
+ * Adds a child widget at the top child position.
+ * Same as alg_insert_widget(parent, child, -1);
+ * @param parent parent widget.
+ * @param child child widget.
+ */
+void alg_add_widget(ALG_WIDGET* parent, ALG_WIDGET* child);
+
+
+/**
+ * Returns the z-order of a widget.
+ * @return the z-order of a widget.
+ */
+int alg_get_widget_z_order(ALG_WIDGET* wgt);
+
+
+/**
+ * Sets the z-order of a widget, if it is a child widget.
+ * the parent gets a child z-order changed message.
+ * @param z_order the new z-order of a widget.
+ */
+void alg_set_widget_z_order(ALG_WIDGET* wgt, int z_order);
+
+
+/**
  * Removes a widget from its parent, if there is one.
+ * The parent gets a child removed message.
  * @param wgt widget to remove from its parent.
  */
 void alg_remove_widget(ALG_WIDGET* wgt);

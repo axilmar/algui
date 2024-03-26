@@ -39,6 +39,15 @@ ALG_TREE* alg_get_root_tree(ALG_TREE* tree) {
 }
 
 
+//get position
+int alg_get_tree_position(ALG_TREE* tree) {
+    assert(tree);
+    int r = -1;
+    for (; tree; ++r, tree = tree->prev);
+    return r;
+}
+
+
 //insert child
 void alg_insert_tree(ALG_TREE* parent, ALG_TREE* child, int pos) {
     //check params; parent must not be in the tree of child
