@@ -467,6 +467,24 @@ static void reset_highlighted(ALG_WIDGET* wgt) {
 }
 
 
+//sends message size from content, to children first
+static void size_from_content(ALG_WIDGET* wgt) {
+    for (ALG_WIDGET* child = alg_get_first_child_widget(wgt); child; child = alg_get_next_sibling_widget(child)) {
+        size_from_content(child);
+    }
+    alg_send_message(wgt, ALG_MSG_SIZE_FROM_CONTENT, NULL);
+}
+
+
+//sends message content from size, to parent first
+static void content_from_size(ALG_WIDGET* wgt) {
+    alg_send_message(wgt, ALG_MSG_CONTENT_FROM_SIZE, NULL);
+    for (ALG_WIDGET* child = alg_get_first_child_widget(wgt); child; child = alg_get_next_sibling_widget(child)) {
+        content_from_size(child);
+    }
+}
+
+
 //the default widget proc
 uintptr_t alg_widget_proc(ALG_WIDGET* wgt, int id, void* data) {
     assert(wgt);
@@ -489,6 +507,22 @@ uintptr_t alg_widget_proc(ALG_WIDGET* wgt, int id, void* data) {
 
         case ALG_MSG_SET_PROP:
             return set_prop(wgt, (ALG_DATA_PROP*)data);
+
+        case ALG_MSG_PROPS_CHANGED: {
+            ALG_DATA_PROPS_CHANGED* props_changed = (ALG_DATA_PROPS_CHANGED*)data;
+            if (alg_test_bitvector_bits(&props_changed->props_changed_bits, ALG_PROP_X, ALG_PROP_Y, ALG_PROP_WIDTH, ALG_PROP_HEIGHT, 0)) {
+                return alg_send_message(wgt, ALG_MSG_RESIZED, NULL);
+            }
+            break;
+        }
+
+        case ALG_MSG_RESIZED: {
+            ALG_WIDGET* parent = alg_get_parent_widget(wgt);
+            if (parent) {
+                return alg_send_message(parent, ALG_MSG_CHILD_RESIZED, wgt);
+            }
+            break;
+        }
 
         case ALG_MSG_WANT_FOCUS:
             return 1;
@@ -1046,6 +1080,14 @@ int alg_set_widget_focused(ALG_WIDGET* wgt, int focused) {
     assert(wgt);
     alg_set_widget_properties(wgt, ALG_PROP_FOCUSED, focused, ALG_PROP_NULL);
     return wgt->focused == focused;
+}
+
+
+//manage layout
+void alg_manage_layout(ALG_WIDGET* wgt) {
+    assert(wgt);
+    size_from_content(wgt);
+    content_from_size(wgt);
 }
 
 

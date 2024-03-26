@@ -48,6 +48,15 @@ int alg_get_bitvector_bit(ALG_BITVECTOR* vec, int index);
 
 
 /**
+ * Tests if a bit vector contains one or more flags set.
+ * @param index index of 1st bit.
+ * @param ... rest of indexes; 0-terminated.
+ * @return true if the bit vector contains any of the flags set.
+ */
+int alg_test_bitvector_bits(ALG_BITVECTOR* vec, int index1, ...);
+
+
+/**
  * Sets the bit value at the specified index.
  * It will allocate a new buffer if the index is beyond the current size.
  * @param vec vector to set the bit value of.

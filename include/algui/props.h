@@ -7,7 +7,7 @@
  */
 enum ALG_PROP {
     ///null property used for terminating the property list.
-    ALG_PROP_NULL,
+    ALG_PROP_NULL = 0,
 
     ///widget procedure.
     ALG_PROP_PROC,

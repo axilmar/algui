@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 #include "algui/bitvector.h"
 
 
@@ -100,6 +101,32 @@ int alg_get_bitvector_bit(ALG_BITVECTOR* vec, int index) {
         const int bit_addr = 1 << (index % (sizeof(uintptr_t) * 8));
         return (vec->words[word_addr] & bit_addr) != 0;
     }
+    return 0;
+}
+
+
+//test multiple bits
+int alg_test_bitvector_bits(ALG_BITVECTOR* vec, int index1, ...) {
+    //test first bit
+    if (alg_get_bitvector_bit(vec, index1)) {
+        return 1;
+    }
+
+    //test the rest of the bits
+    va_list indexes;
+    va_start(indexes, index1);
+    for (;;) {
+        int index = va_arg(indexes, int);
+        if (!index) {
+            break;
+        }
+        if (alg_get_bitvector_bit(vec, index)) {
+            return 1;
+        }
+    }
+    va_end(indexes);
+    
+    //no flag set
     return 0;
 }
 

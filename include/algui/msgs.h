@@ -12,7 +12,7 @@
  */
 enum ALG_MSG {
     ///no message.
-    ALG_MSG_NULL,
+    ALG_MSG_NULL = 0,
 
     ///allocate widget structure.
     ALG_MSG_MALLOC,
@@ -34,6 +34,18 @@ enum ALG_MSG {
 
     ///props changed message.
     ALG_MSG_PROPS_CHANGED,
+
+    ///position and/or size changed.
+    ALG_MSG_RESIZED,
+
+    ///child position and/or size changed.
+    ALG_MSG_CHILD_RESIZED,
+
+    ///initialize size based on content.
+    ALG_MSG_SIZE_FROM_CONTENT,
+
+    ///set content according to size.
+    ALG_MSG_CONTENT_FROM_SIZE,
 
     ///paint widget.
     ALG_MSG_PAINT,

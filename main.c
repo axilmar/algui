@@ -58,7 +58,7 @@ uintptr_t test_proc(ALG_WIDGET* wgt, int id, void* data) {
 
         case ALG_MSG_PROPS_CHANGED:
             test_props_changed(wgt, (ALG_DATA_PROPS_CHANGED*)data);
-            return 1;
+            break;
 
         case ALG_MSG_MOUSE_DOWN:
         case ALG_MSG_MOUSE_UP: 
