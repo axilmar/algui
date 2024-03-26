@@ -26,6 +26,7 @@ static void init(ALG_WIDGET* wgt, ALG_DATA_INIT* data) {
     wgt->height = 0;
     wgt->data = NULL;
     wgt->id = 0;
+    wgt->clicked_button = 0;
     wgt->visible = 1;
     wgt->enabled = 1;
     wgt->highlighted = 0;
@@ -416,6 +417,26 @@ static void paint_widget(ALG_WIDGET* wgt, const ALG_DATA_PAINT* parent_data) {
 }
 
 
+//reset the clicked button member helper
+static void reset_clicked_button_helper(ALG_WIDGET* wgt) {
+    wgt->clicked_button = 0;
+    for (ALG_WIDGET* child = alg_get_last_child_widget(wgt); child; child = alg_get_prev_sibling_widget(child)) {
+        if (child->clicked_button) {
+            reset_clicked_button_helper(child);
+            break;
+        }
+    }
+}
+
+
+//reset the clicked button member
+static void reset_clicked_button(ALG_WIDGET* wgt) {
+    if (wgt->clicked_button) {
+        reset_clicked_button_helper(wgt);
+    }
+}
+
+
 //the default widget proc
 uintptr_t alg_widget_proc(ALG_WIDGET* wgt, int id, void* data) {
     assert(wgt);
@@ -449,6 +470,53 @@ uintptr_t alg_widget_proc(ALG_WIDGET* wgt, int id, void* data) {
         case ALG_MSG_DESC_LOST_FOCUS:
             wgt->active = 0;
             return 1;
+
+        case ALG_MSG_HIT_TEST: {
+            const ALG_DATA_HIT_TEST* hit_test = (ALG_DATA_HIT_TEST*)data;
+            return wgt->visible && hit_test->x >= 0 && hit_test->y >= 0 && hit_test->x < wgt->width && hit_test->y < wgt->height;
+        }
+
+        case ALG_MSG_MOUSE_DOWN: 
+        {
+            ALG_DATA_MOUSE* mouse = (ALG_DATA_MOUSE*)data;
+            ALG_WIDGET* child = alg_get_child_widget_from_point(wgt, mouse->x, mouse->y);
+            if (child && child->enabled) {
+                mouse->x -= child->x;
+                mouse->y -= child->y;
+                if (!child->clicked_button) {
+                    child->clicked_button = mouse->button;
+                }
+                return alg_send_message(child, id, mouse);
+            }
+            break;
+        }
+
+        case ALG_MSG_MOUSE_UP:
+        {
+            ALG_DATA_MOUSE* mouse = (ALG_DATA_MOUSE*)data;
+            ALG_WIDGET* child = alg_get_child_widget_from_point(wgt, mouse->x, mouse->y);
+            if (child && child->enabled) {
+                mouse->x -= child->x;
+                mouse->y -= child->y;
+                return alg_send_message(child, id, mouse);
+            }
+            break;
+        }
+
+        case ALG_MSG_CLICK:
+        {
+            ALG_DATA_MOUSE* mouse = (ALG_DATA_MOUSE*)data;
+            ALG_WIDGET* child = alg_get_child_widget_from_point(wgt, mouse->x, mouse->y);
+            if (child && child->enabled && child->clicked_button == mouse->button) {
+                mouse->x -= child->x;
+                mouse->y -= child->y;
+                return alg_send_message(child, id, mouse);
+            }
+            else {
+                reset_clicked_button(wgt);
+            }
+            break;
+        }
     }
 
     return 0;
@@ -874,3 +942,145 @@ int alg_set_widget_focused(ALG_WIDGET* wgt, int focused) {
 }
 
 
+//get child from point
+ALG_WIDGET* alg_get_child_widget_from_point(ALG_WIDGET* parent, int x, int y) {
+    assert(parent);
+    for (ALG_WIDGET* child = alg_get_last_child_widget(parent); child; child = alg_get_prev_sibling_widget(child)) {
+        ALG_DATA_HIT_TEST hit_test;
+        hit_test.x = x - child->x;
+        hit_test.y = y - child->y;
+        if (alg_send_message(child, ALG_MSG_HIT_TEST, &hit_test)) {
+            return child;
+        }
+    }
+    return NULL;
+}
+
+
+//translate point
+void alg_translate_point(ALG_WIDGET* src, int src_x, int src_y, ALG_WIDGET* dst, int* dst_x, int* dst_y) {
+    for (; src; src = alg_get_parent_widget(src)) {
+        src_x += src->x;
+        src_y += src->y;
+    }
+    for (; dst; dst = alg_get_parent_widget(dst)) {
+        src_x -= dst->x;
+        src_y -= dst->y;
+    }
+    *dst_x = src_x;
+    *dst_y = src_y;
+}
+
+
+//test properties of tree.
+int alg_test_widget_tree_properties(ALG_WIDGET* wgt, int prop1, ...) {
+    int v;
+
+    assert(wgt);
+
+    for (; wgt; wgt = alg_get_parent_widget(wgt)) {
+
+        //test first prop
+        v = 0;
+        alg_get_widget_properties(wgt, prop1, &v, 0);
+        if (!v) {
+            return 0;
+        }
+
+        //test rest of props
+        va_list props;
+        va_start(props, prop1);
+        for (;;) {
+            const int prop = va_arg(props, int);
+            if (!prop) {
+                break;
+            }
+            v = 0;
+            alg_get_widget_properties(wgt, prop, &v, 0);
+            if (!v) {
+                return 0;
+            }
+        }
+        va_end(props);
+    }
+
+    //success
+    return 1;
+}
+
+
+//dispatch event
+int alg_dispatch_event(ALG_WIDGET* wgt, ALLEGRO_EVENT* ev) {
+    assert(wgt);
+    assert(ev);
+
+    switch (ev->type) {
+        case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
+            if (alg_test_widget_tree_properties(wgt, ALG_PROP_ENABLED, ALG_PROP_VISIBLE, 0)) {
+                ALG_DATA_HIT_TEST hit_test;
+                alg_translate_point(NULL, ev->mouse.x, ev->mouse.y, wgt, &hit_test.x, &hit_test.y);
+                const is_hit = alg_send_message(wgt, ALG_MSG_HIT_TEST, &hit_test);
+                if (is_hit) {
+                    ALG_DATA_MOUSE data;
+                    data.event = ev;
+                    data.x = hit_test.x;
+                    data.y = hit_test.y;
+                    data.z = ev->mouse.z;
+                    data.w = ev->mouse.w;
+                    data.button = ev->mouse.button;
+                    if (!wgt->clicked_button) {
+                        wgt->clicked_button = ev->mouse.button;
+                    }
+                    return alg_send_message(wgt, ALG_MSG_MOUSE_DOWN, &data);
+                }
+            }
+            break;
+
+        case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
+            if (alg_test_widget_tree_properties(wgt, ALG_PROP_ENABLED, ALG_PROP_VISIBLE, 0)) {
+                ALG_DATA_HIT_TEST hit_test;
+                alg_translate_point(NULL, ev->mouse.x, ev->mouse.y, wgt, &hit_test.x, &hit_test.y);
+                const is_hit = alg_send_message(wgt, ALG_MSG_HIT_TEST, &hit_test);
+                if (is_hit) {
+                    ALG_DATA_MOUSE data;
+                    int r = 0;
+
+                    //send mouse up
+                    {
+                        data.event = ev;
+                        data.x = hit_test.x;
+                        data.y = hit_test.y;
+                        data.z = ev->mouse.z;
+                        data.w = ev->mouse.w;
+                        data.button = ev->mouse.button;
+                        r = alg_send_message(wgt, ALG_MSG_MOUSE_UP, &data) || r;
+                    }
+
+                    //send click
+                    if (wgt->clicked_button == ev->mouse.button) {
+                        data.event = ev;
+                        data.x = hit_test.x;
+                        data.y = hit_test.y;
+                        data.z = ev->mouse.z;
+                        data.w = ev->mouse.w;
+                        data.button = ev->mouse.button;
+                        r = alg_send_message(wgt, ALG_MSG_CLICK, &data) || r;
+                    }
+                    else {
+                        reset_clicked_button(wgt);
+                    }
+
+                    return r;
+                }
+                else {
+                    reset_clicked_button(wgt);
+                }
+            }
+            else {
+                reset_clicked_button(wgt);
+            }
+            break;
+    }
+
+    return 0;
+}

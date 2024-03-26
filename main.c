@@ -59,6 +59,15 @@ uintptr_t test_proc(ALG_WIDGET* wgt, int id, void* data) {
         case ALG_MSG_PROPS_CHANGED:
             test_props_changed(wgt, (ALG_DATA_PROPS_CHANGED*)data);
             return 1;
+
+        case ALG_MSG_MOUSE_DOWN:
+        case ALG_MSG_MOUSE_UP: 
+        case ALG_MSG_CLICK:
+        {
+            const ALG_DATA_MOUSE* mouse = (const ALG_DATA_MOUSE*)data;
+            printf("Widget %s: mouse event %s: x = %i, y = %i, button = %i\n", (const char*)wgt->id, alg_get_message_name(id), mouse->x, mouse->y, mouse->button);
+            break;
+        }
     }
 
     return alg_widget_proc(wgt, id, data);
@@ -124,6 +133,8 @@ int main(int argc, const char* argv[])
                 break;
             }
         }
+
+        alg_dispatch_event(root, &event);
 
         if (redraw) {
             redraw = false;

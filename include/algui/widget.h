@@ -2,6 +2,7 @@
 #define ALG_WIDGET_H
 
 
+#include <allegro5/allegro.h>
 #include "props.h"
 #include "msgs.h"
 #include "tree.h"
@@ -34,6 +35,9 @@ typedef struct ALG_WIDGET {
 
     ///id.
     uintptr_t id;
+
+    ///clicked button.
+    int clicked_button : 4;
 
     ///if widget is visible.
     int visible : 1;
@@ -71,6 +75,8 @@ typedef struct ALG_WIDGET {
  *  -set prop: sets one of the widget properties.
  *  - want focus: returns 1 (true).
  *  - descentant got/lost focus: sets/resets the active flag for the widget.
+ *  - hit test: checks if point within the widget rectangle.
+ *  - mouse messages: dispatched to the appropriate child.
  * @param wgt target widget.
  * @param id message id.
  * @param data message data.
@@ -497,6 +503,47 @@ int alg_is_widget_focused(ALG_WIDGET* wgt);
  * @return non-zero if the widget lost/got the focus, zero otherwise.
  */
 int alg_set_widget_focused(ALG_WIDGET* wgt, int focused);
+
+
+/**
+ * Retrieves the child widget at the given coordinates.
+ * @param parent parent widget to search into.
+ * @param x horizontal coordinate relative to parent.
+ * @param y vertical coordinate relative to parent.
+ * @return child widget under the coordinates or null if none found.
+ */
+ALG_WIDGET* alg_get_child_widget_from_point(ALG_WIDGET* parent, int x, int y);
+
+
+/**
+ * Translates a point from one widget, or the screen, to another widget, or the screen.
+ * @param src source widget; if not given, then source coordinates are absolute.
+ * @param src_x horizontal coordinate to translate.
+ * @param src_y vertical coordinate to translate.
+ * @param dst destination widget; if not given, then destination coordinates are absolute.
+ * @param dst_x output horizontal coordinate.
+ * @param dst_y output vertical coordinate.
+ */
+void alg_translate_point(ALG_WIDGET* src, int src_x, int src_y, ALG_WIDGET* dst, int* dst_x, int* dst_y);
+
+
+/**
+ * Checks if all widgets, from given widget to root, have the given properties set.
+ * @param wgt widget to start the test from.
+ * @param prop1 first property to test.
+ * @param ... rest of properties to test; terminated with 0.
+ * @return non-zero if all widgets up to root have the properties set, zero otherwise.
+ */
+int alg_test_widget_tree_properties(ALG_WIDGET* wgt, int prop1, ...);
+
+
+/**
+ * Dispatches the given allegro event to the widget tree.
+ * @param wgt root of the widget tree.
+ * @param ev event to dispatch.
+ * @return non-zero if the event was processed, zero otherwise.
+ */
+int alg_dispatch_event(ALG_WIDGET* wgt, ALLEGRO_EVENT* ev);
 
 
 #endif //ALG_WIDGET_H

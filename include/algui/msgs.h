@@ -3,6 +3,7 @@
 
 
 #include <stdint.h>
+#include <allegro5/allegro.h>
 #include "bitvector.h"
 
 
@@ -51,6 +52,27 @@ enum ALG_MSG {
 
     ///descentant lost the focus.
     ALG_MSG_DESC_LOST_FOCUS,
+
+    ///hit test 
+    ALG_MSG_HIT_TEST,
+
+    ///mouse button down event.
+    ALG_MSG_MOUSE_DOWN,
+
+    ///mouse button up event.
+    ALG_MSG_MOUSE_UP,
+
+    ///click (differs from button up because click happens only in the widget that the button was pressed).
+    ALG_MSG_CLICK,
+
+    ///mouse enter.
+    ALG_MSG_MOUSE_ENTER,
+
+    ///mouse move.
+    ALG_MSG_MOUSE_MOVE,
+
+    ///mouse leave.
+    ALG_MSG_MOUSE_LEAVE,
 
     ///first available message for apps.
     ALG_MSG_USER = 10000
@@ -140,6 +162,42 @@ typedef struct ALG_DATA_PAINT {
     ///if the widget belongs to a focused widget tree.
     int focused : 1;
 } ALG_DATA_PAINT;
+
+
+/**
+ * Data for the hit test message.
+ */
+typedef struct ALG_DATA_HIT_TEST {
+    ///horizontal coordinate relative to widget.
+    int x;
+
+    ///vertical coordinate relative to widget.
+    int y;
+} ALG_DATA_HIT_TEST;
+
+
+/**
+ * Data for mouse events.
+ */
+typedef struct ALG_DATA_MOUSE {
+    ///related allegro event.
+    ALLEGRO_EVENT* event;
+
+    ///the horizontal mouse coordinate.
+    int x;
+
+    ///the vertical mouse coordinate.
+    int y;
+
+    ///the z coordinate.
+    int z;
+
+    ///the w coordinate.
+    int w;
+
+    ///the mouse button, starting from 1.
+    unsigned button;
+} ALG_DATA_MOUSE;
 
 
 /**

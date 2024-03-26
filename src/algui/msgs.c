@@ -32,6 +32,10 @@ static void init() {
         alg_add_enum_value(&msg_enum, ALG_MSG_DESC_GOT_FOCUS , "ALG_MSG_DESC_GOT_FOCUS" );
         alg_add_enum_value(&msg_enum, ALG_MSG_LOST_FOCUS     , "ALG_MSG_LOST_FOCUS"     );
         alg_add_enum_value(&msg_enum, ALG_MSG_DESC_LOST_FOCUS, "ALG_MSG_DESC_LOST_FOCUS");
+        alg_add_enum_value(&msg_enum, ALG_MSG_HIT_TEST       , "ALG_MSG_HIT_TEST"       );
+        alg_add_enum_value(&msg_enum, ALG_MSG_MOUSE_DOWN     , "ALG_MSG_MOUSE_DOWN"     );
+        alg_add_enum_value(&msg_enum, ALG_MSG_MOUSE_UP       , "ALG_MSG_MOUSE_UP"       );
+        alg_add_enum_value(&msg_enum, ALG_MSG_CLICK          , "ALG_MSG_CLICK"          );
     });
 }
 
