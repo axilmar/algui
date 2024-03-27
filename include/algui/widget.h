@@ -62,6 +62,21 @@ typedef struct ALG_WIDGET {
 
     ///if widget has the focus.
     int focused : 1;
+
+    ///if it participates in the layout management system; default is 1.
+    int managed_layout : 1;
+
+    ///if widget size should be recomputed based on its content.
+    int size_dirty : 1;
+
+    ///if it has descentants that have the size_dirty flag set to true.
+    int tree_size_dirty : 1;
+
+    ///if widget layout should be redone.
+    int layout_dirty : 1;
+
+    ///if it has descentants hat have the layout_dirty flag set to true.
+    int tree_layout_dirty : 1;
 } ALG_WIDGET;
 
 
@@ -143,12 +158,30 @@ void alg_get_widget_properties(ALG_WIDGET* wgt, ...);
 
 
 /**
+ * Retrieves a single property of a widget.
+ * @param wgt widget to get the property of.
+ * @param id property id.
+ * @param value variable to store the property value.
+ */
+void alg_get_widget_property(ALG_WIDGET* wgt, int id, void* value);
+
+
+/**
  * Sets the properties of a widget.
  * The widget receives a set prop message for each property.
  * @param wgt widget to aet the properties.
  * @param null-terminated list of property ids and value pairs.
  */
 void alg_set_widget_properties(ALG_WIDGET* wgt, ...);
+
+
+/**
+ * Sets a single property of a widget.
+ * @param wgt widget to get the property of.
+ * @param id property id.
+ * @param ... property value.
+ */
+void alg_set_widget_property(ALG_WIDGET* wgt, int id, ...);
 
 
 /**
@@ -560,6 +593,22 @@ int alg_is_widget_focused(ALG_WIDGET* wgt);
  * @return non-zero if the widget lost/got the focus, zero otherwise.
  */
 int alg_set_widget_focused(ALG_WIDGET* wgt, int focused);
+
+
+/**
+ * Returns the managed layout property of a widget.
+ * @param wgt widget to get the property of.
+ * @return non-zero if the widget's layout is managed, zero otherwise.
+ */
+int alg_is_widget_layout_managed(ALG_WIDGET* wgt);
+
+
+/**
+ * Sets the managed layout property of a widget.
+ * @param wgt widget to set the property of.
+ * @param managed if non-zero (the default), then the widget participates in layout management; otherwise it does not.
+ */
+void alg_set_widget_layout_managed(ALG_WIDGET* wgt, int managed);
 
 
 /**

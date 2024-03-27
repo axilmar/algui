@@ -99,4 +99,13 @@ void* alg_get_vector_element(ALG_VECTOR* vec, int index);
 int alg_set_vector_element(ALG_VECTOR* vec, int index, void* elem);
 
 
+/**
+ * Resizes the vector to hold the given index, then copies the given element into the vector at the specific index.
+ * @param vec the vector to get the index of.
+ * @param element the element to copy.
+ * @return non-zero on success, zero if index is invalid.
+ */
+int alg_resize_and_set_vector_element(ALG_VECTOR* vec, int index, void* elem);
+
+
 #endif //ALG_VECTOR_H

@@ -194,3 +194,18 @@ int alg_set_vector_element(ALG_VECTOR* vec, int index, void* elem) {
     }
     return 0;
 }
+
+
+//resize and set element
+int alg_resize_and_set_vector_element(ALG_VECTOR* vec, int index, void* elem) {
+    assert(vec);
+    assert(index >= 0);
+
+    //resize, if needed
+    if (index >= vec->size) {
+        alg_set_vector_size(vec, index + 1);
+    }
+
+    //set element
+    return alg_set_vector_element(vec, index, elem);
+}

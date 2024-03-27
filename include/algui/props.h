@@ -2,6 +2,9 @@
 #define ALG_PROPS_H
 
 
+#include <stdarg.h>
+
+
 /**
  * Properties enumeration.
  */
@@ -54,9 +57,20 @@ enum ALG_PROP {
     ///focused state of widget.
     ALG_PROP_FOCUSED,
 
+    ///if the widget participates in the layout management system.
+    ALG_PROP_MANAGED_LAYOUT,
+
     ///first available prop id for apps.
     ALG_PROP_USER = 10000
 };
+
+
+/**
+ * Function for reading a property from a va list and returning a pointer to its value.
+ * @param list variable-argument list to get the property of.
+ * @return pointer to the property.
+ */
+typedef void* (*ALG_READ_PROPERTY_PROC)(va_list* list);
 
 
 /**
@@ -76,12 +90,22 @@ const char* alg_get_property_name(int id);
 
 
 /**
+ * Invokes the internal handler for reading a property off a va list.
+ * @param id property id.
+ * @param list property list.
+ * @return pointer to property value or null if id is invalid.
+ */
+void* alg_read_property(int id, va_list* list);
+
+
+/**
  * Adds a property.
- * @param id property id; should not be 0.
+ * @param id property id; should be greater than 0.
  * @param name property name; should not be null.
+ * @param proc procedure to call for reading the property off a va list.
  * @return non-zero on success, zero on reallocation error or if id is 0 or if name is null.
  */
-int alg_add_property_enum(int id, const char* name);
+int alg_add_property_enum(int id, const char* name, ALG_READ_PROPERTY_PROC proc);
 
 
 #endif //ALG_PROPS_H

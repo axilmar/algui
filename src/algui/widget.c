@@ -35,6 +35,12 @@ static void init(ALG_WIDGET* wgt, ALG_DATA_INIT* data) {
     wgt->active = 0;
     wgt->error = 0;
     wgt->focused = 0;
+    wgt->managed_layout = 1;
+    wgt->size_dirty = 0;
+    wgt->tree_size_dirty = 0;
+    wgt->layout_dirty = 0;
+    wgt->tree_layout_dirty = 0;
+
 }
 
 
@@ -174,6 +180,10 @@ static int get_prop(ALG_WIDGET* wgt, ALG_DATA_PROP* prop) {
         case ALG_PROP_FOCUSED:
             *(int*)prop->value = wgt->focused;
             return 1;
+
+        case ALG_PROP_MANAGED_LAYOUT:
+            *(int*)prop->value = wgt->managed_layout;
+            return 1;
     }
     return 0;
 }
@@ -285,6 +295,13 @@ static int set_prop(ALG_WIDGET* wgt, ALG_DATA_PROP* prop) {
 
         case ALG_PROP_FOCUSED:            
             return set_focused(wgt, *(int*)prop->value, prop->props_changed);
+
+        case ALG_PROP_MANAGED_LAYOUT:
+            if (wgt->managed_layout != *(int*)prop->value) {
+                wgt->managed_layout = *(int*)prop->value;
+                set_prop_changed(prop->props_changed, prop->id);
+            }
+            return 1;
     }
     return 0;
 }
@@ -316,8 +333,8 @@ static void get_props(ALG_WIDGET* wgt, va_list props) {
 }
 
 
-//set props
-static void set_props(ALG_WIDGET* wgt, va_list props) {
+//set props with a counter
+static void set_props_counted(ALG_WIDGET* wgt, va_list props, int count) {
     uintptr_t initial_props_changed_storage[INITIAL_PROPS_CHANGED_WORD_COUNT] = { 0 };
 
     //the props changed message
@@ -329,30 +346,23 @@ static void set_props(ALG_WIDGET* wgt, va_list props) {
     ALG_DATA_PROP data;
     data.props_changed = &props_changed;
 
-    for (;;) {
+    for (; count > 0; --count) {
         //get prop id
         data.id = va_arg(props, int);
 
-        //handle prop id
-        switch (data.id) {
-
-            //end of list
-            case ALG_PROP_NULL:
-                goto END;
-
-            //property is sizeof(void*)
-            case ALG_PROP_PROC:
-            case ALG_PROP_DATA:
-            case ALG_PROP_ID:
-                data.value = &(va_arg(props, void*));
-                break;
-
-            //property is sizeof(int)
-            default:
-                data.value = &(va_arg(props, int));
+        //if id is 0, nd
+        if (!data.id) {
+            goto END;
         }
 
-        //set prop
+        //get data value
+        data.value = alg_read_property(data.id, &props);
+
+        //if value is null, end
+        if (!data.value) {
+            goto END;
+        }
+
         alg_send_message(wgt, ALG_MSG_SET_PROP, &data);
     }
 
@@ -377,6 +387,12 @@ static void set_props(ALG_WIDGET* wgt, va_list props) {
 
     //cleanup
     alg_cleanup_bitvector(&props_changed.props_changed_bits);
+}
+
+
+//set props 
+static void set_props(ALG_WIDGET* wgt, va_list props) {
+    set_props_counted(wgt, props, INT_MAX);
 }
 
 
@@ -699,11 +715,26 @@ void alg_get_widget_properties(ALG_WIDGET* wgt, ...) {
 }
 
 
+//get single property
+void alg_get_widget_property(ALG_WIDGET* wgt, int id, void* value) {
+    alg_get_widget_properties(wgt, id, value, 0);
+}
+
+
 //set props
 void alg_set_widget_properties(ALG_WIDGET* wgt, ...) {
     va_list props;
     va_start(props, wgt);
     set_props(wgt, props);
+    va_end(props);
+}
+
+
+//set single widget property
+void alg_set_widget_property(ALG_WIDGET* wgt, int id, ...) {
+    va_list props;
+    va_start(props, id);
+    set_props_counted(wgt, props, 1);
     va_end(props);
 }
 
@@ -1130,6 +1161,21 @@ int alg_set_widget_focused(ALG_WIDGET* wgt, int focused) {
     alg_set_widget_properties(wgt, ALG_PROP_FOCUSED, focused, ALG_PROP_NULL);
     return wgt->focused == focused;
 }
+
+
+//Retrieves the managed layout property of a widget.
+int alg_is_widget_layout_managed(ALG_WIDGET* wgt) {
+    int value;
+    alg_get_widget_property(wgt, ALG_PROP_MANAGED_LAYOUT, &value);
+    return value;
+}
+
+
+//Sets the managed layout property of a widget.
+void alg_set_widget_layout_managed(ALG_WIDGET * wgt, int managed) {
+    alg_set_widget_property(wgt, ALG_PROP_MANAGED_LAYOUT, managed);
+}
+
 
 
 //get child from point
