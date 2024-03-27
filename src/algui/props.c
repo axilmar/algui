@@ -27,40 +27,28 @@ static int add_property(int id, const char* name, ALG_READ_PROPERTY_PROC proc) {
 }
 
 
-//read int prop
-static void* read_int_proc(va_list* list) {
-    return &va_arg(*list, int);
-}
-
-
-//read void* prop
-static void* read_pvoid_proc(va_list* list) {
-    return &va_arg(*list, void*);
-}
-
-
 //initialize the property enumeration
 static void init() {
     ALG_STATIC_INIT({
         alg_init_enum(&prop_enums);
         alg_init_vector(&read_prop_procs, sizeof(ALG_READ_PROPERTY_PROC), 0, NULL, 0);
         atexit(cleanup);
-        add_property(ALG_PROP_PROC          , "ALG_PROP_PROC"          , read_pvoid_proc);
-        add_property(ALG_PROP_X             , "ALG_PROP_X"             , read_int_proc  );
-        add_property(ALG_PROP_Y             , "ALG_PROP_Y"             , read_int_proc  );
-        add_property(ALG_PROP_WIDTH         , "ALG_PROP_WIDTH"         , read_int_proc  );
-        add_property(ALG_PROP_HEIGHT        , "ALG_PROP_HEIGHT"        , read_int_proc  );
-        add_property(ALG_PROP_DATA          , "ALG_PROP_DATA"          , read_int_proc  );
-        add_property(ALG_PROP_ID            , "ALG_PROP_ID"            , read_pvoid_proc);
-        add_property(ALG_PROP_VISIBLE       , "ALG_PROP_VISIBLE"       , read_int_proc  );
-        add_property(ALG_PROP_ENABLED       , "ALG_PROP_ENABLED"       , read_int_proc  );
-        add_property(ALG_PROP_HIGHLIGHTED   , "ALG_PROP_HIGHLIGHTED"   , read_int_proc  );
-        add_property(ALG_PROP_PRESSED       , "ALG_PROP_PRESSED"       , read_int_proc  );
-        add_property(ALG_PROP_SELECTED      , "ALG_PROP_SELECTED"      , read_int_proc  );
-        add_property(ALG_PROP_ACTIVE        , "ALG_PROP_ACTIVE"        , read_int_proc  );
-        add_property(ALG_PROP_ERROR         , "ALG_PROP_ERROR"         , read_int_proc  );
-        add_property(ALG_PROP_FOCUSED       , "ALG_PROP_FOCUSED"       , read_int_proc  );
-        add_property(ALG_PROP_MANAGED_LAYOUT, "ALG_PROP_MANAGED_LAYOUT", read_int_proc  );
+        add_property(ALG_PROP_PROC          , "ALG_PROP_PROC"          , alg_read_pvoid_property);
+        add_property(ALG_PROP_X             , "ALG_PROP_X"             , alg_read_int_property  );
+        add_property(ALG_PROP_Y             , "ALG_PROP_Y"             , alg_read_int_property  );
+        add_property(ALG_PROP_WIDTH         , "ALG_PROP_WIDTH"         , alg_read_int_property  );
+        add_property(ALG_PROP_HEIGHT        , "ALG_PROP_HEIGHT"        , alg_read_int_property  );
+        add_property(ALG_PROP_DATA          , "ALG_PROP_DATA"          , alg_read_int_property  );
+        add_property(ALG_PROP_ID            , "ALG_PROP_ID"            , alg_read_pvoid_property);
+        add_property(ALG_PROP_VISIBLE       , "ALG_PROP_VISIBLE"       , alg_read_int_property  );
+        add_property(ALG_PROP_ENABLED       , "ALG_PROP_ENABLED"       , alg_read_int_property  );
+        add_property(ALG_PROP_HIGHLIGHTED   , "ALG_PROP_HIGHLIGHTED"   , alg_read_int_property  );
+        add_property(ALG_PROP_PRESSED       , "ALG_PROP_PRESSED"       , alg_read_int_property  );
+        add_property(ALG_PROP_SELECTED      , "ALG_PROP_SELECTED"      , alg_read_int_property  );
+        add_property(ALG_PROP_ACTIVE        , "ALG_PROP_ACTIVE"        , alg_read_int_property  );
+        add_property(ALG_PROP_ERROR         , "ALG_PROP_ERROR"         , alg_read_int_property  );
+        add_property(ALG_PROP_FOCUSED       , "ALG_PROP_FOCUSED"       , alg_read_int_property  );
+        add_property(ALG_PROP_MANAGED_LAYOUT, "ALG_PROP_MANAGED_LAYOUT", alg_read_int_property  );
     });
 }
 
@@ -90,8 +78,22 @@ void* alg_read_property(int id, va_list* list) {
 }
 
 
+//read int prop
+void* alg_read_int_property(va_list* list) {
+    assert(list);
+    return &va_arg(*list, int);
+}
+
+
+//read void* prop
+void* alg_read_pvoid_property(va_list* list) {
+    assert(list);
+    return &va_arg(*list, void*);
+}
+
+
 //Adds a property.
-int alg_add_property_enum(int id, const char* name, ALG_READ_PROPERTY_PROC proc) {
+int alg_register_property(int id, const char* name, ALG_READ_PROPERTY_PROC proc) {
     init();
     assert(id > 0);
     assert(name);

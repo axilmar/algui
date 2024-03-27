@@ -36,11 +36,10 @@ static void init(ALG_WIDGET* wgt, ALG_DATA_INIT* data) {
     wgt->error = 0;
     wgt->focused = 0;
     wgt->managed_layout = 1;
-    wgt->size_dirty = 0;
-    wgt->tree_size_dirty = 0;
-    wgt->layout_dirty = 0;
-    wgt->tree_layout_dirty = 0;
-
+    wgt->size_dirty = 1;
+    wgt->tree_size_dirty = 1;
+    wgt->layout_dirty = 1;
+    wgt->tree_layout_dirty = 1;
 }
 
 
@@ -74,7 +73,7 @@ static void set_prop_changed(ALG_DATA_PROPS_CHANGED* data, int prop_id) {
 static int set_focused(ALG_WIDGET* wgt, int focused, ALG_DATA_PROPS_CHANGED* props_changed) {
     //check for change
     if (wgt->focused == focused) {
-        return 1;
+        return 0;
     }
 
     //focus
@@ -92,7 +91,6 @@ static int set_focused(ALG_WIDGET* wgt, int focused, ALG_DATA_PROPS_CHANGED* pro
         //got focus
         wgt->focused = 1;
         focused_widget = wgt;
-        set_prop_changed(props_changed, ALG_PROP_FOCUSED);
         alg_send_message(wgt, ALG_MSG_GOT_FOCUS, NULL);
 
         //inform ancestors
@@ -106,7 +104,6 @@ static int set_focused(ALG_WIDGET* wgt, int focused, ALG_DATA_PROPS_CHANGED* pro
         //lost focus
         wgt->focused = 0;
         focused_widget = NULL;
-        set_prop_changed(props_changed, ALG_PROP_FOCUSED);
         alg_send_message(wgt, ALG_MSG_LOST_FOCUS, NULL);
 
         //inform ancestors
@@ -198,100 +195,100 @@ static int set_prop(ALG_WIDGET* wgt, ALG_DATA_PROP* prop) {
         case ALG_PROP_PROC:
             if (wgt->proc != *(ALG_WIDGET_PROC*)prop->value) {
                 wgt->proc = *(ALG_WIDGET_PROC*)prop->value;
-                set_prop_changed(prop->props_changed, prop->id);
+                return 1;
             }
-            return 1;
+            break;
 
         case ALG_PROP_X:
             if (wgt->x != *(int*)prop->value) {
                 wgt->x = *(int*)prop->value;
-                set_prop_changed(prop->props_changed, prop->id);
+                return 1;
             }
-            return 1;
+            break;
 
         case ALG_PROP_Y:
             if (wgt->y != *(int*)prop->value) {
                 wgt->y = *(int*)prop->value;
-                set_prop_changed(prop->props_changed, prop->id);
+                return 1;
             }
-            return 1;
+            break;
 
         case ALG_PROP_WIDTH:
             if (wgt->width != *(int*)prop->value) {
                 wgt->width = *(int*)prop->value;
-                set_prop_changed(prop->props_changed, prop->id);
+                return 1;
             }
-            return 1;
+            break;
 
         case ALG_PROP_HEIGHT:
             if (wgt->height != *(int*)prop->value) {
                 wgt->height = *(int*)prop->value;
-                set_prop_changed(prop->props_changed, prop->id);
+                return 1;
             }
-            return 1;
+            break;
 
         case ALG_PROP_DATA:
             if (wgt->data != *(void**)prop->value) {
                 wgt->data = *(void**)prop->value;
-                set_prop_changed(prop->props_changed, prop->id);
+                return 1;
             }
-            return 1;
+            break;
 
         case ALG_PROP_ID:
             if (wgt->id != *(uintptr_t*)prop->value) {
                 wgt->id = *(uintptr_t*)prop->value;
-                set_prop_changed(prop->props_changed, prop->id);
+                return 1;
             }
-            return 1;
+            break;
 
         case ALG_PROP_VISIBLE:
             if (wgt->visible != *(int*)prop->value) {
                 wgt->visible = *(int*)prop->value;
-                set_prop_changed(prop->props_changed, prop->id);
+                return 1;
             }
-            return 1;
+            break;
 
         case ALG_PROP_ENABLED:
             if (wgt->enabled != *(int*)prop->value) {
                 wgt->enabled = *(int*)prop->value;
-                set_prop_changed(prop->props_changed, prop->id);
+                return 1;
             }
-            return 1;
+            break;
 
         case ALG_PROP_HIGHLIGHTED:
             if (wgt->highlighted != *(int*)prop->value) {
                 wgt->highlighted = *(int*)prop->value;
-                set_prop_changed(prop->props_changed, prop->id);
+                return 1;
             }
-            return 1;
+            break;
 
         case ALG_PROP_PRESSED:
             if (wgt->pressed != *(int*)prop->value) {
                 wgt->pressed = *(int*)prop->value;
-                set_prop_changed(prop->props_changed, prop->id);
+                return 1;
             }
-            return 1;
+            break;
 
         case ALG_PROP_SELECTED:
             if (wgt->selected != *(int*)prop->value) {
                 wgt->selected = *(int*)prop->value;
-                set_prop_changed(prop->props_changed, prop->id);
+                return 1;
             }
-            return 1;
+            break;
 
         case ALG_PROP_ACTIVE:
             if (wgt->active != *(int*)prop->value) {
                 wgt->active = *(int*)prop->value;
-                set_prop_changed(prop->props_changed, prop->id);
+                return 1;
             }
-            return 1;
+            break;
 
         case ALG_PROP_ERROR:
             if (wgt->error != *(int*)prop->value) {
                 wgt->error = *(int*)prop->value;
-                set_prop_changed(prop->props_changed, prop->id);
+                return 1;
             }
-            return 1;
+            break;
 
         case ALG_PROP_FOCUSED:            
             return set_focused(wgt, *(int*)prop->value, prop->props_changed);
@@ -299,10 +296,16 @@ static int set_prop(ALG_WIDGET* wgt, ALG_DATA_PROP* prop) {
         case ALG_PROP_MANAGED_LAYOUT:
             if (wgt->managed_layout != *(int*)prop->value) {
                 wgt->managed_layout = *(int*)prop->value;
-                set_prop_changed(prop->props_changed, prop->id);
+                if (!wgt->managed_layout) {
+                    wgt->size_dirty = 0;
+                    wgt->layout_dirty = 0;
+                }
+                return 1;
             }
-            return 1;
+            break;
     }
+
+    //no change
     return 0;
 }
 
@@ -355,6 +358,10 @@ static void set_props_counted(ALG_WIDGET* wgt, va_list props, int count) {
             goto END;
         }
 
+        if (data.id == 17) {
+            int x = 0;
+        }
+
         //get data value
         data.value = alg_read_property(data.id, &props);
 
@@ -363,7 +370,10 @@ static void set_props_counted(ALG_WIDGET* wgt, va_list props, int count) {
             goto END;
         }
 
-        alg_send_message(wgt, ALG_MSG_SET_PROP, &data);
+        //notify the widget; if the widget returns non-zero, then set the property as changed
+        if (alg_send_message(wgt, ALG_MSG_SET_PROP, &data)) {
+            set_prop_changed(&props_changed, data.id);
+        }
     }
 
     END:
@@ -374,15 +384,40 @@ static void set_props_counted(ALG_WIDGET* wgt, va_list props, int count) {
         alg_send_parent_message(wgt, ALG_MSG_CHILD_GEOMETRY_CHANGED, wgt);
     }
 
-    //if visible changed, notify the widget and its parent
-    if (alg_get_bitvector_bit(&props_changed.props_changed_bits, ALG_PROP_VISIBLE)) {
-        alg_send_message(wgt, ALG_MSG_VISIBLE_CHANGED, NULL);
-        alg_send_parent_message(wgt, ALG_MSG_CHILD_VISIBLE_CHANGED, wgt);
-    }
-
-    //if there are properties that are changed, notify the widget
+    //process property changes
     if (props_changed.props_changed_count > 0) {
+        ALG_WIDGET* parent = alg_get_parent_widget(wgt);
+        const int position_changed = alg_test_bitvector_bits(&props_changed.props_changed_bits, ALG_PROP_X, ALG_PROP_Y, 0);
+        const int size_changed = alg_test_bitvector_bits(&props_changed.props_changed_bits, ALG_PROP_WIDTH, ALG_PROP_HEIGHT, 0);
+        const int visible_changed = alg_get_bitvector_bit(&props_changed.props_changed_bits, ALG_PROP_VISIBLE);
+
+        //if the widget's size changed, then set its layout as dirty
+        if (size_changed) {
+            alg_set_widget_layout_dirty(wgt);
+        }
+
+        //handle parent size/layout changes
+        if (parent) {
+            //child's position and size affects both the parent's size and layout
+            if (position_changed || size_changed) {
+                alg_set_widget_size_dirty(parent);
+                alg_set_widget_layout_dirty(parent);
+            }
+            
+            //child's visibility affects the parent layout
+            if (visible_changed) {
+                alg_set_widget_layout_dirty(parent);
+            }
+        }
+
+        //notify the widget about property changes
         alg_send_message(wgt, ALG_MSG_PROPS_CHANGED, &props_changed);
+
+        //if visible changed, notify the widget and its parent
+        if (visible_changed) {
+            alg_send_message(wgt, ALG_MSG_VISIBLE_CHANGED, NULL);
+            alg_send_parent_message(wgt, ALG_MSG_CHILD_VISIBLE_CHANGED, wgt);
+        }
     }
 
     //cleanup
@@ -393,6 +428,45 @@ static void set_props_counted(ALG_WIDGET* wgt, va_list props, int count) {
 //set props 
 static void set_props(ALG_WIDGET* wgt, va_list props) {
     set_props_counted(wgt, props, INT_MAX);
+}
+
+
+//manage size
+static void manage_size(ALG_WIDGET* wgt) {
+    //manage size of children
+    if (wgt->tree_size_dirty) {
+        for (ALG_WIDGET* child = alg_get_first_child_widget(wgt); child; child = alg_get_next_sibling_widget(child)) {
+            manage_size(child);
+        }
+        wgt->tree_size_dirty = 0;
+    }
+
+    //manage size of widget
+    if (wgt->size_dirty) {
+        alg_send_message(wgt, ALG_MSG_INIT_SIZE, NULL);
+        wgt->size_dirty = 0;
+    }
+}
+
+
+//manage layout
+static void manage_layout(ALG_WIDGET* wgt) {
+    //manage layout of widget
+    if (wgt->layout_dirty) {
+        alg_send_message(wgt, ALG_MSG_DO_LAYOUT, NULL);
+        wgt->tree_size_dirty = 0;
+        wgt->layout_dirty = 0;
+    }
+
+    //manage layout of children
+    if (wgt->tree_layout_dirty) {
+        for (ALG_WIDGET* child = alg_get_first_child_widget(wgt); child; child = alg_get_next_sibling_widget(child)) {
+            manage_layout(child);
+            child->size_dirty = 0;
+        }
+        wgt->tree_size_dirty = 0;
+        wgt->tree_layout_dirty = 0;
+    }
 }
 
 
@@ -797,6 +871,14 @@ void alg_insert_widget(ALG_WIDGET* parent, ALG_WIDGET* child, int z_order) {
     //insert the widget 
     alg_insert_tree(&parent->tree, &child->tree, z_order);
 
+    //parent should recompute its size and layout since it has a new child
+    alg_set_widget_size_dirty(parent);
+    alg_set_widget_layout_dirty(parent);
+
+    //child should recompute its size and layout since it is a new child
+    alg_set_widget_size_dirty(child);
+    alg_set_widget_layout_dirty(child);
+
     //notify the widgets
     alg_send_message(child, ALG_MSG_INSERTED, NULL);
     alg_send_message(parent, ALG_MSG_CHILD_INSERTED, child);
@@ -835,6 +917,9 @@ void alg_set_widget_z_order(ALG_WIDGET* wgt, int z_order) {
         return;
     }
 
+    //the parent must recompute its layout
+    alg_set_widget_layout_dirty(parent);
+
     //notify the widgets
     alg_send_message(wgt, ALG_MSG_Z_ORDER_CHANGED, NULL);
     alg_send_message(parent, ALG_MSG_CHILD_Z_ORDER_CHANGED, wgt);
@@ -853,6 +938,10 @@ void alg_remove_widget(ALG_WIDGET* wgt) {
 
     //remove the tree node 
     alg_remove_tree(&wgt->tree);
+
+    //the parent must recompute its size and layout
+    alg_set_widget_size_dirty(parent);
+    alg_set_widget_layout_dirty(parent);
 
     //notify the widgets
     alg_send_message(wgt, ALG_MSG_REMOVED, NULL);
@@ -1176,6 +1265,67 @@ void alg_set_widget_layout_managed(ALG_WIDGET * wgt, int managed) {
     alg_set_widget_property(wgt, ALG_PROP_MANAGED_LAYOUT, managed);
 }
 
+
+//set up size as dirty
+void alg_set_widget_size_dirty(ALG_WIDGET* wgt) {
+    assert(wgt);
+
+    //if layout is not managed, do nothing else
+    if (!wgt->managed_layout) {
+        return;
+    }
+
+    //if already set, do nothing else
+    if (wgt->size_dirty) {
+        return;
+    }
+
+    //set dirty
+    wgt->size_dirty = 1;
+
+    //set ancestors
+    for (ALG_WIDGET* parent = alg_get_parent_widget(wgt); parent; parent = alg_get_parent_widget(parent)) {
+        if (parent->tree_size_dirty) {
+            break;
+        }
+        parent->tree_size_dirty = 1;
+    }
+}
+
+
+//set up layout as dirty
+void alg_set_widget_layout_dirty(ALG_WIDGET* wgt) {
+    assert(wgt);
+
+    //if layout is not managed, do nothing else
+    if (!wgt->managed_layout) {
+        return;
+    }
+
+    //if already set, do nothing else
+    if (wgt->layout_dirty) {
+        return;
+    }
+
+    //set dirty
+    wgt->layout_dirty = 1;
+
+    //set ancestors
+    for (ALG_WIDGET* parent = alg_get_parent_widget(wgt); parent; parent = alg_get_parent_widget(parent)) {
+        if (parent->tree_layout_dirty) {
+            break;
+        }
+        parent->tree_layout_dirty = 1;
+    }
+}
+
+
+//manage layout
+void alg_manage_layout(ALG_WIDGET* wgt) {
+    assert(wgt);
+    manage_size(wgt);
+    manage_layout(wgt);
+}
 
 
 //get child from point

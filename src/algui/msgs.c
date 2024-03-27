@@ -36,6 +36,8 @@ static void init() {
         alg_add_enum_value(&msg_enum, ALG_MSG_CHILD_GEOMETRY_CHANGED, "ALG_MSG_CHILD_GEOMETRY_CHANGED");
         alg_add_enum_value(&msg_enum, ALG_MSG_VISIBLE_CHANGED       , "ALG_MSG_VISIBLE_CHANGED"       );
         alg_add_enum_value(&msg_enum, ALG_MSG_CHILD_VISIBLE_CHANGED , "ALG_MSG_CHILD_VISIBLE_CHANGED" );
+        alg_add_enum_value(&msg_enum, ALG_MSG_INIT_SIZE             , "ALG_MSG_INIT_SIZE"             );
+        alg_add_enum_value(&msg_enum, ALG_MSG_DO_LAYOUT             , "ALG_MSG_DO_LAYOUT"             );
         alg_add_enum_value(&msg_enum, ALG_MSG_PAINT                 , "ALG_MSG_PAINT"                 );
         alg_add_enum_value(&msg_enum, ALG_MSG_WANT_FOCUS            , "ALG_MSG_WANT_FOCUS"            );
         alg_add_enum_value(&msg_enum, ALG_MSG_GOT_FOCUS             , "ALG_MSG_GOT_FOCUS"             );
@@ -68,7 +70,7 @@ const char* alg_get_message_name(int id) {
 
 
 //Adds a message.
-int alg_add_message_enum(int id, const char* name) {
+int alg_register_message(int id, const char* name) {
     init();
     return alg_add_enum_value(&msg_enum, id, name);
 }

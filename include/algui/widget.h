@@ -605,10 +605,47 @@ int alg_is_widget_layout_managed(ALG_WIDGET* wgt);
 
 /**
  * Sets the managed layout property of a widget.
+ * 
+ * If a widget participates in layout management, then when it is inserted into another widget,
+ * its size is set to be recomputed (lazily, by calling alg_manage_layout() from the main loop).
+ * 
+ * If a parent widget participates in layout management, 
+ * then every time a child of it is inserted/is removed/changes geometry/changes z-order/changes visibility, 
+ * the parent is set up to have its layout recomputed (lazily, by calling alg_manage_layout() from the main loop).
+ * 
  * @param wgt widget to set the property of.
  * @param managed if non-zero (the default), then the widget participates in layout management; otherwise it does not.
  */
 void alg_set_widget_layout_managed(ALG_WIDGET* wgt, int managed);
+
+
+/**
+ * Sets up a widget so as that its size is computed lazily from the main loop, when alg_manage_layout() is called on the root widget.
+ * @param wgt widget to set the size of to dirty state.
+ */
+void alg_set_widget_size_dirty(ALG_WIDGET* wgt);
+
+
+/**
+ * Sets up a widget so as that its layout is computed lazily from the main loop, when alg_manage_layout() is called on the root widget.
+ * @param wgt widget to set the layout of to dirty state.
+ */
+void alg_set_widget_layout_dirty(ALG_WIDGET* wgt);
+
+
+/**
+ * Updates the size and layout of the given widget and its children,
+ * depending on which dirty flags widgets have.
+ * 
+ * Firstly, it updates the size of widgets. Each widget receives an ALG_MSG_INIT_SIZE message,
+ * in which it can alter the size of it using the various related setter functions (alg_set_widget_size, alg_set_widget_width, etc).
+ * Children receive this message before their parents, allowing parents to size themselves based on children.
+ * 
+ * Secondly, it updates the layout of widgets. Each widget receives an ALG_MSG_DO_LAYOUT message,
+ * in which it can alter the position and size of its children using the various related setter functions (alg_set_widget_geometry, etc).
+ * Parents receive this message before their children, allowing parents to position their children according to the parent's preferred layout algorithm.
+ */
+void alg_manage_layout(ALG_WIDGET* wgt);
 
 
 /**

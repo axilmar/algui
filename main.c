@@ -5,6 +5,7 @@
 #include "allegro5/allegro_font.h"
 #include <allegro5/allegro_ttf.h>
 #include "algui/widget.h"
+#include "algui/minmax.h"
 
 
 static ALLEGRO_FONT* test_font;
@@ -20,8 +21,23 @@ ALLEGRO_COLOR random_color() {
 }
 
 
+typedef enum LAYOUT_TYPE {
+    LAYOUT_NONE,
+    LAYOUT_HORIZONTAL,
+    LAYOUT_VERTICAL,
+    LAYOUT_HORIZONTAL_WRAP,
+    LAYOUT_VERTICAL_WRAP
+} LAYOUT_TYPE;
+
+
+enum EXTRA_PROPS {
+    ALG_PROP_LAYOUT_TYPE = ALG_PROP_LAST
+};
+
+
 typedef struct TEST {
     ALG_WIDGET widget;
+    LAYOUT_TYPE layout_type;
 } TEST;
 
 
@@ -48,9 +64,16 @@ static void test_props_changed(ALG_WIDGET* wgt, ALG_DATA_PROPS_CHANGED* data) {
 
 
 uintptr_t test_proc(ALG_WIDGET* wgt, int id, void* data) {
+    TEST* test = (TEST*)wgt;
+    ALG_DATA_PROP* prop;
+
     switch (id) {
         case ALG_MSG_MALLOC:
             return (uintptr_t)malloc(sizeof(TEST));
+
+        case ALG_MSG_INIT:
+            ((TEST*)wgt)->layout_type = LAYOUT_NONE;
+            break;
 
         case ALG_MSG_PAINT:
             test_paint(wgt, (ALG_DATA_PAINT*)data);
@@ -71,14 +94,114 @@ uintptr_t test_proc(ALG_WIDGET* wgt, int id, void* data) {
             printf("Widget %s: mouse event %s: x = %i, y = %i, button = %i\n", (const char*)wgt->id, alg_get_message_name(id), mouse->x, mouse->y, mouse->button);
             break;
         }
+
+        case ALG_MSG_GET_PROP:
+        {
+            prop = (ALG_DATA_PROP*)data;
+            switch (prop->id) {
+                case ALG_PROP_LAYOUT_TYPE:
+                    *(LAYOUT_TYPE*)prop->value = test->layout_type;
+                    return 1;
+            }
+            break;
+        }
+
+        case ALG_MSG_SET_PROP:
+        {
+            prop = (ALG_DATA_PROP*)data;
+            switch (prop->id) {
+                case ALG_PROP_LAYOUT_TYPE:
+                    test->layout_type = *(LAYOUT_TYPE*)prop->value;
+                    return 1;
+            }
+            break;
+        }
+
+        case ALG_MSG_INIT_SIZE:
+            switch (((TEST*)wgt)->layout_type) {
+                case LAYOUT_HORIZONTAL_WRAP: {
+                    int w = 0;
+                    int h = 0;
+                    for (ALG_WIDGET* child = alg_get_first_child_widget(wgt); child; child = alg_get_next_sibling_widget(child)) {
+                        w += child->width;
+                        h = ALG_MAX(h, child->height);
+                    }
+                    alg_set_widget_size(wgt, w, h);
+                    break;
+                }
+
+                case LAYOUT_VERTICAL_WRAP: {
+                    int w = 0;
+                    int h = 0;
+                    for (ALG_WIDGET* child = alg_get_first_child_widget(wgt); child; child = alg_get_next_sibling_widget(child)) {
+                        w = ALG_MAX(w, child->width);
+                        h += child->height;
+                    }
+                    alg_set_widget_size(wgt, w, h);
+                    break;
+                }
+            }
+            return 1;
+
+        case ALG_MSG_DO_LAYOUT:
+            switch (((TEST*)wgt)->layout_type) {
+                case LAYOUT_HORIZONTAL:
+                {
+                    int x = 0;
+                    for (ALG_WIDGET* child = alg_get_first_child_widget(wgt); child; child = alg_get_next_sibling_widget(child)) {
+                        alg_set_widget_geometry(child, x, 0, child->width, child->height);
+                        x += child->width;
+                    }
+                    break;
+                }
+
+                case LAYOUT_HORIZONTAL_WRAP:
+                {
+                    int x = 0;
+                    for (ALG_WIDGET* child = alg_get_first_child_widget(wgt); child; child = alg_get_next_sibling_widget(child)) {
+                        alg_set_widget_geometry(child, x, 0, child->width, wgt->height);
+                        x += child->width;
+                    }
+                    break;
+                }
+
+                case LAYOUT_VERTICAL:
+                {
+                    int y = 0;
+                    for (ALG_WIDGET* child = alg_get_first_child_widget(wgt); child; child = alg_get_next_sibling_widget(child)) {
+                        alg_set_widget_geometry(child, 0, y, child->width, child->height);
+                        y += child->height;
+                    }
+                    break;
+                }
+
+                case LAYOUT_VERTICAL_WRAP:
+                {
+                    int y = 0;
+                    for (ALG_WIDGET* child = alg_get_first_child_widget(wgt); child; child = alg_get_next_sibling_widget(child)) {
+                        alg_set_widget_geometry(child, 0, y, wgt->width, child->height);
+                        y += child->height;
+                    }
+                    break;
+                }
+            }
+            return 1;
     }
 
     return alg_widget_proc(wgt, id, data);
 }
 
 
-ALG_WIDGET* create_test(const char* id, ALG_WIDGET* parent, int x, int y, int w, int h) {
-    return alg_create_child_widget(parent, test_proc, ALG_PROP_X, x, ALG_PROP_Y, y, ALG_PROP_WIDTH, w, ALG_PROP_HEIGHT, h, ALG_PROP_ID, id, 0);
+ALG_WIDGET* create_test(const char* id, ALG_WIDGET* parent, int x, int y, int w, int h, LAYOUT_TYPE lt) {
+    return alg_create_child_widget(
+        parent, test_proc, 
+        ALG_PROP_X, x, 
+        ALG_PROP_Y, y, 
+        ALG_PROP_WIDTH, w, 
+        ALG_PROP_HEIGHT, h, 
+        ALG_PROP_ID, id, 
+        ALG_PROP_LAYOUT_TYPE, lt, 
+        0);
 }
 
 
@@ -111,13 +234,15 @@ int main(int argc, const char* argv[])
 
     test_font = al_load_ttf_font("SourceSansPro-Regular.ttf", -12, 0);
 
-    ALG_WIDGET* root = create_test("root", NULL, 0, 0, 800, 600);
-    ALG_WIDGET* form1 = create_test("form1", root, 100, 50, 250, 200);
-    ALG_WIDGET* form2 = create_test("form2", root, 200, 150, 250, 200);
-    ALG_WIDGET* form3 = create_test("form3", root, 300, 250, 250, 200);
-    ALG_WIDGET* btn1 = create_test("btn1", form2, 50, 40, 50, 40);
-    ALG_WIDGET* btn2 = create_test("btn2", form2, 70, 60, 50, 40);
-    ALG_WIDGET* btn3 = create_test("btn3", form2, 90, 80, 50, 40);
+    alg_register_property(ALG_PROP_LAYOUT_TYPE, "ALG_PROP_LAYOUT_TYPE", alg_read_int_property);
+
+    ALG_WIDGET* root = create_test("root", NULL, 0, 0, 800, 600, LAYOUT_NONE);
+    ALG_WIDGET* form1 = create_test("form1", root, 100, 50, 250, 200, LAYOUT_NONE);
+    ALG_WIDGET* form2 = create_test("form2", root, 200, 150, 250, 200, LAYOUT_NONE);
+    ALG_WIDGET* form3 = create_test("form3", root, 300, 250, 250, 200, LAYOUT_NONE);
+    ALG_WIDGET* btn1 = create_test("btn1", form2, 50, 40, 50, 40, LAYOUT_NONE);
+    ALG_WIDGET* btn2 = create_test("btn2", form2, 70, 60, 50, 40, LAYOUT_NONE);
+    ALG_WIDGET* btn3 = create_test("btn3", form2, 90, 80, 50, 40, LAYOUT_NONE);
 
     while (1) {
         ALLEGRO_EVENT event;
@@ -136,6 +261,8 @@ int main(int argc, const char* argv[])
                 break;
             }
         }
+
+        alg_manage_layout(root);
 
         alg_dispatch_event(root, &event);
 

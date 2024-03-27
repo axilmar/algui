@@ -65,6 +65,12 @@ enum ALG_MSG {
     ///child visible changed.
     ALG_MSG_CHILD_VISIBLE_CHANGED,
 
+    ///widget should initialize its size based on its content.
+    ALG_MSG_INIT_SIZE,
+
+    ///widget should layout its children elements according to its layout algorithm.
+    ALG_MSG_DO_LAYOUT,
+
     ///paint widget.
     ALG_MSG_PAINT,
 
@@ -105,7 +111,7 @@ enum ALG_MSG {
     ALG_MSG_MOUSE_LEAVE,
 
     ///first available message for apps.
-    ALG_MSG_USER = 10000
+    ALG_MSG_LAST
 };
 
 
@@ -252,7 +258,7 @@ const char* alg_get_message_name(int id);
  * @param name message name; should not be null.
  * @return non-zero on success, zero on reallocation error or if id is 0 or if name is null.
  */
-int alg_add_message_enum(int id, const char* name);
+int alg_register_message(int id, const char* name);
 
 
 #endif //ALG_MSGS_H

@@ -61,7 +61,7 @@ enum ALG_PROP {
     ALG_PROP_MANAGED_LAYOUT,
 
     ///first available prop id for apps.
-    ALG_PROP_USER = 10000
+    ALG_PROP_LAST
 };
 
 
@@ -99,13 +99,29 @@ void* alg_read_property(int id, va_list* list);
 
 
 /**
+ * Reads an integer property from a va list.
+ * @param list va list to read the property of.
+ * @return pointer to property.
+ */
+void* alg_read_int_property(va_list* list);
+
+
+/**
+ * Reads an pointer-to-void property from a va list.
+ * @param list va list to read the property of.
+ * @return pointer to property.
+ */
+void* alg_read_pvoid_property(va_list* list);
+
+
+/**
  * Adds a property.
  * @param id property id; should be greater than 0.
  * @param name property name; should not be null.
  * @param proc procedure to call for reading the property off a va list.
  * @return non-zero on success, zero on reallocation error or if id is 0 or if name is null.
  */
-int alg_add_property_enum(int id, const char* name, ALG_READ_PROPERTY_PROC proc);
+int alg_register_property(int id, const char* name, ALG_READ_PROPERTY_PROC proc);
 
 
 #endif //ALG_PROPS_H
