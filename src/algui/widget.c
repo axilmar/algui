@@ -91,7 +91,7 @@ static int set_focused(ALG_WIDGET* wgt, int focused, ALG_DATA_PROPS_CHANGED* pro
 
         //inform ancestors
         for (ALG_WIDGET* anc = alg_get_parent_widget(wgt); anc; anc = alg_get_parent_widget(anc)) {
-            alg_send_message(wgt, ALG_MSG_DESC_GOT_FOCUS, NULL);
+            alg_send_message(wgt, ALG_MSG_TREE_GOT_FOCUS, NULL);
         }
     }
 
@@ -105,7 +105,7 @@ static int set_focused(ALG_WIDGET* wgt, int focused, ALG_DATA_PROPS_CHANGED* pro
 
         //inform ancestors
         for (ALG_WIDGET* anc = alg_get_parent_widget(wgt); anc; anc = alg_get_parent_widget(anc)) {
-            alg_send_message(wgt, ALG_MSG_DESC_LOST_FOCUS, NULL);
+            alg_send_message(wgt, ALG_MSG_TREE_LOST_FOCUS, NULL);
         }
     }
 
@@ -358,6 +358,18 @@ static void set_props(ALG_WIDGET* wgt, va_list props) {
 
     END:
 
+    //if geometry changed, notify the widget and its parent
+    if (alg_test_bitvector_bits(&props_changed.props_changed_bits, ALG_PROP_X, ALG_PROP_Y, ALG_PROP_WIDTH, ALG_PROP_HEIGHT, 0)) {
+        alg_send_message(wgt, ALG_MSG_GEOMETRY_CHANGED, NULL);
+        alg_send_parent_message(wgt, ALG_MSG_CHILD_GEOMETRY_CHANGED, wgt);
+    }
+
+    //if visible changed, notify the widget and its parent
+    if (alg_get_bitvector_bit(&props_changed.props_changed_bits, ALG_PROP_VISIBLE)) {
+        alg_send_message(wgt, ALG_MSG_VISIBLE_CHANGED, NULL);
+        alg_send_parent_message(wgt, ALG_MSG_CHILD_VISIBLE_CHANGED, wgt);
+    }
+
     //if there are properties that are changed, notify the widget
     if (props_changed.props_changed_count > 0) {
         alg_send_message(wgt, ALG_MSG_PROPS_CHANGED, &props_changed);
@@ -493,11 +505,11 @@ uintptr_t alg_widget_proc(ALG_WIDGET* wgt, int id, void* data) {
         case ALG_MSG_WANT_FOCUS:
             return 1;
 
-        case ALG_MSG_DESC_GOT_FOCUS:
+        case ALG_MSG_TREE_GOT_FOCUS:
             wgt->active = 1;
             return 1;
 
-        case ALG_MSG_DESC_LOST_FOCUS:
+        case ALG_MSG_TREE_LOST_FOCUS:
             wgt->active = 0;
             return 1;
 
@@ -637,6 +649,13 @@ uintptr_t alg_send_message(ALG_WIDGET* wgt, int id, void* data) {
 }
 
 
+//send message to parent
+uintptr_t alg_send_parent_message(ALG_WIDGET* wgt, int id, void* data) {
+    ALG_WIDGET* parent = alg_get_parent_widget(wgt);
+    return parent ? alg_send_message(parent, id, data) : 0;
+}
+
+
 //create widget
 ALG_WIDGET* alg_create_widget(ALG_WIDGET_PROC proc, ...) {
     va_list props;
@@ -735,7 +754,21 @@ ALG_WIDGET* alg_get_last_child_widget(ALG_WIDGET* wgt) {
 void alg_insert_widget(ALG_WIDGET* parent, ALG_WIDGET* child, int z_order) {
     assert(parent);
     assert(child);
+
+    //if parent doesn't change, then do nothing
+    if (alg_get_parent_widget(child) == parent) {
+        return;
+    }
+
+    //remove widget from its parent, if it exists
+    alg_remove_widget(child);
+
+    //insert the widget 
     alg_insert_tree(&parent->tree, &child->tree, z_order);
+
+    //notify the widgets
+    alg_send_message(child, ALG_MSG_INSERTED, NULL);
+    alg_send_message(parent, ALG_MSG_CHILD_INSERTED, child);
 }
 
 
@@ -755,21 +788,44 @@ int alg_get_widget_z_order(ALG_WIDGET* wgt) {
 //Sets the z-order of a widget, if it is a child widget.
 void alg_set_widget_z_order(ALG_WIDGET* wgt, int z_order) {
     assert(wgt);
+
+    //if the widget has no parent, do nothing
     ALG_WIDGET* parent = alg_get_parent_widget(wgt);
-    if (parent) {
-        alg_remove_tree(&wgt->tree);
-        alg_insert_tree(&parent->tree, &wgt->tree, z_order);
+    if (!parent) {
     }
+
+    //remove and reinsert the tree node
+    ALG_WIDGET* prev = alg_get_prev_sibling_widget(wgt);
+    alg_remove_tree(&wgt->tree);
+    alg_insert_tree(&parent->tree, &wgt->tree, z_order);
+
+    //if z-order didn't change, do nothing else
+    if (alg_get_prev_sibling_widget(wgt) == prev) {
+        return;
+    }
+
+    //notify the widgets
+    alg_send_message(wgt, ALG_MSG_Z_ORDER_CHANGED, NULL);
+    alg_send_message(parent, ALG_MSG_CHILD_Z_ORDER_CHANGED, wgt);
 }
 
 
 //remove child widget
 void alg_remove_widget(ALG_WIDGET* wgt) {
     assert(wgt);
+
+    //if there is no parent, do nothing
     ALG_WIDGET* parent = alg_get_parent_widget(wgt);
-    if (parent) {
-        alg_remove_tree(&wgt->tree);
+    if (!parent) {
+        return;
     }
+
+    //remove the tree node 
+    alg_remove_tree(&wgt->tree);
+
+    //notify the widgets
+    alg_send_message(wgt, ALG_MSG_REMOVED, NULL);
+    alg_send_message(parent, ALG_MSG_CHILD_REMOVED, wgt);
 }
 
 
@@ -921,7 +977,7 @@ void alg_set_widget_size(ALG_WIDGET* wgt, int width, int height) {
 
 
 //Retrieves the position and size of a widget.
-void alg_get_widget_position_and_size(ALG_WIDGET* wgt, int* x, int* y, int* width, int* height) {
+void alg_get_widget_geometry(ALG_WIDGET* wgt, int* x, int* y, int* width, int* height) {
     alg_get_widget_properties(wgt,
         ALG_PROP_X, x,
         ALG_PROP_Y, y,
@@ -932,7 +988,7 @@ void alg_get_widget_position_and_size(ALG_WIDGET* wgt, int* x, int* y, int* widt
 
 
 //Sets the position and size of a widget.
-void alg_set_widget_position_and_size(ALG_WIDGET* wgt, int x, int y, int width, int height) {
+void alg_set_widget_geometry(ALG_WIDGET* wgt, int x, int y, int width, int height) {
     alg_set_widget_properties(wgt, 
         ALG_PROP_X, x,
         ALG_PROP_Y, y,

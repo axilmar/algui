@@ -96,6 +96,16 @@ uintptr_t alg_send_message(ALG_WIDGET* wgt, int id, void* data);
 
 
 /**
+ * Sends message to widget's parent.
+ * @param wgt target widget.
+ * @param id message id.
+ * @param data message data.
+ * @return depends on message.
+ */
+uintptr_t alg_send_parent_message(ALG_WIDGET* wgt, int id, void* data);
+
+
+/**
  * Creates a widget.
  * The widget proc receives a malloc message, and then an init message, then a series of set prop messages, one for each property.
  * @param proc widget proc.
@@ -191,6 +201,9 @@ ALG_WIDGET* alg_get_last_child_widget(ALG_WIDGET* wgt);
 
 /**
  * Inserts a widget into another widget.
+ * If the widget belongs in another parent, then it is removed from that parent.
+ * The widget gets an 'inserted' message.
+ * The parent gets a 'child inserted' message.
  * The parent gets a child inserted message.
  * @param parent parent widget.
  * @param child child widget.
@@ -209,22 +222,24 @@ void alg_add_widget(ALG_WIDGET* parent, ALG_WIDGET* child);
 
 
 /**
- * Returns the z-order of a widget.
- * @return the z-order of a widget.
+ * Returns the z-order of a widget, if it has a parent.
+ * @return the z-order of a widget; 0 if it does not have a parent.
  */
 int alg_get_widget_z_order(ALG_WIDGET* wgt);
 
 
 /**
- * Sets the z-order of a widget, if it is a child widget.
- * the parent gets a child z-order changed message.
+ * Sets the z-order of a widget, if it has a parent.
+ * The widget gets a z-order changed message.
+ * The parent gets a child z-order changed message.
  * @param z_order the new z-order of a widget.
  */
 void alg_set_widget_z_order(ALG_WIDGET* wgt, int z_order);
 
 
 /**
- * Removes a widget from its parent, if there is one.
+ * Removes a widget from its parent, if it has a parent.
+ * The widget gets a removed message.
  * The parent gets a child removed message.
  * @param wgt widget to remove from its parent.
  */
@@ -266,6 +281,8 @@ int alg_get_widget_x(ALG_WIDGET* wgt);
 
 /**
  * Sets the x coordinate of a widget.
+ * The widget gets a geometry changed message.
+ * The parent of the widget, if there is one, gets a child geometry changed message.
  * @param wgt widget to set the x coordinate of.
  * @param x the x coordinate of a widget.
  */
@@ -282,6 +299,8 @@ int alg_get_widget_y(ALG_WIDGET* wgt);
 
 /**
  * Sets the y coordinate of a widget.
+ * The widget gets a geometry changed message.
+ * The parent of the widget, if there is one, gets a child geometry changed message.
  * @param wgt widget to set the y coordinate of.
  * @param y the y coordinate of a widget.
  */
@@ -298,6 +317,8 @@ int alg_get_widget_width(ALG_WIDGET* wgt);
 
 /**
  * Sets the width of a widget.
+ * The widget gets a geometry changed message.
+ * The parent of the widget, if there is one, gets a child geometry changed message.
  * @param wgt widget to set the width of.
  * @param width the width of a widget.
  */
@@ -314,6 +335,8 @@ int alg_get_widget_height(ALG_WIDGET* wgt);
 
 /**
  * Sets the height of a widget.
+ * The widget gets a geometry changed message.
+ * The parent of the widget, if there is one, gets a child geometry changed message.
  * @param wgt widget to set the height of.
  * @param height the height of a widget.
  */
@@ -331,6 +354,8 @@ void alg_get_widget_position(ALG_WIDGET* wgt, int* x, int* y);
 
 /**
  * Sets the x and y coordinates of a widget.
+ * The widget gets a geometry changed message.
+ * The parent of the widget, if there is one, gets a child geometry changed message.
  * @param wgt widget to get the coordinates of.
  * @param x the x coordinate.
  * @param y the y coordinate.
@@ -349,6 +374,8 @@ void alg_get_widget_size(ALG_WIDGET* wgt, int* width, int* height);
 
 /**
  * Sets the size of a widget.
+ * The widget gets a geometry changed message.
+ * The parent of the widget, if there is one, gets a child geometry changed message.
  * @param wgt widget to get the size of.
  * @param width the width.
  * @param height the height.
@@ -364,18 +391,20 @@ void alg_set_widget_size(ALG_WIDGET* wgt, int width, int height);
  * @param width variable to store the width.
  * @param height variable to store the height.
  */
-void alg_get_widget_position_and_size(ALG_WIDGET* wgt, int* x, int* y, int* width, int* height);
+void alg_get_widget_geometry(ALG_WIDGET* wgt, int* x, int* y, int* width, int* height);
 
 
 /**
  * Sets the position and size of a widget.
+ * The widget gets a geometry changed message.
+ * The parent of the widget, if there is one, gets a child geometry changed message.
  * @param wgt widget to get the position and size of.
  * @param x the x coordinate.
  * @param y the y coordinate.
  * @param width the width.
  * @param height the height.
  */
-void alg_set_widget_position_and_size(ALG_WIDGET* wgt, int x, int y, int width, int height);
+void alg_set_widget_geometry(ALG_WIDGET* wgt, int x, int y, int width, int height);
 
 
 /**
@@ -420,6 +449,8 @@ int alg_is_widget_visible(ALG_WIDGET* wgt);
 
 /**
  * Sets the visible property of a widget.
+ * The widget gets a visible changed message.
+ * The parent widget, if there is one, gets a child visible changed message.
  * @param wgt widget to set the property of.
  * @param value the property value.
  */

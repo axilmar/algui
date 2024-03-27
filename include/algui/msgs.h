@@ -35,6 +35,36 @@ enum ALG_MSG {
     ///props changed message.
     ALG_MSG_PROPS_CHANGED,
 
+    ///widget inserted.
+    ALG_MSG_INSERTED,
+
+    ///child widget inserted.
+    ALG_MSG_CHILD_INSERTED,
+
+    ///widget changed z-order.
+    ALG_MSG_Z_ORDER_CHANGED,
+
+    ///child widget changed z-order.
+    ALG_MSG_CHILD_Z_ORDER_CHANGED,
+
+    ///widget removed.
+    ALG_MSG_REMOVED,
+
+    ///child widget removed.
+    ALG_MSG_CHILD_REMOVED,
+
+    ///position and size changed.
+    ALG_MSG_GEOMETRY_CHANGED,
+
+    ///child position and size changed.
+    ALG_MSG_CHILD_GEOMETRY_CHANGED,
+
+    ///visible changed.
+    ALG_MSG_VISIBLE_CHANGED,
+
+    ///child visible changed.
+    ALG_MSG_CHILD_VISIBLE_CHANGED,
+
     ///paint widget.
     ALG_MSG_PAINT,
 
@@ -45,13 +75,13 @@ enum ALG_MSG {
     ALG_MSG_GOT_FOCUS,
 
     ///descentant got the focus.
-    ALG_MSG_DESC_GOT_FOCUS,
+    ALG_MSG_TREE_GOT_FOCUS,
 
     ///lost the focus.
     ALG_MSG_LOST_FOCUS,
 
     ///descentant lost the focus.
-    ALG_MSG_DESC_LOST_FOCUS,
+    ALG_MSG_TREE_LOST_FOCUS,
 
     ///hit test 
     ALG_MSG_HIT_TEST,
