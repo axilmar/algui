@@ -4,8 +4,8 @@
 #include "allegro5/allegro_primitives.h"
 #include "allegro5/allegro_font.h"
 #include <allegro5/allegro_ttf.h>
-#include "algui/widget.h"
-#include "algui/minmax.h"
+//#include "algui/widget.h"
+//#include "algui/minmax.h"
 
 
 static ALLEGRO_FONT* test_font;
@@ -21,6 +21,7 @@ ALLEGRO_COLOR random_color() {
 }
 
 
+/*
 typedef enum LAYOUT_TYPE {
     LAYOUT_NONE,
     LAYOUT_HORIZONTAL,
@@ -50,8 +51,8 @@ static void test_paint(ALG_WIDGET* wgt, ALG_DATA_PAINT* data) {
 static void test_props_changed(ALG_WIDGET* wgt, ALG_DATA_PROPS_CHANGED* data) {
     const char* id = (const char*)wgt->id;
     printf("props changed for widget %s: ", id);
-    for (int i = 1, c = 0; i < alg_get_bitvector_size(&data->props_changed_bits); ++i) {
-        if (alg_get_bitvector_bit(&data->props_changed_bits, i)) {
+    for (int i = 1, c = 0; i < alg_get_bitset_size(&data->props_changed_bits); ++i) {
+        if (alg_get_bitset_bit(&data->props_changed_bits, i)) {
             if (c > 0) {
                 printf(", ");
             }
@@ -202,7 +203,7 @@ ALG_WIDGET* create_test(const char* id, ALG_WIDGET* parent, int x, int y, int w,
         ALG_PROP_ID, id, 
         ALG_PROP_LAYOUT_TYPE, lt, 
         0);
-}
+}*/
 
 
 int main(int argc, const char* argv[])
@@ -234,15 +235,14 @@ int main(int argc, const char* argv[])
 
     test_font = al_load_ttf_font("SourceSansPro-Regular.ttf", -12, 0);
 
-    alg_register_property(ALG_PROP_LAYOUT_TYPE, "ALG_PROP_LAYOUT_TYPE", alg_read_int_property);
-
-    ALG_WIDGET* root = create_test("root", NULL, 0, 0, 800, 600, LAYOUT_NONE);
-    ALG_WIDGET* form1 = create_test("form1", root, 100, 50, 250, 200, LAYOUT_NONE);
-    ALG_WIDGET* form2 = create_test("form2", root, 200, 150, 250, 200, LAYOUT_NONE);
-    ALG_WIDGET* form3 = create_test("form3", root, 300, 250, 250, 200, LAYOUT_NONE);
-    ALG_WIDGET* btn1 = create_test("btn1", form2, 50, 40, 50, 40, LAYOUT_NONE);
-    ALG_WIDGET* btn2 = create_test("btn2", form2, 70, 60, 50, 40, LAYOUT_NONE);
-    ALG_WIDGET* btn3 = create_test("btn3", form2, 90, 80, 50, 40, LAYOUT_NONE);
+    //alg_register_property(ALG_PROP_LAYOUT_TYPE, "ALG_PROP_LAYOUT_TYPE", alg_read_int_property);
+    //ALG_WIDGET* root = create_test("root", NULL, 0, 0, 800, 600, LAYOUT_NONE);
+    //ALG_WIDGET* form1 = create_test("form1", root, 100, 50, 250, 200, LAYOUT_NONE);
+    //ALG_WIDGET* form2 = create_test("form2", root, 200, 150, 250, 200, LAYOUT_NONE);
+    //ALG_WIDGET* form3 = create_test("form3", root, 300, 250, 250, 200, LAYOUT_NONE);
+    //ALG_WIDGET* btn1 = create_test("btn1", form2, 50, 40, 50, 40, LAYOUT_NONE);
+    //ALG_WIDGET* btn2 = create_test("btn2", form2, 70, 60, 50, 40, LAYOUT_NONE);
+    //ALG_WIDGET* btn3 = create_test("btn3", form2, 90, 80, 50, 40, LAYOUT_NONE);
 
     while (1) {
         ALLEGRO_EVENT event;
@@ -262,19 +262,18 @@ int main(int argc, const char* argv[])
             }
         }
 
-        alg_manage_layout(root);
-
-        alg_dispatch_event(root, &event);
+        //alg_manage_layout(root);
+        //alg_dispatch_event(root, &event);
 
         if (redraw) {
             redraw = false;
             //al_clear_to_color(al_map_rgb_f(0, 0, 0));
-            alg_paint_widget(root);
+            //alg_paint_widget(root);
             al_flip_display();
         }
     }
 
-    alg_destroy_widget(root);
+    //alg_destroy_widget(root);
 
     return 0;
 }
