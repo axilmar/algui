@@ -35,27 +35,6 @@ enum ALG_MSG {
     ///props changed message.
     ALG_MSG_PROPS_CHANGED,
 
-    ///position and/or size changed.
-    ALG_MSG_RESIZED,
-
-    ///child position and/or size changed.
-    ALG_MSG_CHILD_RESIZED,
-
-    ///initialize size based on content.
-    ALG_MSG_SIZE_FROM_CONTENT,
-
-    ///set content according to size.
-    ALG_MSG_CONTENT_FROM_SIZE,
-
-    ///sent to parent when a child is added to the parent.
-    ALG_MSG_CHILD_INSERTED,
-
-    ///send to parent when a child is removed from a parent.
-    ALG_MSG_CHILD_REMOVED,
-
-    ///send to parent when a child changes z-order.
-    ALG_MSG_CHILD_Z_ORDER_CHANGED,
-
     ///paint widget.
     ALG_MSG_PAINT,
 

@@ -73,12 +73,6 @@ typedef struct ALG_WIDGET {
  *  -free: frees the widget structure using the free() function.
  *  -get prop: returns one of the widget properties.
  *  -set prop: sets one of the widget properties.
- *  - props changed: dispatches the resized message if any of width or height changes.
- *  - resized: sends the child resized message to parent, if there is a parent; otherwise, it sends a content from size message to the widget.
- *  - child resized: sends the size from content message to the widget.
- *  - child inserted: sends the size from content message to the widget.
- *  - child removed: sends the size from content message to the widget.
- *  - child changed z-order: sends the size from content message to the widget.
  *  - want focus: returns 1 (true).
  *  - descentant got/lost focus: sets/resets the active flag for the widget.
  *  - hit test: checks if point within the widget rectangle.
@@ -535,20 +529,6 @@ int alg_is_widget_focused(ALG_WIDGET* wgt);
  * @return non-zero if the widget lost/got the focus, zero otherwise.
  */
 int alg_set_widget_focused(ALG_WIDGET* wgt, int focused);
-
-
-/**
- * Does layout management.
- * 
- * Firstly, it sends the message ALG_MSG_SIZE_FROM_CONTENT to every child widget,
- * allowing parent widgets to size themselves according to their children.
- * 
- * Secondly, it sends the message ALG_MSG_CONTENT_FROM_SIZE to every parent widget,
- * allowing parent widgets to set a layout for their children.
- * 
- * @param wgt root of the tree to layout.
- */
-void alg_manage_layout(ALG_WIDGET* wgt);
 
 
 /**

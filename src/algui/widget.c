@@ -467,24 +467,6 @@ static void reset_highlighted(ALG_WIDGET* wgt) {
 }
 
 
-//sends message size from content, to children first
-static void size_from_content(ALG_WIDGET* wgt) {
-    for (ALG_WIDGET* child = alg_get_first_child_widget(wgt); child; child = alg_get_next_sibling_widget(child)) {
-        size_from_content(child);
-    }
-    alg_send_message(wgt, ALG_MSG_SIZE_FROM_CONTENT, NULL);
-}
-
-
-//sends message content from size, to parent first
-static void content_from_size(ALG_WIDGET* wgt) {
-    alg_send_message(wgt, ALG_MSG_CONTENT_FROM_SIZE, NULL);
-    for (ALG_WIDGET* child = alg_get_first_child_widget(wgt); child; child = alg_get_next_sibling_widget(child)) {
-        content_from_size(child);
-    }
-}
-
-
 //the default widget proc
 uintptr_t alg_widget_proc(ALG_WIDGET* wgt, int id, void* data) {
     assert(wgt);
@@ -507,39 +489,6 @@ uintptr_t alg_widget_proc(ALG_WIDGET* wgt, int id, void* data) {
 
         case ALG_MSG_SET_PROP:
             return set_prop(wgt, (ALG_DATA_PROP*)data);
-
-        case ALG_MSG_PROPS_CHANGED: {
-            ALG_DATA_PROPS_CHANGED* props_changed = (ALG_DATA_PROPS_CHANGED*)data;
-            if (alg_test_bitvector_bits(&props_changed->props_changed_bits, ALG_PROP_WIDTH, ALG_PROP_HEIGHT, 0)) {
-                return alg_send_message(wgt, ALG_MSG_RESIZED, NULL);
-            }
-            break;
-        }
-
-        case ALG_MSG_RESIZED: {
-            ALG_WIDGET* parent = alg_get_parent_widget(wgt);
-            if (parent) {
-                return alg_send_message(parent, ALG_MSG_CHILD_RESIZED, wgt);
-            }
-            else {
-                content_from_size(wgt);
-            }
-            break;
-        }
-
-        case ALG_MSG_CHILD_RESIZED: 
-        case ALG_MSG_CHILD_INSERTED:
-        case ALG_MSG_CHILD_REMOVED:
-        case ALG_MSG_CHILD_Z_ORDER_CHANGED:
-        {
-            int w = wgt->width;
-            int h = wgt->height;
-            int r = alg_send_message(wgt, ALG_MSG_SIZE_FROM_CONTENT, data);
-            if (wgt->width == w && wgt->height == h) {
-                content_from_size(wgt);
-            }
-            return r;
-        }
 
         case ALG_MSG_WANT_FOCUS:
             return 1;
@@ -787,7 +736,6 @@ void alg_insert_widget(ALG_WIDGET* parent, ALG_WIDGET* child, int z_order) {
     assert(parent);
     assert(child);
     alg_insert_tree(&parent->tree, &child->tree, z_order);
-    alg_send_message(parent, ALG_MSG_CHILD_INSERTED, child);
 }
 
 
@@ -809,13 +757,8 @@ void alg_set_widget_z_order(ALG_WIDGET* wgt, int z_order) {
     assert(wgt);
     ALG_WIDGET* parent = alg_get_parent_widget(wgt);
     if (parent) {
-        ALG_WIDGET* prev = alg_get_prev_sibling_widget(wgt);
-        ALG_WIDGET* next = alg_get_next_sibling_widget(wgt);
         alg_remove_tree(&wgt->tree);
         alg_insert_tree(&parent->tree, &wgt->tree, z_order);
-        if (alg_get_prev_sibling_widget(wgt) != prev || alg_get_next_sibling_widget(wgt) != next) {
-            alg_send_message(parent, ALG_MSG_CHILD_Z_ORDER_CHANGED, wgt);
-        }
     }
 }
 
@@ -826,7 +769,6 @@ void alg_remove_widget(ALG_WIDGET* wgt) {
     ALG_WIDGET* parent = alg_get_parent_widget(wgt);
     if (parent) {
         alg_remove_tree(&wgt->tree);
-        alg_send_message(parent, ALG_MSG_CHILD_REMOVED, wgt);
     }
 }
 
@@ -1131,14 +1073,6 @@ int alg_set_widget_focused(ALG_WIDGET* wgt, int focused) {
     assert(wgt);
     alg_set_widget_properties(wgt, ALG_PROP_FOCUSED, focused, ALG_PROP_NULL);
     return wgt->focused == focused;
-}
-
-
-//manage layout
-void alg_manage_layout(ALG_WIDGET* wgt) {
-    assert(wgt);
-    size_from_content(wgt);
-    content_from_size(wgt);
 }
 
 

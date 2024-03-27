@@ -26,13 +26,6 @@ static void init() {
         alg_add_enum_value(&msg_enum, ALG_MSG_GET_PROP             , "ALG_MSG_GET_PROP"             );
         alg_add_enum_value(&msg_enum, ALG_MSG_SET_PROP             , "ALG_MSG_SET_PROP"             );
         alg_add_enum_value(&msg_enum, ALG_MSG_PROPS_CHANGED        , "ALG_MSG_PROPS_CHANGED"        );
-        alg_add_enum_value(&msg_enum, ALG_MSG_RESIZED              , "ALG_MSG_RESIZED"              );
-        alg_add_enum_value(&msg_enum, ALG_MSG_CHILD_RESIZED        , "ALG_MSG_CHILD_RESIZED"        );
-        alg_add_enum_value(&msg_enum, ALG_MSG_SIZE_FROM_CONTENT    , "ALG_MSG_SIZE_FROM_CONTENT"    );
-        alg_add_enum_value(&msg_enum, ALG_MSG_CONTENT_FROM_SIZE    , "ALG_MSG_CONTENT_FROM_SIZE"    );
-        alg_add_enum_value(&msg_enum, ALG_MSG_CHILD_INSERTED       , "ALG_MSG_CHILD_INSERTED"       );
-        alg_add_enum_value(&msg_enum, ALG_MSG_CHILD_REMOVED        , "ALG_MSG_CHILD_REMOVED"        );
-        alg_add_enum_value(&msg_enum, ALG_MSG_CHILD_Z_ORDER_CHANGED, "ALG_MSG_CHILD_Z_ORDER_CHANGED");
         alg_add_enum_value(&msg_enum, ALG_MSG_PAINT                , "ALG_MSG_PAINT"                );
         alg_add_enum_value(&msg_enum, ALG_MSG_WANT_FOCUS           , "ALG_MSG_WANT_FOCUS"           );
         alg_add_enum_value(&msg_enum, ALG_MSG_GOT_FOCUS            , "ALG_MSG_GOT_FOCUS"            );
