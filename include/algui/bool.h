@@ -8,7 +8,7 @@
 #define ALGUI_TRUE 1
 
 
-typedef int ALGUI_BOOL;
+typedef unsigned ALGUI_BOOL;
 
 
 #endif //ALGUI_BOOL_H

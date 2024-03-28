@@ -222,7 +222,7 @@ size_t algui_find_array_element_index(const ALGUI_ARRAY* array, size_t start_ind
     const char* array_end = array->data + array->element_size * array->size;
 
     //find element by comparator or by memcmp
-    if (compare) {
+    if (compare != NULL) {
         for (const char* array_element = array->data + array->element_size * start_index; array_element < array_end; array_element += array->element_size, ++start_index) {
             if (compare(array_element, element) == 0) {
                 return start_index;
@@ -268,7 +268,7 @@ size_t algui_find_array_element_index_reverse(const ALGUI_ARRAY* array, size_t s
     }
 
     //find element by comparator or by memcmp
-    if (compare) {
+    if (compare != NULL) {
         for (const char* array_element = array->data + array->element_size * start_index; array_element >= array->data; array_element -= array->element_size, --start_index) {
             if (compare(array_element, element) == 0) {
                 return start_index;
@@ -408,8 +408,10 @@ ALGUI_BOOL algui_remove_array_elements(ALGUI_ARRAY* array, size_t index, size_t 
         return ALGUI_TRUE;
     }
 
+    char* rem_pos = array->data + array->element_size * index;
+
     //move the data
-    memmove(array->data + array->element_size * index, array->data + array->element_size * (index + count), array->element_size * (array->size - index - count));
+    memmove(rem_pos, rem_pos + array->element_size * count, array->element_size * (array->size - index - count));
 
     //shrink the array
     array->size -= count;

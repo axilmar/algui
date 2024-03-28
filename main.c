@@ -8,6 +8,9 @@
 //#include "algui/minmax.h"
 
 
+extern void algui_run_tests();
+
+
 static ALLEGRO_FONT* test_font;
 
 
@@ -208,6 +211,10 @@ ALG_WIDGET* create_test(const char* id, ALG_WIDGET* parent, int x, int y, int w,
 
 int main(int argc, const char* argv[])
 {
+    algui_run_tests();
+    system("pause");
+    return 0;
+
     ALLEGRO_DISPLAY* display;
     ALLEGRO_EVENT_QUEUE* queue;
     ALLEGRO_TIMER* timer;
