@@ -32,7 +32,7 @@ ALGUI_BOOL algui_set_array_size(ALGUI_ARRAY* array, size_t size);
 void* algui_get_array_element(const ALGUI_ARRAY* array, size_t index);
 
 
-ALGUI_BOOL algui_set_array_element(ALGUI_ARRAY* array, size_t index, void* element);
+ALGUI_BOOL algui_set_array_element(ALGUI_ARRAY* array, size_t index, const void* element);
 
 
 size_t algui_get_array_element_index(const ALGUI_ARRAY* array, const void* element);
@@ -41,7 +41,7 @@ size_t algui_get_array_element_index(const ALGUI_ARRAY* array, const void* eleme
 size_t algui_find_array_element_index(const ALGUI_ARRAY* array, size_t start_index, const void* element, ALGUI_COMPARATOR compare);
 
 
-size_t algui_find_array_element_index_reverse(const ALGUI_ARRAY* array, size_t start_index, void* element, ALGUI_COMPARATOR compare);
+size_t algui_find_array_element_index_reverse(const ALGUI_ARRAY* array, size_t start_index, const void* element, ALGUI_COMPARATOR compare);
 
 
 void* algui_find_array_element(const ALGUI_ARRAY* array, size_t start_index, const void* element, ALGUI_COMPARATOR compare);
