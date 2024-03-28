@@ -5,6 +5,9 @@
 #include <stddef.h>
 
 
+/**
+ * Invalid index value.
+ */
 #define ALGUI_INVALID_INDEX ((size_t)-1)
 
 

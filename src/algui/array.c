@@ -173,7 +173,7 @@ ALGUI_BOOL algui_set_array_element(ALGUI_ARRAY* array, size_t index, const void*
     }
 
     //copy the element
-    memcpy(array->data + array->element_size * index, element, array->element_size);
+    memmove(array->data + array->element_size * index, element, array->element_size);
 
     //success
     return ALGUI_TRUE;
@@ -348,7 +348,7 @@ ALGUI_BOOL algui_insert_array_elements(ALGUI_ARRAY* array, size_t index, const v
     memmove(ins_pos + array->element_size * count, ins_pos, array->element_size * (array->size - index));
 
     //copy the elements
-    memcpy(ins_pos, element, array->element_size * count);
+    memmove(ins_pos, element, array->element_size * count);
 
     //save the new data
     array->data = new_data;
