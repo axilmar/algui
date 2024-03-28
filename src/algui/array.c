@@ -296,7 +296,7 @@ void* algui_find_array_element(const ALGUI_ARRAY* array, size_t start_index, con
 
 
 //find array element in reverse order
-void* algui_find_array_element_reverse(const ALGUI_ARRAY* array, size_t start_index, void* element, ALGUI_COMPARATOR compare) {
+void* algui_find_array_element_reverse(const ALGUI_ARRAY* array, size_t start_index, const void* element, ALGUI_COMPARATOR compare) {
     const size_t index = algui_find_array_element_index_reverse(array, start_index, element, compare);
     return algui_get_array_element(array, index);
 }
@@ -308,11 +308,6 @@ ALGUI_BOOL algui_insert_array_elements(ALGUI_ARRAY* array, size_t index, const v
     if (array == NULL) {
         errno = EINVAL;
         return ALGUI_FALSE;
-    }
-
-    //check the count
-    if (count == 0) {
-        return ALGUI_TRUE;
     }
 
     //the element cannot be null
@@ -332,6 +327,11 @@ ALGUI_BOOL algui_insert_array_elements(ALGUI_ARRAY* array, size_t index, const v
         return ALGUI_FALSE;
     }
     
+    //check the count
+    if (count == 0) {
+        return ALGUI_TRUE;
+    }
+
     //allocate room for the new data
     char* new_data = realloc(array->data, array->element_size * (array->size + count));
 
@@ -373,7 +373,7 @@ ALGUI_BOOL algui_append_array_elements(ALGUI_ARRAY* array, const void* element, 
 
 //insert one element
 ALGUI_BOOL algui_insert_array_element(ALGUI_ARRAY* array, size_t index, const void* element) {
-    return algui_insert_array_elements(array, 0, element, 1);
+    return algui_insert_array_elements(array, index, element, 1);
 }
 
 

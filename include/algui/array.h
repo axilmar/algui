@@ -47,7 +47,7 @@ size_t algui_find_array_element_index_reverse(const ALGUI_ARRAY* array, size_t s
 void* algui_find_array_element(const ALGUI_ARRAY* array, size_t start_index, const void* element, ALGUI_COMPARATOR compare);
 
 
-void* algui_find_array_element_reverse(const ALGUI_ARRAY* array, size_t start_index, void* element, ALGUI_COMPARATOR compare);
+void* algui_find_array_element_reverse(const ALGUI_ARRAY* array, size_t start_index, const void* element, ALGUI_COMPARATOR compare);
 
 
 ALGUI_BOOL algui_insert_array_elements(ALGUI_ARRAY* array, size_t index, const void* element, size_t count);

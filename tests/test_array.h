@@ -3,7 +3,7 @@
 #include "util.h"
 
 
-static ALGUI_BOOL test_init_array(void* data) {
+static ALGUI_BOOL test_init_array(void* external_data) {
     //test null array
     {
         ALGUI_ENSURE(algui_init_array(NULL, 4, 4) == ALGUI_FALSE);
@@ -44,7 +44,7 @@ static ALGUI_BOOL test_init_array(void* data) {
 }
 
 
-static ALGUI_BOOL test_cleanup_array(void* data) {
+static ALGUI_BOOL test_cleanup_array(void* external_data) {
     //test null array
     {
         ALGUI_ENSURE(algui_cleanup_array(NULL) == ALGUI_FALSE);
@@ -78,7 +78,7 @@ static ALGUI_BOOL test_cleanup_array(void* data) {
 }
 
 
-static ALGUI_BOOL test_get_array_element_size(void* data) {
+static ALGUI_BOOL test_get_array_element_size(void* external_data) {
     //test null array
     {
         ALGUI_ENSURE(algui_get_array_element_size(NULL) == (size_t)-1);
@@ -97,7 +97,7 @@ static ALGUI_BOOL test_get_array_element_size(void* data) {
 }
 
 
-static ALGUI_BOOL test_get_array_size(void* data) {
+static ALGUI_BOOL test_get_array_size(void* external_data) {
     //test null array
     {
         ALGUI_ENSURE(algui_get_array_size(NULL) == (size_t)-1);
@@ -125,7 +125,7 @@ static ALGUI_BOOL test_get_array_size(void* data) {
 }
 
 
-static ALGUI_BOOL test_set_array_size(void* data) {
+static ALGUI_BOOL test_set_array_size(void* external_data) {
     //set size of null array
     {
         ALGUI_ENSURE(algui_set_array_size(NULL, 0) == ALGUI_FALSE);
@@ -212,7 +212,7 @@ static ALGUI_BOOL test_set_array_size(void* data) {
 }
 
 
-static ALGUI_BOOL test_get_array_element(void* data) {
+static ALGUI_BOOL test_get_array_element(void* external_data) {
     //get element of null array
     {
         ALGUI_ENSURE(algui_get_array_element(NULL, 0) == ALGUI_FALSE);
@@ -250,7 +250,7 @@ static ALGUI_BOOL test_get_array_element(void* data) {
 }
 
 
-static ALGUI_BOOL test_set_array_element(void* data) {
+static ALGUI_BOOL test_set_array_element(void* external_data) {
     //set array element for null array
     {
         int v = 0;
@@ -301,7 +301,7 @@ static ALGUI_BOOL test_set_array_element(void* data) {
 }
 
 
-static ALGUI_BOOL test_get_array_element_index(void* data) {
+static ALGUI_BOOL test_get_array_element_index(void* external_data) {
     //get element index for null array
     {
         int v = 0;
@@ -342,7 +342,7 @@ static ALGUI_BOOL test_get_array_element_index(void* data) {
 }
 
 
-static ALGUI_BOOL test_find_array_element_index(void* data) {
+static ALGUI_BOOL test_find_array_element_index(void* external_data) {
     //find null array element index 
     {
         int v = 0;
@@ -398,7 +398,7 @@ static ALGUI_BOOL test_find_array_element_index(void* data) {
 }
 
 
-static ALGUI_BOOL test_find_array_element_index_reverse(void* data) {
+static ALGUI_BOOL test_find_array_element_index_reverse(void* external_data) {
     //find null array element index 
     {
         int v = 0;
@@ -460,6 +460,381 @@ static ALGUI_BOOL test_find_array_element_index_reverse(void* data) {
 }
 
 
+static ALGUI_BOOL test_find_array_element(void* external_data) {
+    //find null array element index 
+    {
+        int v = 0;
+        ALGUI_ENSURE(algui_find_array_element(NULL, 0, &v, int_comparator) == NULL);
+        ALGUI_ENSURE(algui_find_array_element(NULL, 0, &v, NULL) == NULL);
+    }
+
+    //find empty array element index 
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 0);
+        ALGUI_ENSURE(algui_find_array_element(&array, 0, NULL, int_comparator) == NULL);
+        ALGUI_ENSURE(algui_find_array_element(&array, 0, NULL, NULL) == NULL);
+        int v = 0;
+        ALGUI_ENSURE(algui_find_array_element(&array, 0, &v, int_comparator) == NULL);
+        ALGUI_ENSURE(algui_find_array_element(&array, 0, &v, NULL) == NULL);
+    }
+
+    //find non-empty array element index from start
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 8);
+        for (size_t i = 0; i < array.size; ++i) {
+            const int v = (int)i;
+            algui_set_array_element(&array, i, &v);
+        }
+        for (size_t i = 0; i < array.size; ++i) {
+            const int v = (int)i;
+            ALGUI_ENSURE(algui_find_array_element(&array, 0, &v, int_comparator) == array.data + array.element_size * i);
+            ALGUI_ENSURE(algui_find_array_element(&array, 0, &v, NULL) == array.data + array.element_size * i);
+        }
+    }
+
+    //find non-empty array element index from non-start
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 8);
+        for (size_t i = 0; i < array.size; ++i) {
+            const int v = (int)i;
+            algui_set_array_element(&array, i, &v);
+        }
+        for (size_t i = 5; i < array.size; ++i) {
+            const int v1 = (int)i - 5;
+            ALGUI_ENSURE(algui_find_array_element(&array, 5, &v1, int_comparator) == NULL);
+            ALGUI_ENSURE(algui_find_array_element(&array, 5, &v1, NULL) == NULL);
+            const int v2 = (int)i;
+            ALGUI_ENSURE(algui_find_array_element(&array, 5, &v2, int_comparator) == array.data + array.element_size * i);
+            ALGUI_ENSURE(algui_find_array_element(&array, 5, &v2, NULL) == array.data + array.element_size * i);
+        }
+    }
+
+    return ALGUI_TRUE;
+}
+
+
+static ALGUI_BOOL test_find_array_element_reverse(void* external_data) {
+    //find null array element index 
+    {
+        int v = 0;
+        ALGUI_ENSURE(algui_find_array_element_reverse(NULL, 0, &v, int_comparator) == NULL);
+        ALGUI_ENSURE(algui_find_array_element_reverse(NULL, 0, &v, NULL) == NULL);
+        ALGUI_ENSURE(algui_find_array_element_reverse(NULL, -1, &v, int_comparator) == NULL);
+        ALGUI_ENSURE(algui_find_array_element_reverse(NULL, -1, &v, NULL) == NULL);
+    }
+
+    //find empty array element index 
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 0);
+        ALGUI_ENSURE(algui_find_array_element_reverse(&array, 0, NULL, int_comparator) == NULL);
+        ALGUI_ENSURE(algui_find_array_element_reverse(&array, 0, NULL, NULL) == NULL);
+        ALGUI_ENSURE(algui_find_array_element_reverse(&array, -1, NULL, int_comparator) == NULL);
+        ALGUI_ENSURE(algui_find_array_element_reverse(&array, -1, NULL, NULL) == NULL);
+        int v = 0;
+        ALGUI_ENSURE(algui_find_array_element_reverse(&array, 0, &v, int_comparator) == NULL);
+        ALGUI_ENSURE(algui_find_array_element_reverse(&array, 0, &v, NULL) == NULL);
+        ALGUI_ENSURE(algui_find_array_element_reverse(&array, -1, &v, int_comparator) == NULL);
+        ALGUI_ENSURE(algui_find_array_element_reverse(&array, -1, &v, NULL) == NULL);
+    }
+
+    //find non-empty array element index from start
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 8);
+        for (size_t i = 0; i < array.size; ++i) {
+            const int v = (int)i;
+            algui_set_array_element(&array, i, &v);
+        }
+        for (size_t i = 0; i < array.size; ++i) {
+            const int v = (int)i;
+            ALGUI_ENSURE(algui_find_array_element_reverse(&array, -1, &v, int_comparator) == array.data + array.element_size * i);
+            ALGUI_ENSURE(algui_find_array_element_reverse(&array, -1, &v, NULL) == array.data + array.element_size * i);
+        }
+    }
+
+    //find non-empty array element index from non-start
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 8);
+        for (size_t i = 0; i < array.size; ++i) {
+            const int v = (int)i;
+            algui_set_array_element(&array, i, &v);
+        }
+        for (size_t i = 0; i < 5; ++i) {
+            const int v1 = (int)i;
+            ALGUI_ENSURE(algui_find_array_element_reverse(&array, 4, &v1, int_comparator) == array.data + array.element_size * i);
+            ALGUI_ENSURE(algui_find_array_element_reverse(&array, 4, &v1, NULL) == array.data + array.element_size * i);
+            const int v2 = (int)i + 5;
+            ALGUI_ENSURE(algui_find_array_element_reverse(&array, 4, &v2, int_comparator) == NULL);
+            ALGUI_ENSURE(algui_find_array_element_reverse(&array, 4, &v2, NULL) == NULL);
+        }
+    }
+
+    return ALGUI_TRUE;
+}
+
+
+static ALGUI_BOOL test_insert_array_elements(void* external_data) {
+    const int test_data[3] = { 1, 2, 3 };
+    const size_t test_data_size = sizeof(test_data) / sizeof(int);
+
+    //insert into null array
+    {
+        ALGUI_ENSURE(algui_insert_array_elements(NULL, 0, test_data, test_data_size) == ALGUI_FALSE);
+        ALGUI_ENSURE(algui_insert_array_elements(NULL, 0, test_data, 0) == ALGUI_FALSE);
+        ALGUI_ENSURE(algui_insert_array_elements(NULL, 0, NULL, test_data_size) == ALGUI_FALSE);
+        ALGUI_ENSURE(algui_insert_array_elements(NULL, 0, NULL, 0) == ALGUI_FALSE);
+    }
+
+    //insert null test_data into empty array
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 0);
+        void* test_data = array.data;
+        size_t size = array.size;
+        ALGUI_ENSURE(algui_insert_array_elements(&array, 0, NULL, test_data_size) == ALGUI_FALSE);
+        ALGUI_ENSURE(algui_insert_array_elements(&array, 0, NULL, 0) == ALGUI_FALSE);
+        ALGUI_ENSURE(array.data == test_data);
+        ALGUI_ENSURE(array.size == size);
+    }
+
+    //insert zero length test_data into empty array
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 0);
+        void* test_data = array.data;
+        size_t size = array.size;
+        ALGUI_ENSURE(algui_insert_array_elements(&array, 0, test_data, 0) == ALGUI_FALSE);
+        ALGUI_ENSURE(array.data == test_data);
+        ALGUI_ENSURE(array.size == size);
+    }
+
+    //insert test_data into empty array
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 0);
+        ALGUI_ENSURE(algui_insert_array_elements(&array, 0, test_data, test_data_size) == ALGUI_TRUE);
+        ALGUI_ENSURE(array.data != NULL);
+        ALGUI_ENSURE(array.size == test_data_size);
+        for (size_t i = 0; i < test_data_size; ++i) {
+            ALGUI_ENSURE(*(int*)algui_get_array_element(&array, i) == test_data[i]);
+        }
+        algui_cleanup_array(&array);
+    }
+
+    //insert test_data into empty array last position
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 0);
+        ALGUI_ENSURE(algui_insert_array_elements(&array, -1, test_data, test_data_size) == ALGUI_TRUE);
+        ALGUI_ENSURE(array.data != NULL);
+        ALGUI_ENSURE(array.size == test_data_size);
+        for (size_t i = 0; i < test_data_size; ++i) {
+            ALGUI_ENSURE(*(int*)algui_get_array_element(&array, i) == test_data[i]);
+        }
+        algui_cleanup_array(&array);
+    }
+
+    //insert test_data into empty array last position index
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 0);
+        ALGUI_ENSURE(algui_insert_array_elements(&array, array.size, test_data, test_data_size) == ALGUI_TRUE);
+        ALGUI_ENSURE(array.data != NULL);
+        ALGUI_ENSURE(array.size == test_data_size);
+        for (size_t i = 0; i < test_data_size; ++i) {
+            ALGUI_ENSURE(*(int*)algui_get_array_element(&array, i) == test_data[i]);
+        }
+        algui_cleanup_array(&array);
+    }
+
+    //insert test_data into empty array invalid position index
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 0);
+        ALGUI_ENSURE(algui_insert_array_elements(&array, array.size + 1, test_data, test_data_size) == ALGUI_FALSE);
+        ALGUI_ENSURE(array.data == NULL);
+        ALGUI_ENSURE(array.size == 0);
+    }
+
+    //insert data into non-empty array at beginning
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 8);
+        const size_t insertion_pos = 0;
+        ALGUI_ENSURE(algui_insert_array_elements(&array, insertion_pos, test_data, test_data_size) == ALGUI_TRUE);
+        ALGUI_ENSURE(array.data != NULL);
+        ALGUI_ENSURE(array.size == 8 + test_data_size);
+        for (size_t i = 0; i < test_data_size; ++i) {
+            ALGUI_ENSURE(*(int*)algui_get_array_element(&array, insertion_pos + i) == test_data[i]);
+        }
+        algui_cleanup_array(&array);
+    }
+
+    //insert data into non-empty array in the middle
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 8);
+        const size_t insertion_pos = array.size / 2;
+        ALGUI_ENSURE(algui_insert_array_elements(&array, insertion_pos, test_data, test_data_size) == ALGUI_TRUE);
+        ALGUI_ENSURE(array.data != NULL);
+        ALGUI_ENSURE(array.size == 8 + test_data_size);
+        for (size_t i = 0; i < test_data_size; ++i) {
+            ALGUI_ENSURE(*(int*)algui_get_array_element(&array, insertion_pos + i) == test_data[i]);
+        }
+        algui_cleanup_array(&array);
+    }
+
+    //insert data into non-empty array in the end
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 8);
+        const size_t insertion_pos = array.size;
+        ALGUI_ENSURE(algui_insert_array_elements(&array, -1, test_data, test_data_size) == ALGUI_TRUE);
+        ALGUI_ENSURE(array.data != NULL);
+        ALGUI_ENSURE(array.size == 8 + test_data_size);
+        for (size_t i = 0; i < test_data_size; ++i) {
+            ALGUI_ENSURE(*(int*)algui_get_array_element(&array, insertion_pos + i) == test_data[i]);
+        }
+        algui_cleanup_array(&array);
+    }
+
+    //insert data into non-empty array in the end index
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 8);
+        const size_t insertion_pos = array.size;
+        ALGUI_ENSURE(algui_insert_array_elements(&array, insertion_pos, test_data, test_data_size) == ALGUI_TRUE);
+        ALGUI_ENSURE(array.data != NULL);
+        ALGUI_ENSURE(array.size == 8 + test_data_size);
+        for (size_t i = 0; i < test_data_size; ++i) {
+            ALGUI_ENSURE(*(int*)algui_get_array_element(&array, insertion_pos + i) == test_data[i]);
+        }
+        algui_cleanup_array(&array);
+    }
+
+    return ALGUI_TRUE;
+}
+
+
+static ALGUI_BOOL test_insert_array_element(void* external_data) {
+    const int test_data[3] = { 1, 2, 3 };
+
+    //insert into null array
+    {
+        ALGUI_ENSURE(algui_insert_array_element(NULL, 0, test_data) == ALGUI_FALSE);
+        ALGUI_ENSURE(algui_insert_array_element(NULL, 0, NULL) == ALGUI_FALSE);
+    }
+
+    //insert null test_data into empty array
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 0);
+        void* test_data = array.data;
+        size_t size = array.size;
+        ALGUI_ENSURE(algui_insert_array_element(&array, 0, NULL) == ALGUI_FALSE);
+        ALGUI_ENSURE(array.data == test_data);
+        ALGUI_ENSURE(array.size == size);
+    }
+
+    //insert test_data into empty array
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 0);
+        ALGUI_ENSURE(algui_insert_array_element(&array, 0, test_data) == ALGUI_TRUE);
+        ALGUI_ENSURE(array.data != NULL);
+        ALGUI_ENSURE(array.size == 1);
+        ALGUI_ENSURE(*(int*)algui_get_array_element(&array, 0) == test_data[0]);
+        algui_cleanup_array(&array);
+    }
+
+    //insert test_data into empty array last position
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 0);
+        ALGUI_ENSURE(algui_insert_array_element(&array, -1, test_data) == ALGUI_TRUE);
+        ALGUI_ENSURE(array.data != NULL);
+        ALGUI_ENSURE(array.size == 1);
+        ALGUI_ENSURE(*(int*)algui_get_array_element(&array, 0) == test_data[0]);
+        algui_cleanup_array(&array);
+    }
+
+    //insert test_data into empty array last position index
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 0);
+        ALGUI_ENSURE(algui_insert_array_element(&array, array.size, test_data) == ALGUI_TRUE);
+        ALGUI_ENSURE(array.data != NULL);
+        ALGUI_ENSURE(array.size == 1);
+        ALGUI_ENSURE(*(int*)algui_get_array_element(&array, 0) == test_data[0]);
+        algui_cleanup_array(&array);
+    }
+
+    //insert test_data into empty array invalid position index
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 0);
+        ALGUI_ENSURE(algui_insert_array_element(&array, array.size + 1, test_data) == ALGUI_FALSE);
+        ALGUI_ENSURE(array.data == NULL);
+        ALGUI_ENSURE(array.size == 0);
+    }
+
+    //insert data into non-empty array at beginning
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 8);
+        const size_t insertion_pos = 0;
+        ALGUI_ENSURE(algui_insert_array_element(&array, insertion_pos, test_data) == ALGUI_TRUE);
+        ALGUI_ENSURE(array.data != NULL);
+        ALGUI_ENSURE(array.size == 9);
+        ALGUI_ENSURE(*(int*)algui_get_array_element(&array, insertion_pos) == test_data[0]);
+        algui_cleanup_array(&array);
+    }
+
+    //insert data into non-empty array in the middle
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 8);
+        const size_t insertion_pos = array.size / 2;
+        ALGUI_ENSURE(algui_insert_array_element(&array, insertion_pos, test_data) == ALGUI_TRUE);
+        ALGUI_ENSURE(array.data != NULL);
+        ALGUI_ENSURE(array.size == 9);
+        ALGUI_ENSURE(*(int*)algui_get_array_element(&array, insertion_pos) == test_data[0]);
+        algui_cleanup_array(&array);
+    }
+
+    //insert data into non-empty array in the end
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 8);
+        const size_t insertion_pos = array.size;
+        ALGUI_ENSURE(algui_insert_array_element(&array, -1, test_data) == ALGUI_TRUE);
+        ALGUI_ENSURE(array.data != NULL);
+        ALGUI_ENSURE(array.size == 9);
+        ALGUI_ENSURE(*(int*)algui_get_array_element(&array, insertion_pos) == test_data[0]);
+        algui_cleanup_array(&array);
+    }
+
+    //insert data into non-empty array in the end index
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 8);
+        const size_t insertion_pos = array.size;
+        ALGUI_ENSURE(algui_insert_array_element(&array, insertion_pos, test_data) == ALGUI_TRUE);
+        ALGUI_ENSURE(array.data != NULL);
+        ALGUI_ENSURE(array.size == 9);
+        ALGUI_ENSURE(*(int*)algui_get_array_element(&array, insertion_pos) == test_data[0]);
+        algui_cleanup_array(&array);
+    }
+
+    return ALGUI_TRUE;
+}
+
+
 static void run_tests_array(ALGUI_TEST_STATISTICS* stats) {
     algui_do_test(stats, "algui_init_array", test_init_array, NULL);
     algui_do_test(stats, "algui_cleanup_array", test_cleanup_array, NULL);
@@ -471,4 +846,8 @@ static void run_tests_array(ALGUI_TEST_STATISTICS* stats) {
     algui_do_test(stats, "algui_get_array_element_index", test_get_array_element_index, NULL);
     algui_do_test(stats, "algui_find_array_element_index", test_find_array_element_index, NULL);
     algui_do_test(stats, "algui_find_array_element_index_reverse", test_find_array_element_index_reverse, NULL);
+    algui_do_test(stats, "algui_find_array_element", test_find_array_element, NULL);
+    algui_do_test(stats, "algui_find_array_element_reverse", test_find_array_element_reverse, NULL);
+    algui_do_test(stats, "algui_insert_array_elements", test_insert_array_elements, NULL);
+    algui_do_test(stats, "algui_insert_array_element", test_insert_array_element, NULL);
 }
