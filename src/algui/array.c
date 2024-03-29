@@ -240,7 +240,7 @@ void* algui_get_array_element(const ALGUI_ARRAY* array, size_t index) {
     }
 
     //return element at specific position
-    return array->data + array->element_size * index;
+    return ALGUI_GET_ARRAY_ELEMENT_UTIL(char, array->data, array->element_size, index);
 }
 
 
@@ -569,4 +569,112 @@ size_t algui_find_array_element_index_binary_search(ALGUI_ARRAY* array, const vo
 //binary search element
 void* algui_find_array_element_binary_search(ALGUI_ARRAY* array, const void* element, ALGUI_COMPARATOR compare) {
     return algui_get_array_element(array, algui_find_array_element_index_binary_search(array, element, compare));
+}
+
+
+//Invokes a callback for each array element within a range.
+uintptr_t algui_for_each_array_element_in_range(ALGUI_ARRAY* array, size_t index, size_t count, uintptr_t(*func)(size_t index, void* elem, void* data), void* data) {
+    //check the array
+    if (array == NULL) {
+        errno = EINVAL;
+        return (uintptr_t)NULL;
+    }
+
+    //check the index
+    if (index >= array->size) {
+        errno = EINVAL;
+        return (uintptr_t)NULL;
+    }
+
+    //if count == -1, set count tp size
+    if (count == (size_t)-1) {
+        count = array->size;
+    }
+
+    //else check index + count
+    else if (index + count > array->size) {
+        errno = EINVAL;
+        return (uintptr_t)NULL;
+    }
+
+    //check the func
+    if (func == NULL) {
+        errno = EINVAL;
+        return (uintptr_t)NULL;
+    }
+
+    //loop
+    for (size_t i = index; i < index + count; ++i) {
+        const uintptr_t res = func(i, ALGUI_GET_ARRAY_ELEMENT_UTIL(char, array->data, array->element_size, i), data);
+        if (res != (uintptr_t)NULL) {
+            return res;
+        }
+    }
+
+    //not found
+    return (uintptr_t)NULL;
+}
+
+
+//Invokes a callback for each array element within an array.
+uintptr_t algui_for_each_array_element(ALGUI_ARRAY* array, uintptr_t(*func)(size_t index, void* elem, void* data), void* data) {
+    if (array == NULL) {
+        errno = EINVAL;
+        return (uintptr_t)NULL;
+    }
+    return algui_for_each_array_element_in_range(array, 0, array->size, func, data);
+}
+
+
+//Invokes a callback for each array element within a range, in reverse order.
+uintptr_t algui_for_each_array_element_in_range_reverse(ALGUI_ARRAY* array, size_t index, size_t count, uintptr_t(*func)(size_t index, void* elem, void* data), void* data) {
+    //check the array
+    if (array == NULL) {
+        errno = EINVAL;
+        return (uintptr_t)NULL;
+    }
+
+    //check the index
+    if (index >= array->size) {
+        errno = EINVAL;
+        return (uintptr_t)NULL;
+    }
+
+    //if count == -1, set count tp size
+    if (count == (size_t)-1) {
+        count = array->size;
+    }
+
+    //else check index + count
+    else if (index + count > array->size) {
+        errno = EINVAL;
+        return (uintptr_t)NULL;
+    }
+
+    //check the func
+    if (func == NULL) {
+        errno = EINVAL;
+        return (uintptr_t)NULL;
+    }
+
+    //loop
+    for (size_t i = index + count; i > index; --i) {
+        const uintptr_t res = func(i, ALGUI_GET_ARRAY_ELEMENT_UTIL(char, array->data, array->element_size, i - 1), data);
+        if (res != (uintptr_t)NULL) {
+            return res;
+        }
+    }
+
+    //not found
+    return (uintptr_t)NULL;
+}
+
+
+//Invokes a callback for each array element within an array, in reverse order.
+uintptr_t algui_for_each_array_element_reverse(ALGUI_ARRAY* array, uintptr_t(*func)(size_t index, void* elem, void* data), void* data) {
+    if (array == NULL) {
+        errno = EINVAL;
+        return (uintptr_t)NULL;
+    }
+    return algui_for_each_array_element_in_range_reverse(array, 0, array->size, func, data);
 }

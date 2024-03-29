@@ -17,10 +17,26 @@ static int int_comparator_reverse(const void* a, const void* b) {
 }
 
 
+//returns random double between 0 and 1
+static double rnd() {
+    return (double)rand() / RAND_MAX;
+}
+
+
 //random integer within the given range
 static int random_int(int min, int max) {
     int len = max - min;
-    return min + (int)(rand() * (double)len);
+    return min + (int)(rnd() * len);
+}
+
+
+//sum int array
+static int sum_int_array(const int* data, size_t size) {
+    int result = 0;
+    for (size_t i = 0; i < size; ++i) {
+        result += data[i];
+    }
+    return result;
 }
 
 

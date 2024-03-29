@@ -8,6 +8,19 @@
 
 
 /**
+ * Macro that computes the element address from data, element size, and index.
+ * No checks are performed.
+ * @param TYPE type to cast the address to.
+ * @param DATA array base.
+ * @param ELEMENT_SIZE element size.
+ * @param INDEX index.
+ * @return element at the given index.
+ */
+#define ALGUI_GET_ARRAY_ELEMENT_UTIL(TYPE, DATA, ELEMENT_SIZE, INDEX)\
+    ((TYPE*)(((char *)(DATA)) + ((ELEMENT_SIZE) * (INDEX))))
+
+
+/**
  * Performs a binary search into the given array, which must be sorted prior to this call; returns index of element found.
  * If duplicates exist in the array, then it returns the index to the rightmost element.
  * @param data pointer to array data to search; if null, it returns ALGUI_INVALID_INDEX and sets errno to EINVAL.

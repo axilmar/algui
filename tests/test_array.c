@@ -1394,7 +1394,181 @@ static ALGUI_BOOL test_find_array_element_index_binary_search(void* external_dat
 }
 
 
-static void run_tests_array(ALGUI_TEST_STATISTICS* stats) {
+static uintptr_t sum_array_elements_callback(size_t index, void* elem, void* data) {
+    *(int*)data += *(int*)elem;
+    return (uintptr_t)NULL;
+}
+
+
+static ALGUI_BOOL test_for_each_array_element_in_range(void* external_data) {
+    const int test_data[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    const int test_data_size = sizeof(test_data) / sizeof(int);
+    const int test_sum = sum_int_array(test_data, test_data_size);
+    int sum = 0;
+
+    //test null array
+    {
+        ALGUI_ENSURE_ERROR(algui_for_each_array_element_in_range(NULL, 0, 1, sum_array_elements_callback, &sum) == (uintptr_t)NULL, EINVAL);
+    }
+
+    //test invalid index
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 10);
+        ALGUI_ENSURE_ERROR(algui_for_each_array_element_in_range(&array, 10, 1, sum_array_elements_callback, &sum) == (uintptr_t)NULL, EINVAL);
+        algui_cleanup_array(&array);
+    }
+
+    //test invalid count
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 10);
+        ALGUI_ENSURE_ERROR(algui_for_each_array_element_in_range(&array, 0, 11, sum_array_elements_callback, &sum) == (uintptr_t)NULL, EINVAL);
+        algui_cleanup_array(&array);
+    }
+
+    //test null function
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 10);
+        ALGUI_ENSURE_ERROR(algui_for_each_array_element_in_range(&array, 0, 10, NULL, NULL) == (uintptr_t)NULL, EINVAL);
+        algui_cleanup_array(&array);
+    }
+
+    //test normal
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 10);
+        algui_set_array_elements(&array, 0, test_data, test_data_size);
+        sum = 0;
+        ALGUI_ENSURE_ERROR(algui_for_each_array_element_in_range(&array, 0, 10, sum_array_elements_callback, &sum) == (uintptr_t)NULL, 0);
+        ALGUI_ENSURE(sum == test_sum);
+        algui_cleanup_array(&array);
+    }
+
+    return ALGUI_TRUE;
+}
+
+
+static ALGUI_BOOL test_for_each_array_element(void* external_data) {
+    const int test_data[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    const int test_data_size = sizeof(test_data) / sizeof(int);
+    const int test_sum = sum_int_array(test_data, test_data_size);
+    int sum = 0;
+
+    //test null array
+    {
+        ALGUI_ENSURE_ERROR(algui_for_each_array_element(NULL, sum_array_elements_callback, &sum) == (uintptr_t)NULL, EINVAL);
+    }
+
+    //test null function
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 10);
+        ALGUI_ENSURE_ERROR(algui_for_each_array_element(&array, NULL, NULL) == (uintptr_t)NULL, EINVAL);
+        algui_cleanup_array(&array);
+    }
+
+    //test normal
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 10);
+        algui_set_array_elements(&array, 0, test_data, test_data_size);
+        sum = 0;
+        ALGUI_ENSURE_ERROR(algui_for_each_array_element(&array, sum_array_elements_callback, &sum) == (uintptr_t)NULL, 0);
+        ALGUI_ENSURE(sum == test_sum);
+        algui_cleanup_array(&array);
+    }
+
+    return ALGUI_TRUE;
+}
+
+
+static ALGUI_BOOL test_for_each_array_element_in_range_reverse(void* external_data) {
+    const int test_data[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    const int test_data_size = sizeof(test_data) / sizeof(int);
+    const int test_sum = sum_int_array(test_data, test_data_size);
+    int sum = 0;
+
+    //test null array
+    {
+        ALGUI_ENSURE_ERROR(algui_for_each_array_element_in_range_reverse(NULL, 0, 1, sum_array_elements_callback, &sum) == (uintptr_t)NULL, EINVAL);
+    }
+
+    //test invalid index
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 10);
+        ALGUI_ENSURE_ERROR(algui_for_each_array_element_in_range_reverse(&array, 10, 1, sum_array_elements_callback, &sum) == (uintptr_t)NULL, EINVAL);
+        algui_cleanup_array(&array);
+    }
+
+    //test invalid count
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 10);
+        ALGUI_ENSURE_ERROR(algui_for_each_array_element_in_range_reverse(&array, 0, 11, sum_array_elements_callback, &sum) == (uintptr_t)NULL, EINVAL);
+        algui_cleanup_array(&array);
+    }
+
+    //test null function
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 10);
+        ALGUI_ENSURE_ERROR(algui_for_each_array_element_in_range_reverse(&array, 0, 10, NULL, NULL) == (uintptr_t)NULL, EINVAL);
+        algui_cleanup_array(&array);
+    }
+
+    //test normal
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 10);
+        algui_set_array_elements(&array, 0, test_data, test_data_size);
+        sum = 0;
+        ALGUI_ENSURE_ERROR(algui_for_each_array_element_in_range_reverse(&array, 0, 10, sum_array_elements_callback, &sum) == (uintptr_t)NULL, 0);
+        ALGUI_ENSURE(sum == test_sum);
+        algui_cleanup_array(&array);
+    }
+
+    return ALGUI_TRUE;
+}
+
+
+static ALGUI_BOOL test_for_each_array_element_reverse(void* external_data) {
+    const int test_data[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    const int test_data_size = sizeof(test_data) / sizeof(int);
+    const int test_sum = sum_int_array(test_data, test_data_size);
+    int sum = 0;
+
+    //test null array
+    {
+        ALGUI_ENSURE_ERROR(algui_for_each_array_element_reverse(NULL, sum_array_elements_callback, &sum) == (uintptr_t)NULL, EINVAL);
+    }
+
+    //test null function
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 10);
+        ALGUI_ENSURE_ERROR(algui_for_each_array_element_reverse(&array, NULL, NULL) == (uintptr_t)NULL, EINVAL);
+        algui_cleanup_array(&array);
+    }
+
+    //test normal
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 10);
+        algui_set_array_elements(&array, 0, test_data, test_data_size);
+        sum = 0;
+        ALGUI_ENSURE_ERROR(algui_for_each_array_element_reverse(&array, sum_array_elements_callback, &sum) == (uintptr_t)NULL, 0);
+        ALGUI_ENSURE(sum == test_sum);
+        algui_cleanup_array(&array);
+    }
+
+    return ALGUI_TRUE;
+}
+
+
+void run_tests_array(ALGUI_TEST_STATISTICS* stats) {
     algui_do_test(stats, "algui_init_array", test_init_array, NULL);
     algui_do_test(stats, "algui_cleanup_array", test_cleanup_array, NULL);
     algui_do_test(stats, "algui_get_array_element_size", test_get_array_element_size, NULL);
@@ -1414,5 +1588,8 @@ static void run_tests_array(ALGUI_TEST_STATISTICS* stats) {
     algui_do_test(stats, "algui_insert_array_element", test_insert_array_element, NULL);
     algui_do_test(stats, "algui_remove_array_elements", test_remove_array_elements, NULL);
     algui_do_test(stats, "algui_qsort_array", test_qsort_array, NULL);
-    algui_do_test(stats, "algui_find_array_element_index_binary_search", test_find_array_element_index_binary_search, NULL);
+    algui_do_test(stats, "algui_for_each_array_element_in_range", test_for_each_array_element_in_range, NULL);
+    algui_do_test(stats, "algui_for_each_array_element", test_for_each_array_element, NULL);
+    algui_do_test(stats, "algui_for_each_array_element_in_range_reverse", test_for_each_array_element_in_range_reverse, NULL);
+    algui_do_test(stats, "algui_for_each_array_element_reverse", test_for_each_array_element_reverse, NULL);
 }

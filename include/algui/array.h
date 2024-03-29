@@ -275,4 +275,48 @@ size_t algui_find_array_element_index_binary_search(ALGUI_ARRAY* array, const vo
 void* algui_find_array_element_binary_search(ALGUI_ARRAY* array, const void* element, ALGUI_COMPARATOR compare);
 
 
+/**
+ * Invokes a callback for each array element within a range.
+ * @param array array to search; if null, it returns NULL and sets errno to EINVAL.
+ * @param index start index; if it is invalid, it returns NULL and sets errno to EINVAL.
+ * @param count number of elements to search; if index + count is invalid, it returns NULL and sets errno to EINVAL.
+ * @param func callback function; if null, it returns NULL and sets errno to EINVAL; loop ends when function returns anything other than NULL.
+ * @param data callback data.
+ * @return what the function returns or NULL if all the elements have been examined or if there was an error.
+ */
+uintptr_t algui_for_each_array_element_in_range(ALGUI_ARRAY* array, size_t index, size_t count, uintptr_t (*func)(size_t index, void* elem, void* data), void* data);
+
+
+/**
+ * Invokes a callback for each array element within an array.
+ * @param array array to search; if null, it returns NULL and sets errno to EINVAL.
+ * @param func callback function; if null, it returns NULL and sets errno to EINVAL; loop ends when function returns anything other than NULL.
+ * @param data callback data.
+ * @return what the function returns or NULL if all the elements have been examined or if there was an error.
+ */
+uintptr_t algui_for_each_array_element(ALGUI_ARRAY* array, uintptr_t(*func)(size_t index, void* elem, void* data), void* data);
+
+
+/**
+ * Invokes a callback for each array element within a range, in reverse order.
+ * @param array array to search; if null, it returns NULL and sets errno to EINVAL.
+ * @param index start index; if it is invalid, it returns NULL and sets errno to EINVAL.
+ * @param count number of elements to search; if index + count is invalid, it returns NULL and sets errno to EINVAL.
+ * @param func callback function; if null, it returns NULL and sets errno to EINVAL; loop ends when function returns anything other than NULL.
+ * @param data callback data.
+ * @return what the function returns or NULL if all the elements have been examined or if there was an error.
+ */
+uintptr_t algui_for_each_array_element_in_range_reverse(ALGUI_ARRAY* array, size_t index, size_t count, uintptr_t(*func)(size_t index, void* elem, void* data), void* data);
+
+
+/**
+ * Invokes a callback for each array element within an array, in reverse order.
+ * @param array array to search; if null, it returns NULL and sets errno to EINVAL.
+ * @param func callback function; if null, it returns NULL and sets errno to EINVAL; loop ends when function returns anything other than NULL.
+ * @param data callback data.
+ * @return what the function returns or NULL if all the elements have been examined or if there was an error.
+ */
+uintptr_t algui_for_each_array_element_reverse(ALGUI_ARRAY* array, uintptr_t(*func)(size_t index, void* elem, void* data), void* data);
+
+
 #endif //ALGUI_ARRAY_H
