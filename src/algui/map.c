@@ -51,6 +51,9 @@ static void sort_map(ALGUI_MAP* map) {
     //sort the array
     qsort(map->array.data, map->size, map->array.element_size, sort_comparator);
 
+    //resize the array to match the map size
+    algui_set_array_size(&map->array, map->size);
+
     //the map is sorted
     map->sorted = ALGUI_TRUE;
 }
@@ -137,7 +140,7 @@ ALGUI_BOOL algui_init_map(ALGUI_MAP* map, size_t key_size, size_t value_size, AL
     map->size = 0;
     map->value_size = value_size;
     map->sorted = ALGUI_TRUE;
-    map->bucket_size = 16;
+    map->bucket_size = 32;
 
     //success
     return ALGUI_TRUE;
@@ -233,12 +236,12 @@ ALGUI_BOOL algui_set_map_element(ALGUI_MAP* map, const void* key, const void* va
         return ALGUI_FALSE;
     }
 
-    //check the value
-    if (value == NULL) {
+    //check the value, but only if map value size is greater than zero
+    if ((map->value_size > 0 && value == NULL) || (map->value_size == 0 && value != NULL)) {
         errno = EINVAL;
         return ALGUI_FALSE;
     }
-
+    
     //make room into the array if needed; on error, return false
     if (map->size == map->array.size) {
         if (algui_set_array_size(&map->array, map->size + map->bucket_size) == ALGUI_FALSE) {
@@ -270,7 +273,7 @@ ALGUI_BOOL algui_set_map_element(ALGUI_MAP* map, const void* key, const void* va
 
 
 //delete element
-ALGUI_BOOL algui_delete_map_element(ALGUI_MAP* map, const void* key) {
+ALGUI_BOOL algui_remove_map_element(ALGUI_MAP* map, const void* key) {
     //check the map
     if (map == NULL) {
         errno = EINVAL;
@@ -356,6 +359,62 @@ uintptr_t algui_for_each_map_element(ALGUI_MAP* map, uintptr_t(*func)(const void
         for (++i; i < map->size; ++i) {
             //get other element
             ELEMENT_HEADER* eh1 = ALGUI_GET_ARRAY_ELEMENT_UTIL(ELEMENT_HEADER, map->array.data, map->array.element_size, i);
+
+            //get other key
+            const char* key1 = (char*)(eh1 + 1);
+
+            //if keys are not the same, then break
+            if (map->compare(key, key1) != 0) {
+                break;
+            }
+        }
+    }
+
+    //the loop didn't stop at any element
+    return (uintptr_t)NULL;
+}
+
+
+//execute function for each map element in reverse order
+uintptr_t algui_for_each_map_element_reverse(ALGUI_MAP* map, uintptr_t(*func)(const void* key, void* value, void* data), void* data) {
+    //check the map
+    if (map == NULL) {
+        errno = EINVAL;
+        return (uintptr_t)NULL;
+    }
+
+    //check the function
+    if (func == NULL) {
+        errno = EINVAL;
+        return (uintptr_t)NULL;
+    }
+
+    //sort the map, if needed
+    sort_map(map);
+
+    //loop
+    for (size_t i = map->size; i > 0; ) {
+        //get element
+        ELEMENT_HEADER* eh = ALGUI_GET_ARRAY_ELEMENT_UTIL(ELEMENT_HEADER, map->array.data, map->array.element_size, i - 1);
+
+        //get key
+        char* key = (char*)(eh + 1);
+
+        //get value
+        char* value = key + map->key_size;
+
+        //invoke the func
+        const uintptr_t res = func(key, value, data);
+
+        //if it returns a result, then stop
+        if (res != (uintptr_t)NULL) {
+            return res;
+        }
+
+        //skip prev elements with same key
+        for (--i; i > 0; --i) {
+            //get other element
+            ELEMENT_HEADER* eh1 = ALGUI_GET_ARRAY_ELEMENT_UTIL(ELEMENT_HEADER, map->array.data, map->array.element_size, i - 1);
 
             //get other key
             const char* key1 = (char*)(eh1 + 1);

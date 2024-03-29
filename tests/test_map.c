@@ -76,7 +76,7 @@ static ALGUI_BOOL test_is_empty_map(void* external_data) {
 }
 
 
-static ALGUI_BOOL test_set_get_map_element(void* external_data) {
+static ALGUI_BOOL test_get_set_remove_map_element(void* external_data) {
     int k = 0;
     int v = 0;
 
@@ -121,7 +121,7 @@ static ALGUI_BOOL test_set_get_map_element(void* external_data) {
 
         //remove non existing element
         k = 55;
-        ALGUI_ENSURE_ERROR(algui_delete_map_element(&map, &k) == ALGUI_FALSE, 0);
+        ALGUI_ENSURE_ERROR(algui_remove_map_element(&map, &k) == ALGUI_FALSE, 0);
 
         //get existing element
         k = 5;
@@ -129,7 +129,7 @@ static ALGUI_BOOL test_set_get_map_element(void* external_data) {
 
         //remove existing element
         k = 5;
-        ALGUI_ENSURE_ERROR(algui_delete_map_element(&map, &k) == ALGUI_TRUE, 0);
+        ALGUI_ENSURE_ERROR(algui_remove_map_element(&map, &k) == ALGUI_TRUE, 0);
 
         //get non existing element that previously existed
         k = 5;
@@ -158,7 +158,7 @@ static ALGUI_BOOL test_set_get_map_element(void* external_data) {
 
         //remove non existing element
         k = 55;
-        ALGUI_ENSURE_ERROR(algui_delete_map_element(&map, &k) == ALGUI_FALSE, 0);
+        ALGUI_ENSURE_ERROR(algui_remove_map_element(&map, &k) == ALGUI_FALSE, 0);
 
         //get existing element
         k = 5;
@@ -166,7 +166,7 @@ static ALGUI_BOOL test_set_get_map_element(void* external_data) {
 
         //remove existing element
         k = 5;
-        ALGUI_ENSURE_ERROR(algui_delete_map_element(&map, &k) == ALGUI_TRUE, 0);
+        ALGUI_ENSURE_ERROR(algui_remove_map_element(&map, &k) == ALGUI_TRUE, 0);
 
         //get non existing element that previously existed
         k = 5;
@@ -196,7 +196,7 @@ static ALGUI_BOOL test_set_get_map_element(void* external_data) {
 
         //remove non existing element
         k = 55;
-        ALGUI_ENSURE_ERROR(algui_delete_map_element(&map, &k) == ALGUI_FALSE, 0);
+        ALGUI_ENSURE_ERROR(algui_remove_map_element(&map, &k) == ALGUI_FALSE, 0);
 
         //get existing elements
         for (int i = 5; i < 20; ++i) {
@@ -205,7 +205,7 @@ static ALGUI_BOOL test_set_get_map_element(void* external_data) {
 
         //remove existing elements
         for (int i = 5; i < 20; ++i) {
-            ALGUI_ENSURE_ERROR(algui_delete_map_element(&map, &i) == ALGUI_TRUE, 0);
+            ALGUI_ENSURE_ERROR(algui_remove_map_element(&map, &i) == ALGUI_TRUE, 0);
         }
 
         //get non existing element that previously existed
@@ -305,11 +305,85 @@ static ALGUI_BOOL test_for_each_map_element(void* external_data) {
 }
 
 
-static void run_tests_map(ALGUI_TEST_STATISTICS* stats) {
+static ALGUI_BOOL test_for_each_map_element_reverse(void* external_data) {
+    const int test_data[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    const int test_data_size = sizeof(test_data) / sizeof(int);
+    const int test_sum = sum_int_array(test_data, test_data_size);
+    int sum;
+
+    //test null map
+    {
+        ALGUI_ENSURE_ERROR(algui_for_each_map_element_reverse(NULL, sum_map_elements_callback, &sum) == ALGUI_FALSE, EINVAL);
+    }
+
+    //test null func
+    {
+        ALGUI_MAP map;
+        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator);
+        ALGUI_ENSURE_ERROR(algui_for_each_map_element_reverse(&map, NULL, &sum) == ALGUI_FALSE, EINVAL);
+        algui_cleanup_map(&map);
+    }
+
+    //test for each on empty map
+    {
+        ALGUI_MAP map;
+        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator);
+        sum = 0;
+        ALGUI_ENSURE_ERROR(algui_for_each_map_element_reverse(&map, sum_map_elements_callback, &sum) == ALGUI_FALSE, 0);
+        ALGUI_ENSURE(sum == 0);
+        algui_cleanup_map(&map);
+    }
+
+    //test for each on non-empty map without duplicate keys
+    {
+        ALGUI_MAP map;
+        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator);
+        for (int i = 0; i < test_data_size; ++i) {
+            algui_set_map_element(&map, &i, &i);
+        }
+        sum = 0;
+        ALGUI_ENSURE_ERROR(algui_for_each_map_element_reverse(&map, sum_map_elements_callback, &sum) == ALGUI_FALSE, 0);
+        ALGUI_ENSURE(sum == test_sum);
+        algui_cleanup_map(&map);
+    }
+
+    //test for each on non-empty map with some duplicate keys
+    {
+        ALGUI_MAP map;
+        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator);
+        for (int i = 0; i < test_data_size; ++i) {
+            algui_set_map_element(&map, &i, &i);
+            if (i & 1) {
+                algui_set_map_element(&map, &i, &i);
+            }
+        }
+        sum = 0;
+        ALGUI_ENSURE_ERROR(algui_for_each_map_element_reverse(&map, sum_map_elements_callback, &sum) == ALGUI_FALSE, 0);
+        ALGUI_ENSURE(sum == test_sum);
+        algui_cleanup_map(&map);
+    }
+
+    //test find value
+    {
+        ALGUI_MAP map;
+        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator);
+        for (int i = 0; i < test_data_size; ++i) {
+            algui_set_map_element(&map, &i, &i);
+        }
+        int v = 5;
+        ALGUI_ENSURE_ERROR(algui_for_each_map_element_reverse(&map, find_map_value_callback, &v) == ALGUI_TRUE, 0);
+        algui_cleanup_map(&map);
+    }
+
+    return ALGUI_TRUE;
+}
+
+
+void run_tests_map(ALGUI_TEST_STATISTICS* stats) {
     algui_do_test(stats, "algui_init_map", test_init_map, NULL);
     algui_do_test(stats, "algui_cleanup_map", test_cleanup_map, NULL);
     algui_do_test(stats, "algui_is_empty_map", test_is_empty_map, NULL);
-    algui_do_test(stats, "algui_set_map_element", test_set_get_map_element, NULL);
-    algui_do_test(stats, "algui_set_map_element", test_set_get_map_element, NULL);
+    algui_do_test(stats, "algui_get/set/remove_map_element", test_get_set_remove_map_element, NULL);
     algui_do_test(stats, "algui_for_each_map_element", test_for_each_map_element, NULL);
+    algui_do_test(stats, "algui_for_each_map_element_reverse", test_for_each_map_element_reverse, NULL);
 }
