@@ -3,6 +3,8 @@
 
 
 #include <stdio.h>
+#include <errno.h>
+#include <limits.h>
 #include "bool.h"
 
 
@@ -16,6 +18,18 @@
         fprintf(stderr, "\033[0;91mFAILURE\033[0m\n    \033[0;97mERROR: %s, %i: %s\033[0m\n", __FILE__, __LINE__, #EXPR);\
         return ALGUI_FALSE;\
     }\
+}
+
+
+/**
+ * Same as ALGUI_ENSURE, with errno testing.
+ * Before invoking the given expression, it sets errno to 0, and then also tests if errno equals the given error code.
+ * @param EXPR expression to evaluate.
+ * @param ERRCODE error code to test with errno.
+ */
+#define ALGUI_ENSURE_ERROR(EXPR, ERRCODE) {\
+    errno = 0;\
+    ALGUI_ENSURE((EXPR) && errno == (ERRCODE));\
 }
 
 

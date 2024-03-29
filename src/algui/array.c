@@ -133,6 +133,84 @@ ALGUI_BOOL algui_set_array_size(ALGUI_ARRAY* array, size_t size) {
 }
 
 
+//get array elements
+ALGUI_BOOL algui_get_array_elements(ALGUI_ARRAY* array, size_t index, void* elements, size_t count) {
+    //the array cannot be null
+    if (array == NULL) {
+        errno = EINVAL;
+        return ALGUI_FALSE;
+    }
+
+    //the index must be valid
+    if (index >= array->size) {
+        errno = EINVAL;
+        return ALGUI_FALSE;
+    }
+
+    //the destination should not be null
+    if (elements == NULL) {
+        errno = EINVAL;
+        return ALGUI_FALSE;
+    }
+
+    //index + count must be valid
+    if (index + count > array->size) {
+        errno = EINVAL;
+        return ALGUI_FALSE;
+    }
+
+    //if count is zero, copy nothing
+    if (count == 0) {
+        return ALGUI_TRUE;
+    }
+
+    //copy data to the destination
+    memmove(elements, array->data + array->element_size * index, array->element_size * count);
+
+    //success
+    return ALGUI_TRUE;
+}
+
+
+//set array elements.
+ALGUI_BOOL algui_set_array_elements(ALGUI_ARRAY* array, size_t index, const void* elements, size_t count) {
+    //the array cannot be null
+    if (array == NULL) {
+        errno = EINVAL;
+        return ALGUI_FALSE;
+    }
+
+    //the index must be valid
+    if (index >= array->size) {
+        errno = EINVAL;
+        return ALGUI_FALSE;
+    }
+
+    //the source should not be null
+    if (elements == NULL) {
+        errno = EINVAL;
+        return ALGUI_FALSE;
+    }
+
+    //index + count must be valid
+    if (index + count > array->size) {
+        errno = EINVAL;
+        return ALGUI_FALSE;
+    }
+
+    //if count is zero, copy nothing
+    if (count == 0) {
+        return ALGUI_TRUE;
+    }
+
+    //copy data into the array
+    memmove(array->data + array->element_size * index, elements, array->element_size * count);
+
+    //success
+    return ALGUI_TRUE;
+}
+
+
 //get array element
 void* algui_get_array_element(const ALGUI_ARRAY* array, size_t index) {
     //the array cannot be null
@@ -458,4 +536,83 @@ ALGUI_BOOL algui_qsort_array(ALGUI_ARRAY* array, ALGUI_COMPARATOR compare) {
    
     //success
     return ALGUI_TRUE;
+}
+
+
+//binary search index
+size_t algui_find_array_element_index_binary_search(ALGUI_ARRAY* array, const void* element, ALGUI_COMPARATOR compare) {
+    //the array cannot be null
+    if (array == NULL) {
+        errno = EINVAL;
+        return ALGUI_INVALID_INDEX;
+    }
+
+    //the element cannot be null
+    if (element == NULL) {
+        errno = EINVAL;
+        return ALGUI_INVALID_INDEX;
+    }
+
+    //the compare function cannot be null
+    if (compare == NULL) {
+        errno = EINVAL;
+        return ALGUI_INVALID_INDEX;
+    }
+
+    //range to check; inclusive on minIndex, exclusive on maxIndex.
+    size_t minIndex = 0;
+    size_t maxIndex = array->size;
+
+    //loop until found or range becomes empty.
+    while(minIndex < maxIndex) {
+
+        //calculate the mid index.
+        const size_t midIndex = (minIndex + maxIndex) / 2;
+
+        //calculate the mid element pointer.
+        const char* const arrayElement = array->data + array->element_size * midIndex;
+
+        //compare the elements.
+        const int comp = compare(arrayElement, element);
+
+        //if comparison is greater, 
+        //then the searched element comes before the array element, 
+        //therefore continue the search from minIndex to midIndex.
+        if (comp > 0) {
+            maxIndex = midIndex;
+            continue;
+        }
+
+        //the searched element is either equal to the array element,
+        //or it comes after the array element.
+        //therefore continue the search from midIndex + 1 to maxIndex.
+        else {
+            minIndex = midIndex + 1;
+        }
+    }
+
+    //if max index is 0, 
+    //then the searched element is less than the first array element,
+    //therefore the element is not found.
+    if (maxIndex == 0) {
+        return ALGUI_INVALID_INDEX;
+    }
+
+    //the found index is one less than maxIndex.
+    const size_t foundIndex = maxIndex - 1;
+
+    //if the element at foundIndex equals the searched element,
+    //then the element is found.
+    if (compare(array->data + array->element_size * foundIndex, element) == 0) {
+        return foundIndex;
+    }
+
+    //element not found.
+    return ALGUI_INVALID_INDEX;
+}
+
+
+//binary search element
+void* algui_find_array_element_binary_search(ALGUI_ARRAY* array, const void* element, ALGUI_COMPARATOR compare) {
+    return algui_get_array_element(array, algui_find_array_element_index_binary_search(array, element, compare));
 }

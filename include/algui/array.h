@@ -64,6 +64,28 @@ ALGUI_BOOL algui_set_array_size(ALGUI_ARRAY* array, size_t size);
 
 
 /**
+ * Retrieves multiple array elements from an array.
+ * @param array array to get the elements of; if null, it returns false and sets errno to EINVAL.
+ * @param index start index; if invalid, it returns false and sets errno to EINVAL.
+ * @param elements destination array; if null, it returns false and sets errno to EINVAL.
+ * @param count number of elements to copy; if zero, then no copy is performed and the result is true; if index + count is invalid, it returns false and sets errno to EINVAL.
+ * @return true on success, false on error.
+ */
+ALGUI_BOOL algui_get_array_elements(ALGUI_ARRAY* array, size_t index, void* elements, size_t count);
+
+
+/**
+ * Sets multiple array elements of an array.
+ * @param array array to set the elements of; if null, it returns false and sets errno to EINVAL.
+ * @param index start index; if invalid, it returns false and sets errno to EINVAL.
+ * @param elements source array; if null, it returns false and sets errno to EINVAL.
+ * @param count number of elements to copy; if zero, then no copy is performed and the result is true; if index + count is invalid, it returns false and sets errno to EINVAL.
+ * @return true on success, false on error.
+ */
+ALGUI_BOOL algui_set_array_elements(ALGUI_ARRAY* array, size_t index, const void* elements, size_t count);
+
+
+/**
  * Returns an array element from index.
  * @param array array to get the element of; if null, it returns NULL and sets errno to EINVAL.
  * @param index index of array element; if out of bounds, it returns NULL and sets errno to EINVAL.
@@ -222,6 +244,27 @@ ALGUI_BOOL algui_remove_array_element(ALGUI_ARRAY* array, size_t index);
  * @return true on success, false on error.
  */
 ALGUI_BOOL algui_qsort_array(ALGUI_ARRAY* array, ALGUI_COMPARATOR compare);
+
+
+/**
+ * Performs a binary search into the given array, which must be sorted prior to this call; returns index of element found.
+ * If duplicates exist in the array, then it returns the index to the rightmost element.
+ * @param array array to search; if null, it returns ALGUI_INVALID_INDEX and sets errno to EINVAL.
+ * @param element pointer to element to search for; if null, it returns ALGUI_INVALID_INDEX and sets errno to EINVAL.
+ * @param compare the compare function to use for locating an element; if null, it returns ALGUI_INVALID_INDEX and sets errno to EINVAL.
+ * @return index of element or ALGUI_INVALID_INDEX if not found or on error.
+ */
+size_t algui_find_array_element_index_binary_search(ALGUI_ARRAY* array, const void* element, ALGUI_COMPARATOR compare);
+
+
+/**
+ * Performs a binary search into the given array, which must be sorted prior to this call; returns pointer to element found.
+ * @param array array to search; if null, it returns NULL and sets errno to EINVAL.
+ * @param element pointer to element to search for; if null, it returns NULL and sets errno to EINVAL.
+ * @param compare the compare function to use for locating an element; if null, it returns NULL and sets errno to EINVAL.
+ * @return index of element or ALGUI_INVALID_INDEX if not found or on error.
+ */
+void* algui_find_array_element_binary_search(ALGUI_ARRAY* array, const void* element, ALGUI_COMPARATOR compare);
 
 
 #endif //ALGUI_ARRAY_H
