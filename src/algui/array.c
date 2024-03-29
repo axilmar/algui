@@ -79,6 +79,19 @@ size_t algui_get_array_element_size(const ALGUI_ARRAY* array) {
 }
 
 
+//check if array is empty
+ALGUI_BOOL algui_is_empty_array(const ALGUI_ARRAY* array) {
+    //the array cannot be null
+    if (array == NULL) {
+        errno = EINVAL;
+        return ALGUI_FALSE;
+    }
+
+    //return empty if the array size is 0
+    return array->size == 0;
+}
+
+
 //get the array size
 size_t algui_get_array_size(const ALGUI_ARRAY* array) {
     //the array cannot be null

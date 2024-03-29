@@ -104,6 +104,31 @@ static ALGUI_BOOL test_get_array_element_size(void* external_data) {
 }
 
 
+static ALGUI_BOOL test_is_empty_array(void* external_data) {
+    //test null array
+    {
+        ALGUI_ENSURE_ERROR(algui_is_empty_array(NULL) == ALGUI_FALSE, EINVAL);
+    }
+
+    //test empty array
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 0);
+        ALGUI_ENSURE_ERROR(algui_is_empty_array(&array) == ALGUI_TRUE, 0);
+    }
+
+    //test non-empty array
+    {
+        ALGUI_ARRAY array;
+        algui_init_array(&array, sizeof(int), 10);
+        ALGUI_ENSURE_ERROR(algui_is_empty_array(&array) == ALGUI_FALSE, 0);
+        algui_cleanup_array(&array);
+    }
+
+    return ALGUI_TRUE;
+}
+
+
 static ALGUI_BOOL test_get_array_size(void* external_data) {
     //test null array
     {
@@ -1373,6 +1398,7 @@ static void run_tests_array(ALGUI_TEST_STATISTICS* stats) {
     algui_do_test(stats, "algui_init_array", test_init_array, NULL);
     algui_do_test(stats, "algui_cleanup_array", test_cleanup_array, NULL);
     algui_do_test(stats, "algui_get_array_element_size", test_get_array_element_size, NULL);
+    algui_do_test(stats, "algui_is_empty_array", test_is_empty_array, NULL);
     algui_do_test(stats, "algui_get_array_size", test_get_array_size, NULL);
     algui_do_test(stats, "algui_set_array_size", test_set_array_size, NULL);
     algui_do_test(stats, "algui_get_array_elements", test_get_array_elements, NULL);

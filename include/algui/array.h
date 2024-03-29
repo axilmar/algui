@@ -45,6 +45,14 @@ size_t algui_get_array_element_size(const ALGUI_ARRAY* array);
 
 
 /**
+ * Checks if an array is empty.
+ * @param array array to check; if null, it returns false and sets errno to EINVAL.
+ * @return true on success and the array is empty, false if the array is not empty or on error.
+ */
+ALGUI_BOOL algui_is_empty_array(const ALGUI_ARRAY* array);
+
+
+/**
  * Returns the size of an array.
  * @param array array to get the size of; if null, it returns false and sets errno to EINVAL.
  * @return size on success, -1 on error.
