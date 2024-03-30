@@ -5,6 +5,7 @@
 #include "bool.h"
 #include "index.h"
 #include "comparator.h"
+#include "destructor.h"
 
 
 /**
@@ -14,6 +15,7 @@ typedef struct ALGUI_ARRAY {
     char* data;
     size_t element_size;
     size_t size;
+    ALGUI_DESTRUCTOR dtor;
 } ALGUI_ARRAY;
 
 
@@ -22,9 +24,10 @@ typedef struct ALGUI_ARRAY {
  * @param array array to initialize; if null, it returns false and sets errno to EINVAL.
  * @param element_size element size, in bytes. If 0, it returns false and sets errno to EINVAL.
  * @param size initial array size, in elements. If allocation fails, it returns false and sets errno to ENOMEM.
+ * @param dtor optional element destructor.
  * @return true on success, false on error.
  */
-ALGUI_BOOL algui_init_array(ALGUI_ARRAY* array, size_t element_size, size_t size);
+ALGUI_BOOL algui_init_array(ALGUI_ARRAY* array, size_t element_size, size_t size, ALGUI_DESTRUCTOR dtor);
 
 
 /**

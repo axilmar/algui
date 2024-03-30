@@ -5,8 +5,23 @@
 #include "algui/array_util.h"
 
 
+//destroys a range of elements
+static void destroy_elements(ALGUI_ARRAY* array, size_t begin, size_t end) {
+    //no destructor, ignore the call
+    if (!array->dtor) {
+        return;
+    }
+
+    //destroy the elements in reverse order
+    for (size_t i = end; i > begin; --i) {
+        char* elem = ALGUI_GET_ARRAY_ELEMENT_UTIL(char, array->data, array->element_size, i - 1);
+        array->dtor(elem);
+    }
+}
+
+
 //init array
-ALGUI_BOOL algui_init_array(ALGUI_ARRAY* array, size_t element_size, size_t size) {
+ALGUI_BOOL algui_init_array(ALGUI_ARRAY* array, size_t element_size, size_t size, ALGUI_DESTRUCTOR dtor) {
     //the array cannot be null
     if (array == NULL) {
         errno = EINVAL;
@@ -41,6 +56,7 @@ ALGUI_BOOL algui_init_array(ALGUI_ARRAY* array, size_t element_size, size_t size
     array->data = data;
     array->element_size = element_size;
     array->size = size;
+    array->dtor = dtor;
 
     //success
     return ALGUI_TRUE;
@@ -57,6 +73,7 @@ ALGUI_BOOL algui_cleanup_array(ALGUI_ARRAY* array) {
 
     //free the data
     if (array->data != NULL) {
+        destroy_elements(array, 0, array->size);
         free(array->data);
         array->data = NULL;
         array->size = 0;
@@ -121,8 +138,8 @@ ALGUI_BOOL algui_set_array_size(ALGUI_ARRAY* array, size_t size) {
 
     void* new_data;
 
-    //if size is greater than 0, reallocate the data
-    if (size > 0) {
+    //if size is greater than existing size, grow the data
+    if (size > array->size) {
         new_data = realloc(array->data, array->element_size * size);
 
         //handle reallocation failure
@@ -132,10 +149,24 @@ ALGUI_BOOL algui_set_array_size(ALGUI_ARRAY* array, size_t size) {
         }
     }
 
-    //else size is 0, free the data
-    else {
+    //else if size is 0, free the data
+    else if (size == 0) {
+        destroy_elements(array, 0, array->size);
         free(array->data);
         new_data = NULL;
+    }
+
+    //else the new size is greater than 0 and smaller than existing size, 
+    //so destroy the excess elements and shrink the array
+    else {
+        destroy_elements(array, size, array->size);
+        new_data = realloc(array->data, array->element_size * size);
+
+        //handle reallocation failure
+        if (!new_data) {
+            errno = ENOMEM;
+            return ALGUI_FALSE;
+        }
     }
 
     //setup the structure
@@ -501,6 +532,9 @@ ALGUI_BOOL algui_remove_array_elements(ALGUI_ARRAY* array, size_t index, size_t 
     }
 
     char* rem_pos = array->data + array->element_size * index;
+
+    //destroy the removed elements
+    destroy_elements(array, index, index + count);
 
     //move the data
     memmove(rem_pos, rem_pos + array->element_size * count, array->element_size * (array->size - index - count));

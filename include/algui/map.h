@@ -21,6 +21,8 @@ typedef struct ALGUI_MAP {
     size_t value_size;
     size_t bucket_size;
     ALGUI_COMPARATOR compare;
+    ALGUI_DESTRUCTOR key_dtor;
+    ALGUI_DESTRUCTOR value_dtor;
 } ALGUI_MAP;
 
 
@@ -30,9 +32,11 @@ typedef struct ALGUI_MAP {
  * @param key_size size of key, in bytes; if 0, then false is returned and errno is set to EINVAL.
  * @param value_size size of value, in bytes; 0 is allowed, if the map is to be treated as a set, inserting null values.
  * @param compare the function that imposes an order in the map; if null, then false is returned and errno is set to EINVAL.
+ * @param key_dtor optional key destructor.
+ * @param value_dtor optional value destructor.
  * @return true on success, false on error.
  */
-ALGUI_BOOL algui_init_map(ALGUI_MAP* map, size_t key_size, size_t value_size, ALGUI_COMPARATOR compare);
+ALGUI_BOOL algui_init_map(ALGUI_MAP* map, size_t key_size, size_t value_size, ALGUI_COMPARATOR compare, ALGUI_DESTRUCTOR key_dtor, ALGUI_DESTRUCTOR value_dtor);
 
 
 /**

@@ -4,28 +4,42 @@
 #include "util.h"
 
 
+static size_t key_test_counter = 0;
+static size_t value_test_counter = 0;
+
+
+static void key_dtor(void* value) {
+    ++key_test_counter;
+}
+
+
+static void value_dtor(void* value) {
+    ++value_test_counter;
+}
+
+
 static ALGUI_BOOL test_init_map(void* external_data) {
     //test null map
     {
-        ALGUI_ENSURE_ERROR(algui_init_map(NULL, sizeof(int), sizeof(int), int_comparator) == ALGUI_FALSE, EINVAL);
+        ALGUI_ENSURE_ERROR(algui_init_map(NULL, sizeof(int), sizeof(int), int_comparator, NULL, NULL) == ALGUI_FALSE, EINVAL);
     }
 
     //test zero key size
     {
         ALGUI_MAP map;
-        ALGUI_ENSURE_ERROR(algui_init_map(&map, 0, sizeof(int), int_comparator) == ALGUI_FALSE, EINVAL);
+        ALGUI_ENSURE_ERROR(algui_init_map(&map, 0, sizeof(int), int_comparator, NULL, NULL) == ALGUI_FALSE, EINVAL);
     }
 
     //test null comparator
     {
         ALGUI_MAP map;
-        ALGUI_ENSURE_ERROR(algui_init_map(&map, sizeof(int), sizeof(int), NULL) == ALGUI_FALSE, EINVAL);
+        ALGUI_ENSURE_ERROR(algui_init_map(&map, sizeof(int), sizeof(int), NULL, NULL, NULL) == ALGUI_FALSE, EINVAL);
     }
 
     //test normal
     {
         ALGUI_MAP map;
-        ALGUI_ENSURE_ERROR(algui_init_map(&map, sizeof(int), sizeof(int), int_comparator) == ALGUI_TRUE, 0);
+        ALGUI_ENSURE_ERROR(algui_init_map(&map, sizeof(int), sizeof(int), int_comparator, NULL, NULL) == ALGUI_TRUE, 0);
     }
 
     return ALGUI_TRUE;
@@ -41,8 +55,30 @@ static ALGUI_BOOL test_cleanup_map(void* external_data) {
     //test normal
     {
         ALGUI_MAP map;
-        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator);
+        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator, NULL, NULL);
         ALGUI_ENSURE_ERROR(algui_cleanup_map(&map) == ALGUI_TRUE, 0);
+    }
+
+    //cleanup with dtor
+    {
+        ALGUI_MAP map;
+        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator, key_dtor, value_dtor);
+
+        int v = 1;
+        algui_set_map_element(&map, &v, &v);
+        v = 2;
+        algui_set_map_element(&map, &v, &v);
+        v = 3;
+        algui_set_map_element(&map, &v, &v);
+
+        key_test_counter = 0;
+        value_test_counter = 0;
+
+        algui_cleanup_map(&map);
+
+        ALGUI_ENSURE(key_test_counter == 3);
+        ALGUI_ENSURE(value_test_counter == 3);
+
     }
 
     return ALGUI_TRUE;
@@ -58,14 +94,14 @@ static ALGUI_BOOL test_is_empty_map(void* external_data) {
     //test empty map
     {
         ALGUI_MAP map;
-        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator);
+        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator, NULL, NULL);
         ALGUI_ENSURE_ERROR(algui_is_empty_map(&map) == ALGUI_TRUE, 0);
     }
 
     //test non-empty map
     {
         ALGUI_MAP map;
-        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator);
+        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator, NULL, NULL);
         int v = 0;
         algui_set_map_element(&map, &v, &v);
         ALGUI_ENSURE_ERROR(algui_is_empty_map(&map) == ALGUI_FALSE, 0);
@@ -89,7 +125,7 @@ static ALGUI_BOOL test_get_set_remove_map_element(void* external_data) {
     //test null key
     {
         ALGUI_MAP map;
-        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator);
+        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator, NULL, NULL);
         ALGUI_ENSURE_ERROR(algui_get_map_element(&map, NULL) == ALGUI_FALSE, EINVAL);
         ALGUI_ENSURE_ERROR(algui_set_map_element(&map, NULL, &v) == ALGUI_FALSE, EINVAL);
     }
@@ -97,14 +133,14 @@ static ALGUI_BOOL test_get_set_remove_map_element(void* external_data) {
     //test null value
     {
         ALGUI_MAP map;
-        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator);
+        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator, NULL, NULL);
         ALGUI_ENSURE_ERROR(algui_set_map_element(&map, &k, NULL) == ALGUI_FALSE, EINVAL);
     }
 
     //test empty map, add 1, remove 1
     {
         ALGUI_MAP map;
-        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator);
+        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator, NULL, NULL);
         
         //insert element
         k = 5;
@@ -141,7 +177,7 @@ static ALGUI_BOOL test_get_set_remove_map_element(void* external_data) {
     //test empty map, add multiple, remove 1
     {
         ALGUI_MAP map;
-        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator);
+        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator, NULL, NULL);
 
         //insert elements
         for (int i = 5; i < 20; ++i) {
@@ -178,7 +214,7 @@ static ALGUI_BOOL test_get_set_remove_map_element(void* external_data) {
     //test empty map, add multiple, remove multiple
     {
         ALGUI_MAP map;
-        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator);
+        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator, NULL, NULL);
 
         //insert elements
         for (int i = 5; i < 20; ++i) {
@@ -216,6 +252,37 @@ static ALGUI_BOOL test_get_set_remove_map_element(void* external_data) {
         algui_cleanup_map(&map);
     }
 
+    //remove elements with dtor
+    {
+        ALGUI_MAP map;
+        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator, key_dtor, value_dtor);
+
+        int v = 1;
+        algui_set_map_element(&map, &v, &v);
+        v = 2;
+        algui_set_map_element(&map, &v, &v);
+        v = 3;
+        algui_set_map_element(&map, &v, &v);
+
+        key_test_counter = 0;
+        value_test_counter = 0;
+
+        v = 1;
+        algui_remove_map_element(&map, &v);
+        v = 2;
+        algui_remove_map_element(&map, &v);
+        v = 3;
+        algui_remove_map_element(&map, &v);
+
+        ALGUI_ENSURE(key_test_counter == 3);
+        ALGUI_ENSURE(value_test_counter == 3);
+
+        algui_cleanup_map(&map);
+
+        ALGUI_ENSURE(key_test_counter == 3);
+        ALGUI_ENSURE(value_test_counter == 3);
+    }
+
     return ALGUI_TRUE;
 }
 
@@ -245,7 +312,7 @@ static ALGUI_BOOL test_for_each_map_element(void* external_data) {
     //test null func
     {
         ALGUI_MAP map;
-        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator);
+        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator, NULL, NULL);
         ALGUI_ENSURE_ERROR(algui_for_each_map_element(&map, NULL, &sum) == ALGUI_FALSE, EINVAL);
         algui_cleanup_map(&map);
     }
@@ -253,7 +320,7 @@ static ALGUI_BOOL test_for_each_map_element(void* external_data) {
     //test for each on empty map
     {
         ALGUI_MAP map;
-        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator);
+        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator, NULL, NULL);
         sum = 0;
         ALGUI_ENSURE_ERROR(algui_for_each_map_element(&map, sum_map_elements_callback, &sum) == ALGUI_FALSE, 0);
         ALGUI_ENSURE(sum == 0);
@@ -263,7 +330,7 @@ static ALGUI_BOOL test_for_each_map_element(void* external_data) {
     //test for each on non-empty map without duplicate keys
     {
         ALGUI_MAP map;
-        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator);
+        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator, NULL, NULL);
         for (int i = 0; i < test_data_size; ++i) {
             algui_set_map_element(&map, &i, &i);
         }
@@ -276,7 +343,7 @@ static ALGUI_BOOL test_for_each_map_element(void* external_data) {
     //test for each on non-empty map with some duplicate keys
     {
         ALGUI_MAP map;
-        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator);
+        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator, NULL, NULL);
         for (int i = 0; i < test_data_size; ++i) {
             algui_set_map_element(&map, &i, &i);
             if (i & 1) {
@@ -292,7 +359,7 @@ static ALGUI_BOOL test_for_each_map_element(void* external_data) {
     //test find value
     {
         ALGUI_MAP map;
-        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator);
+        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator, NULL, NULL);
         for (int i = 0; i < test_data_size; ++i) {
             algui_set_map_element(&map, &i, &i);
         }
@@ -319,7 +386,7 @@ static ALGUI_BOOL test_for_each_map_element_reverse(void* external_data) {
     //test null func
     {
         ALGUI_MAP map;
-        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator);
+        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator, NULL, NULL);
         ALGUI_ENSURE_ERROR(algui_for_each_map_element_reverse(&map, NULL, &sum) == ALGUI_FALSE, EINVAL);
         algui_cleanup_map(&map);
     }
@@ -327,7 +394,7 @@ static ALGUI_BOOL test_for_each_map_element_reverse(void* external_data) {
     //test for each on empty map
     {
         ALGUI_MAP map;
-        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator);
+        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator, NULL, NULL);
         sum = 0;
         ALGUI_ENSURE_ERROR(algui_for_each_map_element_reverse(&map, sum_map_elements_callback, &sum) == ALGUI_FALSE, 0);
         ALGUI_ENSURE(sum == 0);
@@ -337,7 +404,7 @@ static ALGUI_BOOL test_for_each_map_element_reverse(void* external_data) {
     //test for each on non-empty map without duplicate keys
     {
         ALGUI_MAP map;
-        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator);
+        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator, NULL, NULL);
         for (int i = 0; i < test_data_size; ++i) {
             algui_set_map_element(&map, &i, &i);
         }
@@ -350,7 +417,7 @@ static ALGUI_BOOL test_for_each_map_element_reverse(void* external_data) {
     //test for each on non-empty map with some duplicate keys
     {
         ALGUI_MAP map;
-        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator);
+        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator, NULL, NULL);
         for (int i = 0; i < test_data_size; ++i) {
             algui_set_map_element(&map, &i, &i);
             if (i & 1) {
@@ -366,7 +433,7 @@ static ALGUI_BOOL test_for_each_map_element_reverse(void* external_data) {
     //test find value
     {
         ALGUI_MAP map;
-        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator);
+        algui_init_map(&map, sizeof(int), sizeof(int), int_comparator, NULL, NULL);
         for (int i = 0; i < test_data_size; ++i) {
             algui_set_map_element(&map, &i, &i);
         }

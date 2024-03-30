@@ -7,7 +7,7 @@
 
 //element header
 typedef struct ELEMENT_HEADER {
-    ALGUI_COMPARATOR compare;
+    ALGUI_MAP* map;
     size_t counter;
 } ELEMENT_HEADER;
 
@@ -29,7 +29,7 @@ static int sort_comparator(const void* a, const void* b) {
     const void* const kb = hb + 1;
 
     //compare the keys
-    const int comp = ha->compare(ka, kb);
+    const int comp = ha->map->compare(ka, kb);
 
     //if the keys are not equal, return the result of the comparison
     if (comp) {
@@ -42,20 +42,36 @@ static int sort_comparator(const void* a, const void* b) {
 
 
 //sort the map, if not sorted
-static void sort_map(ALGUI_MAP* map) {
+static ALGUI_BOOL sort_map(ALGUI_MAP* map) {
     //if sorted, do nothing else
     if (map->sorted) {
-        return;
+        return ALGUI_TRUE;
     }
 
     //sort the array
     qsort(map->array.data, map->size, map->array.element_size, sort_comparator);
 
-    //resize the array to match the map size
-    algui_set_array_size(&map->array, map->size);
+    //resize the array to match the map size;
+    //do not use the function algui_set_array_size
+    //because we don't want destructors to be invoked for 
+    //uninitialized elements.
+    char* new_data = realloc(map->array.data, map->array.element_size * map->size);
+
+    //check reallocation failure
+    if (new_data == NULL) {
+        errno = ENOMEM;
+        return ALGUI_FALSE;
+    }
+
+    //save the new array data
+    map->array.data = new_data;
+    map->array.size = map->size;
 
     //the map is sorted
     map->sorted = ALGUI_TRUE;
+
+    //success
+    return ALGUI_TRUE;
 }
 
 
@@ -68,7 +84,7 @@ static int search_comparator(const void* a, const void* b) {
     const void* const ka = ha + 1;
 
     //compare the keys
-    return ha->compare(ka, b);
+    return ha->map->compare(ka, b);
 }
 
 
@@ -109,8 +125,26 @@ static size_t remove_older_entries(ALGUI_MAP* map, const void* key, size_t index
 }
 
 
+//destroys the key and value of an element
+static void elem_dtor(void* elem) {
+    ELEMENT_HEADER* h = (ELEMENT_HEADER*)elem;
+
+    //destroy the key
+    if (h->map->key_dtor) {
+        char* key = (char*)(h + 1);
+        h->map->key_dtor(key);
+    }
+
+    //destroy the value
+    if (h->map->value_dtor) {
+        char* value = (char*)(h + 1) + h->map->key_size;
+        h->map->value_dtor(value);
+    }
+}
+
+
 //init map
-ALGUI_BOOL algui_init_map(ALGUI_MAP* map, size_t key_size, size_t value_size, ALGUI_COMPARATOR compare) {
+ALGUI_BOOL algui_init_map(ALGUI_MAP* map, size_t key_size, size_t value_size, ALGUI_COMPARATOR compare, ALGUI_DESTRUCTOR key_dtor, ALGUI_DESTRUCTOR value_dtor) {
     //check the map
     if (map == NULL) {
         errno = EINVAL;
@@ -133,7 +167,7 @@ ALGUI_BOOL algui_init_map(ALGUI_MAP* map, size_t key_size, size_t value_size, AL
     const size_t element_size = compute_element_size(key_size, value_size);
 
     //setup the map
-    algui_init_array(&map->array, element_size, 0);
+    algui_init_array(&map->array, element_size, 0, key_dtor || value_dtor ? elem_dtor : NULL);
     map->compare = compare;
     map->counter = 0;
     map->key_size = key_size;
@@ -141,6 +175,8 @@ ALGUI_BOOL algui_init_map(ALGUI_MAP* map, size_t key_size, size_t value_size, AL
     map->value_size = value_size;
     map->sorted = ALGUI_TRUE;
     map->bucket_size = 32;
+    map->key_dtor = key_dtor;
+    map->value_dtor = value_dtor;
 
     //success
     return ALGUI_TRUE;
@@ -155,8 +191,11 @@ ALGUI_BOOL algui_cleanup_map(ALGUI_MAP* map) {
         return ALGUI_FALSE;
     }
 
-    //cleanup the map
+    //cleanup the array; make sure excess elements are not cleaned up, since they are not initialized
+    map->array.size = map->size;
     algui_cleanup_array(&map->array);
+
+    //cleanup the map
     map->size = 0;
     map->counter = 0;
     map->sorted = ALGUI_TRUE;
@@ -199,7 +238,9 @@ void* algui_get_map_element(ALGUI_MAP* map, const void* key) {
     }
 
     //sort the map, if needed
-    sort_map(map);
+    if (!sort_map(map)) {
+        return NULL;
+    }
 
     //find the entry, based on the map search comparator
     size_t index = algui_find_array_element_index_binary_search_util(map->array.data, map->size, map->array.element_size, key, search_comparator);
@@ -253,7 +294,7 @@ ALGUI_BOOL algui_set_map_element(ALGUI_MAP* map, const void* key, const void* va
     ELEMENT_HEADER* elem = ALGUI_GET_ARRAY_ELEMENT_UTIL(ELEMENT_HEADER, map->array.data, map->array.element_size, map->size);
 
     //set the element header
-    elem->compare = map->compare;
+    elem->map = map;
     elem->counter = map->counter;
 
     //copy the key
@@ -292,7 +333,9 @@ ALGUI_BOOL algui_remove_map_element(ALGUI_MAP* map, const void* key) {
     }
 
     //sort the map, if need, so as that we can find the entry
-    sort_map(map);
+    if (!sort_map(map)) {
+        return ALGUI_FALSE;
+    }
 
     //find the entry, based on the map search comparator
     const size_t index = algui_find_array_element_index_binary_search_util(map->array.data, map->size, map->array.element_size, key, search_comparator);
@@ -334,7 +377,9 @@ uintptr_t algui_for_each_map_element(ALGUI_MAP* map, uintptr_t(*func)(const void
     }
 
     //sort the map, if needed
-    sort_map(map);
+    if (!sort_map(map)) {
+        return (uintptr_t)NULL;
+    }
 
     //loop
     for (size_t i = 0; i < map->size; ) {
@@ -390,7 +435,9 @@ uintptr_t algui_for_each_map_element_reverse(ALGUI_MAP* map, uintptr_t(*func)(co
     }
 
     //sort the map, if needed
-    sort_map(map);
+    if (!sort_map(map)) {
+        return (uintptr_t)NULL;
+    }
 
     //loop
     for (size_t i = map->size; i > 0; ) {
