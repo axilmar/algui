@@ -14,23 +14,23 @@
  */
 typedef struct ALGUI_MAP {
     ALGUI_ARRAY array;
-    size_t size;
-    size_t counter;
-    ALGUI_BOOL sorted;
-    size_t key_size;
-    size_t value_size;
-    size_t bucket_size;
     ALGUI_COMPARATOR compare;
     ALGUI_DESTRUCTOR key_dtor;
     ALGUI_DESTRUCTOR value_dtor;
+    size_t counter : 32;
+    size_t size : 32;
+    ALGUI_BOOL sorted : 1;
+    size_t bucket_size : 7;
+    size_t key_size : ALGUI_MAX_ELEMENT_SIZE_BITS;
+    size_t value_size : ALGUI_MAX_ELEMENT_SIZE_BITS;
 } ALGUI_MAP;
 
 
 /**
  * Initializes a map.
  * @param map map to initialize; if null, then false is returned and errno is set to EINVAL.
- * @param key_size size of key, in bytes; if 0, then false is returned and errno is set to EINVAL.
- * @param value_size size of value, in bytes; 0 is allowed, if the map is to be treated as a set, inserting null values.
+ * @param key_size size of key, in bytes; if 0 or greater than ALGUI_MAX_ELEMENT_SIZE, then false is returned and errno is set to EINVAL.
+ * @param value_size size of value, in bytes; 0 is allowed, if the map is to be treated as a set, inserting null values. If greater than ALGUI_MAX_ELEMENT_SIZE, then false is returned and errno is set to EINVAL.
  * @param compare the function that imposes an order in the map; if null, then false is returned and errno is set to EINVAL.
  * @param key_dtor optional key destructor.
  * @param value_dtor optional value destructor.

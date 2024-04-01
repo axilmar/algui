@@ -6,6 +6,7 @@
 #include "index.h"
 #include "comparator.h"
 #include "destructor.h"
+#include "element_size.h"
 
 
 /**
@@ -13,8 +14,8 @@
  */
 typedef struct ALGUI_ARRAY {
     char* data;
-    size_t element_size;
-    size_t size;
+    size_t element_size : ALGUI_MAX_ELEMENT_SIZE_BITS;
+    size_t size : sizeof(size_t) * 8 - ALGUI_MAX_ELEMENT_SIZE_BITS;
     ALGUI_DESTRUCTOR dtor;
 } ALGUI_ARRAY;
 
@@ -22,7 +23,7 @@ typedef struct ALGUI_ARRAY {
 /**
  * Initializes an array.
  * @param array array to initialize; if null, it returns false and sets errno to EINVAL.
- * @param element_size element size, in bytes. If 0, it returns false and sets errno to EINVAL.
+ * @param element_size element size, in bytes. If 0 or greater than ALGUI_MAX_ELEMENT_SIZE, it returns false and sets errno to EINVAL.
  * @param size initial array size, in elements. If allocation fails, it returns false and sets errno to ENOMEM.
  * @param dtor optional element destructor.
  * @return true on success, false on error.

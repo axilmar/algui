@@ -28,8 +28,8 @@ ALGUI_BOOL algui_init_array(ALGUI_ARRAY* array, size_t element_size, size_t size
         return ALGUI_FALSE;
     }
 
-    //the element size cannot be 0
-    if (element_size == 0) {
+    //the element size cannot be 0 or over the maximum
+    if (element_size == 0 || element_size > ALGUI_MAX_ELEMENT_SIZE) {
         errno = EINVAL;
         return ALGUI_FALSE;
     }

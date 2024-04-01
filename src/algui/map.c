@@ -152,7 +152,13 @@ ALGUI_BOOL algui_init_map(ALGUI_MAP* map, size_t key_size, size_t value_size, AL
     }
 
     //check the key size
-    if (key_size == 0) {
+    if (key_size == 0 || key_size > ALGUI_MAX_ELEMENT_SIZE) {
+        errno = EINVAL;
+        return ALGUI_FALSE;
+    }
+
+    //check the value size
+    if (value_size > ALGUI_MAX_ELEMENT_SIZE) {
         errno = EINVAL;
         return ALGUI_FALSE;
     }

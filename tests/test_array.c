@@ -26,6 +26,12 @@ static ALGUI_BOOL test_init_array(void* external_data) {
         ALGUI_ENSURE_ERROR(algui_init_array(&array, 0, 4, NULL) == ALGUI_FALSE, EINVAL);
     }
 
+    //test big element size
+    {
+        ALGUI_ARRAY array;
+        ALGUI_ENSURE_ERROR(algui_init_array(&array, ALGUI_MAX_ELEMENT_SIZE + 1, 4, NULL) == ALGUI_FALSE, EINVAL);
+    }
+
     //test init with 0 size
     {
         ALGUI_ARRAY array;

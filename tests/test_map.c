@@ -30,6 +30,18 @@ static ALGUI_BOOL test_init_map(void* external_data) {
         ALGUI_ENSURE_ERROR(algui_init_map(&map, 0, sizeof(int), int_comparator, NULL, NULL) == ALGUI_FALSE, EINVAL);
     }
 
+    //test big key size
+    {
+        ALGUI_MAP map;
+        ALGUI_ENSURE_ERROR(algui_init_map(&map, ALGUI_MAX_ELEMENT_SIZE + 1, sizeof(int), int_comparator, NULL, NULL) == ALGUI_FALSE, EINVAL);
+    }
+
+    //test big value size
+    {
+        ALGUI_MAP map;
+        ALGUI_ENSURE_ERROR(algui_init_map(&map, sizeof(int), ALGUI_MAX_ELEMENT_SIZE + 1, int_comparator, NULL, NULL) == ALGUI_FALSE, EINVAL);
+    }
+
     //test null comparator
     {
         ALGUI_MAP map;
