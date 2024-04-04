@@ -6,7 +6,7 @@
  * Number of bits for element size.
  */
 #ifndef ALGUI_MAX_ELEMENT_SIZE_BITS
-#define ALGUI_MAX_ELEMENT_SIZE_BITS 8
+#define ALGUI_MAX_ELEMENT_SIZE_BITS 12
 #endif
 
 
