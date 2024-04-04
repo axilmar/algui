@@ -12,7 +12,7 @@
  */
 typedef struct ALGUI_CONST_BUFFER {
     ///data.
-    const void* const data;
+    const char* const data;
 
     ///number of bytes the buffer holds.
     const size_t size;
@@ -24,7 +24,7 @@ typedef struct ALGUI_CONST_BUFFER {
  */
 typedef struct ALGUI_BUFFER {
     ///data.
-    void* data;
+    char* data;
 
     ///number of bytes the buffer holds.
     size_t size;
