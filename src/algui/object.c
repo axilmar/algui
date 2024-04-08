@@ -208,8 +208,8 @@ static ALGUI_BOOL set_embedded_value(ALGUI_OBJECT* obj, EMBEDDED_VALUE* prop, co
     }
 
     //inform the object about the change
-    if (prop->changed) {
-        prop->changed(obj, value);
+    if (prop->changed != NULL) {
+        prop->changed(obj, &buffer);
     }
 
     //success
@@ -269,8 +269,8 @@ static ALGUI_BOOL set_static_heap_value(ALGUI_OBJECT* obj, STATIC_HEAP_VALUE* pr
     }
 
     //inform the object about the change
-    if (prop->changed) {
-        prop->changed(obj, value);
+    if (prop->changed != NULL) {
+        prop->changed(obj, &prop->value);
     }
 
     //success
@@ -322,8 +322,8 @@ static ALGUI_BOOL set_dynamic_heap_value(ALGUI_OBJECT* obj, DYNAMIC_HEAP_VALUE* 
     }
 
     //inform the object about the change
-    if (prop->changed) {
-        prop->changed(obj, value);
+    if (prop->changed != NULL) {
+        prop->changed(obj, &prop->value);
     }
 
     //success
