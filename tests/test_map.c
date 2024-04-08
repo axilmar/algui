@@ -458,7 +458,7 @@ static ALGUI_BOOL test_for_each_map_element_reverse(void* external_data) {
 }
 
 
-void run_tests_map(ALGUI_TEST_STATISTICS* stats) {
+void test_map(ALGUI_TEST_STATISTICS* stats) {
     algui_do_test(stats, "algui_init_map", test_init_map, NULL);
     algui_do_test(stats, "algui_cleanup_map", test_cleanup_map, NULL);
     algui_do_test(stats, "algui_is_empty_map", test_is_empty_map, NULL);

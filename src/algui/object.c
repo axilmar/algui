@@ -359,7 +359,7 @@ static void destroy_entry(void* p) {
 
 
 //init object
-ALGUI_BOOL algui_init_object(ALGUI_OBJECT* obj, ALGUI_OBJECT_MESSAGE_HANDLER cleanup) {
+ALGUI_BOOL algui_init_object(ALGUI_OBJECT* obj) {
     //check the obj
     if (obj == NULL) {
         errno = EINVAL;
@@ -369,13 +369,6 @@ ALGUI_BOOL algui_init_object(ALGUI_OBJECT* obj, ALGUI_OBJECT_MESSAGE_HANDLER cle
     //init the data
     if (!algui_init_map(&obj->data, sizeof(int), sizeof(ENTRY), algui_int_comparator, NULL, destroy_entry)) {
         return ALGUI_FALSE;
-    }
-
-    //add the cleanup handler
-    if (cleanup) {
-        if (!algui_set_object_message_handler(obj, ALGUI_MSG_CLEANUP, cleanup, NULL, NULL)) {
-            return ALGUI_FALSE;
-        }
     }
 
     //success
@@ -438,6 +431,10 @@ ALGUI_BOOL algui_define_object_property(ALGUI_OBJECT* obj, int id, const ALGUI_P
         
         //set the value
         if (initial_value != NULL) {
+            if (prop->accessor.set == NULL) {
+                errno = EINVAL;
+                return ALGUI_FALSE;
+            }
             set_accessor_value(obj, &entry.accessor, initial_value);
         }
     }
@@ -540,11 +537,13 @@ ALGUI_BOOL algui_get_object_property(ALGUI_OBJECT* obj, int id, ALGUI_BUFFER* pr
 
     //if the entry is not found, either return the default value, if not given, or return null
     if (entry == NULL) {
+        errno = EINVAL;
         goto DEFAULT_VALUE;
     }
 
     //access is not allowed, either return the default value, if not given, or return null
     if (!check_access(entry, access_token)) {
+        errno = EINVAL;
         goto DEFAULT_VALUE;
     }
 
@@ -554,6 +553,7 @@ ALGUI_BOOL algui_get_object_property(ALGUI_OBJECT* obj, int id, ALGUI_BUFFER* pr
             if (entry->accessor.get) {
                 return entry->accessor.get(obj, prop);
             }
+            errno = EINVAL;
             break;
 
         case ENTRY_TYPE_DYNAMIC_HEAP_VALUE:
@@ -730,6 +730,7 @@ uintptr_t algui_do_object_message(ALGUI_OBJECT* obj, int id, void* data, const A
 
     //if the entry is not a message, return
     if (entry->type != ENTRY_TYPE_MSG_HANDLER) {
+        errno = EINVAL;
         return 0;
     }
 

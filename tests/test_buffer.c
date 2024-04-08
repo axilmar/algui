@@ -587,7 +587,7 @@ static ALGUI_BOOL test_memcmp_buffers(void* context) {
 }
 
 
-void run_tests_buffer(ALGUI_TEST_STATISTICS* stats) {
+void test_buffer(ALGUI_TEST_STATISTICS* stats) {
     algui_do_test(stats, "algui_init_buffer", test_init_buffer, NULL);
     algui_do_test(stats, "algui_cleanup_buffer", test_cleanup_buffer, NULL);
     algui_do_test(stats, "algui_is_empty_buffer", test_is_empty_buffer, NULL);

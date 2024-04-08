@@ -14,8 +14,8 @@ typedef struct ALGUI_OBJECT {
 
 
 typedef enum ALGUI_PROPERTY_TYPE {
-    ALGUI_PROPERTY_TYPE_VALUE,
-    ALGUI_PROPERTY_TYPE_ACCESSOR
+    ALGUI_PROPERTY_TYPE_ACCESSOR,
+    ALGUI_PROPERTY_TYPE_VALUE
 } ALGUI_PROPERTY_TYPE;
 
 
@@ -38,10 +38,13 @@ typedef struct ALGUI_PROPERTY_DEFINITION {
 } ALGUI_PROPERTY_DEFINITION;
 
 
-typedef uintptr_t(*ALGUI_OBJECT_MESSAGE_HANDLER)(ALGUI_OBJECT* obj, void* msg_data);
+typedef uintptr_t ALGUI_RESULT;
 
 
-ALGUI_BOOL algui_init_object(ALGUI_OBJECT* obj, ALGUI_OBJECT_MESSAGE_HANDLER cleanup);
+typedef ALGUI_RESULT (*ALGUI_OBJECT_MESSAGE_HANDLER)(ALGUI_OBJECT* obj, void* msg_data);
+
+
+ALGUI_BOOL algui_init_object(ALGUI_OBJECT* obj);
 
 
 ALGUI_BOOL algui_cleanup_object(ALGUI_OBJECT* obj);
@@ -59,7 +62,7 @@ ALGUI_BOOL algui_set_object_property(ALGUI_OBJECT* obj, int id, const ALGUI_BUFF
 ALGUI_BOOL algui_set_object_message_handler(ALGUI_OBJECT* obj, int id, ALGUI_OBJECT_MESSAGE_HANDLER handler, const ALGUI_BUFFER* access_token, ALGUI_OBJECT_MESSAGE_HANDLER* prev_handler);
 
 
-uintptr_t algui_do_object_message(ALGUI_OBJECT* obj, int id, void* data, const ALGUI_BUFFER* access_token);
+ALGUI_RESULT algui_do_object_message(ALGUI_OBJECT* obj, int id, void* data, const ALGUI_BUFFER* access_token);
 
 
 #endif //ALGUI_OBJECT_H

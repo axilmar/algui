@@ -1621,7 +1621,7 @@ static ALGUI_BOOL test_for_each_array_element_reverse(void* external_data) {
 }
 
 
-void run_tests_array(ALGUI_TEST_STATISTICS* stats) {
+void test_array(ALGUI_TEST_STATISTICS* stats) {
     algui_do_test(stats, "algui_init_array", test_init_array, NULL);
     algui_do_test(stats, "algui_cleanup_array", test_cleanup_array, NULL);
     algui_do_test(stats, "algui_get_array_element_size", test_get_array_element_size, NULL);
