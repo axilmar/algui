@@ -16,7 +16,12 @@ enum ENTRY_TYPE {
 };
 
 
+//if value size is equal or less than that of a buffer, then the value is embedded into the data
 enum { EMBEDDED_VALUE_SIZE = sizeof(ALGUI_BUFFER) };
+
+
+//actual message ids start from INT_MAX / 2 so as that they do not coincide with property ids
+enum { MESSAGE_HANDLER_ID_OFFSET = INT_MAX / 2 };
 
 
 //embedded value property
@@ -659,6 +664,9 @@ ALGUI_OBJECT_MESSAGE_HANDLER algui_get_object_message_handler(ALGUI_OBJECT* obj,
         return ALGUI_FALSE;
     }
 
+    //actual message ids start from an offset so as that they are not mixed up with property ids
+    id += MESSAGE_HANDLER_ID_OFFSET;
+
     //locate the entry
     ENTRY* entry = (ENTRY*)algui_get_map_element(&obj->data, &id);
 
@@ -698,6 +706,9 @@ ALGUI_BOOL algui_set_object_message_handler(ALGUI_OBJECT* obj, int id, ALGUI_OBJ
         errno = EINVAL;
         return ALGUI_FALSE;
     }
+
+    //actual message ids start from an offset so as that they are not mixed up with property ids
+    id += MESSAGE_HANDLER_ID_OFFSET;
 
     //locate the previous entry
     ENTRY* entry = (ENTRY*)algui_get_map_element(&obj->data, &id);
@@ -757,6 +768,9 @@ uintptr_t algui_do_object_message(ALGUI_OBJECT* obj, int id, void* data, const A
         errno = EINVAL;
         return 0;
     }
+
+    //actual message ids start from an offset so as that they are not mixed up with property ids
+    id += MESSAGE_HANDLER_ID_OFFSET;
 
     //get the entry
     ENTRY* entry = (ENTRY*)algui_get_map_element(&obj->data, &id);
