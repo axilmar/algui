@@ -130,8 +130,8 @@ static ALGUI_BOOL test_get_set_remove_map_element(void* external_data) {
 
     //test null map
     {
-        ALGUI_ENSURE_ERROR(algui_get_map_element(NULL, &k) == ALGUI_FALSE, EINVAL);
-        ALGUI_ENSURE_ERROR(algui_set_map_element(NULL, &k, &v) == ALGUI_FALSE, EINVAL);
+        ALGUI_ENSURE_ERROR(algui_get_map_element(NULL, &k) == NULL, EINVAL);
+        ALGUI_ENSURE_ERROR(algui_set_map_element(NULL, &k, &v) == NULL, EINVAL);
     }
 
     //test null key
@@ -139,14 +139,14 @@ static ALGUI_BOOL test_get_set_remove_map_element(void* external_data) {
         ALGUI_MAP map;
         algui_init_map(&map, sizeof(int), sizeof(int), int_comparator, NULL, NULL);
         ALGUI_ENSURE_ERROR(algui_get_map_element(&map, NULL) == ALGUI_FALSE, EINVAL);
-        ALGUI_ENSURE_ERROR(algui_set_map_element(&map, NULL, &v) == ALGUI_FALSE, EINVAL);
+        ALGUI_ENSURE_ERROR(algui_set_map_element(&map, NULL, &v) == NULL, EINVAL);
     }
 
     //test null value
     {
         ALGUI_MAP map;
         algui_init_map(&map, sizeof(int), sizeof(int), int_comparator, NULL, NULL);
-        ALGUI_ENSURE_ERROR(algui_set_map_element(&map, &k, NULL) == ALGUI_FALSE, EINVAL);
+        ALGUI_ENSURE_ERROR(algui_set_map_element(&map, &k, NULL) == NULL, EINVAL);
     }
 
     //test empty map, add 1, remove 1
@@ -157,7 +157,7 @@ static ALGUI_BOOL test_get_set_remove_map_element(void* external_data) {
         //insert element
         k = 5;
         v = 5;
-        ALGUI_ENSURE_ERROR(algui_set_map_element(&map, &k, &v) == ALGUI_TRUE, 0);
+        ALGUI_ENSURE_ERROR(algui_set_map_element(&map, &k, &v) != NULL, 0);
 
         //get non existing element
         k = 55;
@@ -193,7 +193,7 @@ static ALGUI_BOOL test_get_set_remove_map_element(void* external_data) {
 
         //insert elements
         for (int i = 5; i < 20; ++i) {
-            ALGUI_ENSURE_ERROR(algui_set_map_element(&map, &i, &i) == ALGUI_TRUE, 0);
+            ALGUI_ENSURE_ERROR(algui_set_map_element(&map, &i, &i) != NULL, 0);
         }
 
         //get non existing element
@@ -230,7 +230,7 @@ static ALGUI_BOOL test_get_set_remove_map_element(void* external_data) {
 
         //insert elements
         for (int i = 5; i < 20; ++i) {
-            ALGUI_ENSURE_ERROR(algui_set_map_element(&map, &i, &i) == ALGUI_TRUE, 0);
+            ALGUI_ENSURE_ERROR(algui_set_map_element(&map, &i, &i) != NULL, 0);
         }
 
         //get non existing element

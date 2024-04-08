@@ -7,21 +7,9 @@
 
 
 /**
- * Max property id.
- */
-#define ALGUI_MAX_PROPERTY_ID 65535
-
-
-/**
- * Property id type.
- */
-typedef uint16_t ALGUI_PROPERTY_ID;
-
-
-/**
  * Property ids.
  */
-enum ALGUI_PROPERTY_ID {
+enum ALGUI_PROP_ID {
     ///null property id.
     ALGUI_PROP_NULL,
 
@@ -42,7 +30,7 @@ enum ALGUI_PROPERTY_ID {
  * @param name property name; if null, then false is returned and errno is set to EINVAL.
  * @return true on success, false on error.
  */
-ALGUI_BOOL algui_register_property(ALGUI_PROPERTY_ID id, const char* name);
+ALGUI_BOOL algui_register_property(int id, const char* name);
 
 
 /**
@@ -50,7 +38,7 @@ ALGUI_BOOL algui_register_property(ALGUI_PROPERTY_ID id, const char* name);
  * @param name name of property; if null, then null id is returned and errno is set to EINVAL.
  * @return on success, the property id; on error, the null id enum value.
  */
-ALGUI_PROPERTY_ID algui_get_property_id(const char* name);
+int algui_get_property_id(const char* name);
 
 
 /**
@@ -58,7 +46,7 @@ ALGUI_PROPERTY_ID algui_get_property_id(const char* name);
  * @param id id of property; if null id, then null is returned and errno is set to EINVAL.
  * @return on success, the property name; on error, NULL.
  */
-const char* algui_get_property_name(ALGUI_PROPERTY_ID id);
+const char* algui_get_property_name(int id);
 
 
 #endif // ALGUI_PROPERTIES_H

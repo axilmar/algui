@@ -7,21 +7,9 @@
 
 
 /**
- * Max message id.
- */
-#define ALGUI_MAX_MESSAGE_ID 65535
-
-
- /**
-  * Message id type.
-  */
-typedef uint16_t ALGUI_MESSAGE_ID;
-
-
-/**
  * Message ids.
  */
-enum ALGUI_MESSAGE_ID {
+enum ALGUI_MSG_ID_TYPE {
     ///null message.
     ALGUI_MSG_NULL,
 
@@ -39,7 +27,7 @@ enum ALGUI_MESSAGE_ID {
  * @param name name of the message; if null, then false is returned and errno is set to EINVAL.
  * @return true on success, false on error.
  */
-ALGUI_BOOL algui_register_message(ALGUI_MESSAGE_ID id, const char* name);
+ALGUI_BOOL algui_register_message(int id, const char* name);
 
 
 /**
@@ -47,7 +35,7 @@ ALGUI_BOOL algui_register_message(ALGUI_MESSAGE_ID id, const char* name);
  * @param name name of message; if null, then null id is returned and errno is set to EINVAL.
  * @return on success, the message id; on error, the null id enum value.
  */
-ALGUI_MESSAGE_ID algui_get_message_id(const char* name);
+int algui_get_message_id(const char* name);
 
 
 /**
@@ -55,7 +43,7 @@ ALGUI_MESSAGE_ID algui_get_message_id(const char* name);
  * @param id id of message; if null id, then null is returned and errno is set to EINVAL.
  * @return on success, the message name; on error, NULL.
  */
-const char* algui_get_message_name(ALGUI_MESSAGE_ID id);
+const char* algui_get_message_name(int id);
 
 
 #endif //ALGUI_MESSAGE_H

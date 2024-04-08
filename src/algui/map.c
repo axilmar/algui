@@ -270,29 +270,29 @@ void* algui_get_map_element(ALGUI_MAP* map, const void* key) {
 
 
 //set element
-ALGUI_BOOL algui_set_map_element(ALGUI_MAP* map, const void* key, const void* value) {
+void* algui_set_map_element(ALGUI_MAP* map, const void* key, const void* value) {
     //check the map
     if (map == NULL) {
         errno = EINVAL;
-        return ALGUI_FALSE;
+        return NULL;
     }
 
     //check the key
     if (key == NULL) {
         errno = EINVAL;
-        return ALGUI_FALSE;
+        return NULL;
     }
 
     //check the value, but only if map value size is greater than zero
     if ((map->value_size > 0 && value == NULL) || (map->value_size == 0 && value != NULL)) {
         errno = EINVAL;
-        return ALGUI_FALSE;
+        return NULL;
     }
     
     //make room into the array if needed; on error, return false
     if (map->size == map->array.size) {
         if (algui_set_array_size(&map->array, map->size + map->bucket_size) == ALGUI_FALSE) {
-            return ALGUI_FALSE;
+            return NULL ;
         }
     }
 
@@ -306,8 +306,9 @@ ALGUI_BOOL algui_set_map_element(ALGUI_MAP* map, const void* key, const void* va
     //copy the key
     memmove(elem + 1, key, map->key_size);
 
-    //copy the value
-    memmove((char*)(elem + 1) + map->key_size, value, map->value_size);
+    //copy the value to the element value
+    char* elem_value = (char*)(elem + 1) + map->key_size;
+    memmove(elem_value, value, map->value_size);
 
     //setup the map after the insertion
     ++map->counter;
@@ -315,7 +316,7 @@ ALGUI_BOOL algui_set_map_element(ALGUI_MAP* map, const void* key, const void* va
     map->sorted = ALGUI_FALSE;
 
     //success
-    return ALGUI_TRUE;
+    return elem_value;
 }
 
 

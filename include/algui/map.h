@@ -69,9 +69,9 @@ void* algui_get_map_element(ALGUI_MAP* map, const void* key);
  * @param map the map to insert an element into; if null, then false is returned and errno is set to EINVAL.
  * @param key pointer to key; if null, then false is returned and errno is set to EINVAL.
  * @param value pointer to key; if null and value size is not 0 or if not null and value size is 0, then false is returned and errno is set to EINVAL.
- * @return true on success, false on error; if memory allocation fails, errno is set to ENOMEM.
+ * @return pointer to value on success, NULL on error; if memory allocation fails, errno is set to ENOMEM.
  */
-ALGUI_BOOL algui_set_map_element(ALGUI_MAP* map, const void* key, const void* value);
+void* algui_set_map_element(ALGUI_MAP* map, const void* key, const void* value);
 
 
 /**

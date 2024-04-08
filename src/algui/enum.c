@@ -65,8 +65,8 @@ ALGUI_BOOL algui_add_enum_value(ALGUI_ENUM* en, int id, const char* name, const 
 
     //add the values to maps
     const ENUM_ENTRY entry = { name, metadata };
-    ALGUI_BOOL ok = algui_set_map_element(&en->id_to_entry, &id, &entry);
-    ok = algui_set_map_element(&en->name_to_id, &name, &id) && ok;
+    ALGUI_BOOL ok = algui_set_map_element(&en->id_to_entry, &id, &entry) != NULL;
+    ok = algui_set_map_element(&en->name_to_id, &name, &id) != NULL && ok;
 
     //return map operations success
     return ok;

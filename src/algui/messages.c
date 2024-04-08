@@ -29,7 +29,7 @@ static void init_messages() {
 
 
 //add a message
-ALGUI_BOOL algui_register_message(ALGUI_MESSAGE_ID id, const char* name) {
+ALGUI_BOOL algui_register_message(int id, const char* name) {
     init_messages();
 
     if (id == ALGUI_MSG_NULL) {
@@ -47,7 +47,7 @@ ALGUI_BOOL algui_register_message(ALGUI_MESSAGE_ID id, const char* name) {
 
 
 //get message id
-ALGUI_MESSAGE_ID algui_get_message_id(const char* name) {
+int algui_get_message_id(const char* name) {
     init_messages();
 
     if (name == NULL) {
@@ -60,7 +60,7 @@ ALGUI_MESSAGE_ID algui_get_message_id(const char* name) {
 
 
 //get message name
-const char* algui_get_message_name(ALGUI_MESSAGE_ID id) {
+const char* algui_get_message_name(int id) {
     init_messages();
 
     if (id == ALGUI_MSG_NULL) {

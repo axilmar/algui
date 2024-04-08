@@ -30,7 +30,7 @@ static void init_properties() {
 
 
 //add a property
-ALGUI_BOOL algui_register_property(ALGUI_PROPERTY_ID id, const char* name) {
+ALGUI_BOOL algui_register_property(int id, const char* name) {
     init_properties();
 
     if (id == ALGUI_PROP_NULL) {
@@ -48,7 +48,7 @@ ALGUI_BOOL algui_register_property(ALGUI_PROPERTY_ID id, const char* name) {
 
 
 //get property id
-ALGUI_PROPERTY_ID algui_get_property_id(const char* name) {
+int algui_get_property_id(const char* name) {
     init_properties();
 
     if (name == NULL) {
@@ -61,7 +61,7 @@ ALGUI_PROPERTY_ID algui_get_property_id(const char* name) {
 
 
 //get property name
-const char* algui_get_property_name(ALGUI_PROPERTY_ID id) {
+const char* algui_get_property_name(int id) {
     init_properties();
 
     if (id == ALGUI_PROP_NULL) {
