@@ -406,6 +406,12 @@ ALGUI_BOOL algui_define_object_property(ALGUI_OBJECT* obj, int id, const ALGUI_P
         return ALGUI_FALSE;
     }
 
+    //check the property type
+    if (prop->type != ALGUI_PROPERTY_TYPE_ACCESSOR && prop->type != ALGUI_PROPERTY_TYPE_VALUE) {
+        errno = EINVAL;
+        return ALGUI_FALSE;
+    }
+
     //check if the entry exists; if so, return an error
     if (algui_get_map_element(&obj->data, &id) != NULL) {
         errno = EINVAL;
@@ -612,17 +618,15 @@ ALGUI_BOOL algui_set_object_property(ALGUI_OBJECT* obj, int id, const ALGUI_BUFF
     //find the entry
     ENTRY* entry = (ENTRY*)algui_get_map_element(&obj->data, &id);
 
-    //if the entry is not found, add a new data property
+    //if the entry is not found
     if (entry == NULL) {
-        ALGUI_PROPERTY_DEFINITION def;
-        memset(&def, 0, sizeof(def));
-        def.type = ALGUI_PROPERTY_TYPE_VALUE;
-        def.value.size = prop->size;
-        return algui_define_object_property(obj, id, &def, prop, access_token);
+        errno = EINVAL;
+        return ALGUI_FALSE;
     }
 
     //check access
     if (!check_access(entry, access_token)) {
+        errno = EINVAL;
         return ALGUI_FALSE;
     }
 
@@ -644,6 +648,40 @@ ALGUI_BOOL algui_set_object_property(ALGUI_OBJECT* obj, int id, const ALGUI_BUFF
     //wrong property id
     errno = EINVAL;
     return ALGUI_FALSE;
+}
+
+
+//retrieve an object's message handler
+ALGUI_OBJECT_MESSAGE_HANDLER algui_get_object_message_handler(ALGUI_OBJECT* obj, int id, const ALGUI_BUFFER* access_token) {
+    //check the obj
+    if (obj == NULL) {
+        errno = EINVAL;
+        return ALGUI_FALSE;
+    }
+
+    //locate the entry
+    ENTRY* entry = (ENTRY*)algui_get_map_element(&obj->data, &id);
+
+    //if not found
+    if (entry == NULL) {
+        errno = EINVAL;
+        return ALGUI_FALSE;
+    }
+
+    //check the entry type
+    if (entry->type != ENTRY_TYPE_MSG_HANDLER) {
+        errno = EINVAL;
+        return ALGUI_FALSE;
+    }
+
+    //check the access token
+    if (!check_access(entry, access_token)) {
+        errno = EINVAL;
+        return ALGUI_FALSE;
+    }
+
+    //success
+    return entry->msg_handler;
 }
 
 
@@ -725,6 +763,7 @@ uintptr_t algui_do_object_message(ALGUI_OBJECT* obj, int id, void* data, const A
 
     //if the entry is not found, return
     if (entry == NULL) {
+        errno = EINVAL;
         return 0;
     }
 
