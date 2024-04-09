@@ -55,6 +55,18 @@ static ALGUI_RESULT test_handler1(ALGUI_OBJECT* obj, void* data) {
 }
 
 
+static ALGUI_RESULT unknown_message_handler(ALGUI_OBJECT* obj, void* data) {
+    ALGUI_MESSAGE* msg = (ALGUI_MESSAGE*)data;
+
+    switch (msg->id) {
+        case MSG_TEST:
+            return test_handler(obj, msg->data);
+    }
+
+    return 0;
+}
+
+
 static ALGUI_BOOL test_value_get(ALGUI_OBJECT* obj, ALGUI_BUFFER* buf) {
     if (buf->size < sizeof(int)) {
         errno = EINVAL;
@@ -1240,6 +1252,16 @@ static ALGUI_BOOL test_do_object_message(void* context) {
         ALGUI_ENSURE(test.test_value == td.value);
 
         algui_cleanup_object(&test.object);
+    }
+
+    //do unknown message
+    {
+        TEST_OBJECT test;
+        init_test_object(&test);
+        algui_set_object_message_handler(&test.object, ALGUI_MSG_UNKNOWN, unknown_message_handler, NULL, NULL);
+
+        TEST_DATA td = { 5 };
+        ALGUI_ENSURE_ERROR(algui_do_object_message(&test.object, MSG_TEST, &td, NULL) == 1, 0);
     }
 
     return ALGUI_TRUE;

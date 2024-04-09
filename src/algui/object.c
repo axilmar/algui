@@ -895,6 +895,8 @@ ALGUI_BOOL algui_set_object_message_handler(ALGUI_OBJECT* obj, int id, ALGUI_OBJ
 
 //do object message
 ALGUI_RESULT  algui_do_object_message(ALGUI_OBJECT* obj, int id, void* data, const ALGUI_BUFFER* access_token) {
+    int original_errno = errno;
+
     //check the obj
     if (obj == NULL) {
         errno = EINVAL;
@@ -909,6 +911,9 @@ ALGUI_RESULT  algui_do_object_message(ALGUI_OBJECT* obj, int id, void* data, con
     if (errno == 0) {
         return result;
     }
+
+    //reset the error so that messaging is tried again
+    errno = original_errno;
 
     //set up an unknown message
     ALGUI_MESSAGE unknown_message = { id, data, access_token };
