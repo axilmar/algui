@@ -126,6 +126,37 @@ static ALGUI_BOOL test_cleanup_object(void* context) {
 }
 
 
+static ALGUI_BOOL test_create_destroy_object(void* context) {
+    //size 0
+    {
+        ALGUI_OBJECT* obj;
+        ALGUI_ENSURE_ERROR((obj = algui_create_object(0)) != NULL, 0);
+        ALGUI_ENSURE_ERROR(algui_destroy_object(NULL) == ALGUI_FALSE, EINVAL);
+        ALGUI_ENSURE_ERROR(algui_destroy_object(obj) == ALGUI_TRUE, EINVAL);
+    }
+
+    //size less than object
+    {
+        ALGUI_ENSURE_ERROR(algui_create_object(sizeof(ALGUI_OBJECT)/2) == NULL, EINVAL);
+    }
+
+    //size greater than object
+    {
+        ALGUI_OBJECT* obj;
+        ALGUI_ENSURE_ERROR((obj = algui_create_object(sizeof(ALGUI_OBJECT) * 2)) != NULL, 0);
+        ALGUI_ENSURE_ERROR(algui_destroy_object(NULL) == ALGUI_FALSE, EINVAL);
+        ALGUI_ENSURE_ERROR(algui_destroy_object(obj) == ALGUI_TRUE, EINVAL);
+    }
+
+    //too large size
+    {
+        ALGUI_ENSURE_ERROR(algui_create_object(UINT_MAX) == NULL, ENOMEM);
+    }
+
+    return ALGUI_TRUE;
+}
+
+
 static ALGUI_BOOL test_define_object_property(void* context) {
     //null object
     {
@@ -1409,6 +1440,7 @@ static ALGUI_BOOL test_object_property_macros(void* context) {
 void test_object(ALGUI_TEST_STATISTICS* stats) {
     algui_do_test(stats, "algui_init_object", test_init_object, NULL);
     algui_do_test(stats, "algui_cleanup_object", test_cleanup_object, NULL);
+    algui_do_test(stats, "create/destroy object", test_create_destroy_object, NULL);
     algui_do_test(stats, "algui_define_object_property", test_define_object_property, NULL);
     algui_do_test(stats, "algui_delete_object_property", test_delete_object_property, NULL);
     algui_do_test(stats, "algui_set_object_property", test_set_object_property, NULL);

@@ -235,6 +235,24 @@ ALGUI_BOOL algui_cleanup_object(ALGUI_OBJECT* obj);
 
 
 /**
+ * Allocates and initializes memory for an object-derived structure.
+ * If memory cannot be allocated, it returns NULL and sets errno to ENOMEM.
+ * @param size number of bytes to allocate; if 0, then it allocates memory for the ALGUI_OBJECT structure; 
+ *  if greater than 0 and less than sizeof(ALGUI_OBJECT), null is returned and errno is set to EINVAL.
+ * @return pointer to allocated object or NULL or error.
+ */
+ALGUI_OBJECT* algui_create_object(size_t size);
+
+
+/**
+ * Cleans up an object, then frees the memory block it occupies.
+ * @param obj pointer to object to destroy; if null, then false is returned and errno is set to EINVAL.
+ * @return true on success, false on error.
+ */
+ALGUI_BOOL algui_destroy_object(ALGUI_OBJECT* obj);
+
+
+/**
  * Defines an object property.
  * If the property is already defined, it returns false and sets errno to EINVAL.
  * @param obj object to define a property of; if null, then false is returned and errno is set to EINVAL.

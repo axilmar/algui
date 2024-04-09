@@ -18,6 +18,7 @@ static void cleanup(void) {
 static void init_messages_func(void) {
     algui_init_enum(&messages_enum);
     atexit(cleanup);
+    algui_add_enum_value(&messages_enum, ALGUI_MSG_UNKNOWN, "ALGUI_MSG_UNKNOWN", NULL);
     algui_add_enum_value(&messages_enum, ALGUI_MSG_CLEANUP, "ALGUI_MSG_CLEANUP", NULL);
 }
 

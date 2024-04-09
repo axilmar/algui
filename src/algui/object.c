@@ -496,6 +496,56 @@ ALGUI_BOOL algui_cleanup_object(ALGUI_OBJECT* obj) {
 }
 
 
+//create object
+ALGUI_OBJECT* algui_create_object(size_t size) {
+    //check the size
+    if (size == 0) {
+        size = sizeof(ALGUI_OBJECT);
+    }
+    else if (size < sizeof(ALGUI_OBJECT)) {
+        errno = EINVAL;
+        return NULL;
+    }
+
+    //allocate memory
+    ALGUI_OBJECT* obj = (ALGUI_OBJECT*)malloc(size);
+
+    //check allocation failure
+    if (obj == NULL) {
+        errno = ENOMEM;
+        return NULL;
+    }
+
+    //initialize the object
+    if (!algui_init_object(obj)) {
+        free(obj);
+        return NULL;
+    }
+
+    //success; return the object
+    return obj;
+}
+
+
+//destroy object
+ALGUI_BOOL algui_destroy_object(ALGUI_OBJECT* obj) {
+    //check the object
+    if (obj == NULL) {
+        errno = EINVAL;
+        return ALGUI_FALSE;
+    }
+
+    //cleanup the object
+    algui_cleanup_object(obj);
+
+    //free the memory it occupies
+    free(obj);
+
+    //success
+    return ALGUI_TRUE;
+}
+
+
 //define property
 ALGUI_BOOL algui_define_object_property(ALGUI_OBJECT* obj, int id, const ALGUI_PROPERTY_DEFINITION* prop, const ALGUI_BUFFER* initial_value, const ALGUI_BUFFER* access_token) {
     //check the obj
