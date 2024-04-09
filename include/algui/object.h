@@ -16,7 +16,7 @@
  * @param RESULT result of call to algui_define_object_property(); boolean.
  * @param OBJECT pointer to object.
  * @param ID property id.
- * @param PROPERTY_DEFINITION instance of ALGUI_PROPERTY_DEFINITION that defines the property; value.size need not be set, it is set for sizeof(TYPE).
+ * @param PROPERTY_DEFINITION instance of ALGUI_PROPERTY_DEFINITION that defines the property; value.size need not be set, it is set to sizeof(TYPE).
  * @param INITIAL_VALUE initial value of property.
  * @param ACCESS_TOKEN_STRING optional access token string.
  */
