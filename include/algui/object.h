@@ -2,6 +2,7 @@
 #define ALGUI_OBJECT_H
 
 
+#include <errno.h>
 #include "properties.h"
 #include "messages.h"
 #include "map.h"
@@ -10,6 +11,7 @@
 
 /**
  * Macro that allows the definition of a property for a specific type.
+ * Before defining the property, it sets errno to 0 to allow for error checking after the macro.
  * @param TYPE type of property.
  * @param RESULT result of call to algui_define_object_property(); boolean.
  * @param OBJECT pointer to object.
@@ -30,12 +32,14 @@
     if ((PROPERTY_DEFINITION).type == ALGUI_PROPERTY_TYPE_VALUE) {\
         (PROPERTY_DEFINITION).value.size = sizeof(TYPE);\
     }\
+    errno = 0;\
     algui_define_object_property(OBJECT, ID, &(PROPERTY_DEFINITION), &initial_value, (ACCESS_TOKEN_STRING) != NULL ? &access_token : NULL);\
 }
 
 
 /**
  * Macro that allows the retrieval of a property for a specific type.
+ * Before getting the property, it sets errno to 0 to allow for error checking after the macro.
  * @param TYPE type of property.
  * @param RESULT variable to store the property value.
  * @param OBJECT pointer to object.
@@ -54,12 +58,14 @@
     if (ACCESS_TOKEN_STRING) {\
         algui_init_buffer(&access_token, ACCESS_TOKEN_STRING, strlen(ACCESS_TOKEN_STRING), ALGUI_FALSE);\
     }\
+    errno = 0;\
     algui_get_object_property(OBJECT, ID, &result_value, &default_value, (ACCESS_TOKEN_STRING) != NULL ? &access_token : NULL);\
 }
 
 
 /**
  * Macro that allows to set a property from a specific type.
+ * Before setting the property, it sets errno to 0 to allow for error checking after the macro.
  * @param TYPE type of property.
  * @param OBJECT pointer to object.
  * @param ID property id.
@@ -75,6 +81,7 @@
     if (ACCESS_TOKEN_STRING) {\
         algui_init_buffer(&access_token, ACCESS_TOKEN_STRING, strlen(ACCESS_TOKEN_STRING), ALGUI_FALSE);\
     }\
+    errno = 0;\
     algui_set_object_property(OBJECT, ID, &value, (ACCESS_TOKEN_STRING) != NULL ? &access_token : NULL);\
 }
 
