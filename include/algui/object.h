@@ -229,6 +229,7 @@ ALGUI_BOOL algui_set_object_message_handler(ALGUI_OBJECT* obj, int id, ALGUI_OBJ
 
 /**
  * Executes a message handler for an object with the specific message handler id.
+ * If the object does not have a message handler for it, then the unknown message is sent to the object with data pointing to an ALGUI_MESSAGE structure.
  * @param obj target object; if null, then false is returned and errno is set to EINVAL.
  * @param id id of message handler.
  * @param data message data; optional.

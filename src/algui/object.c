@@ -426,6 +426,40 @@ static void destroy_entry(void* p) {
 }
 
 
+//do object message implementation
+static uintptr_t do_object_message(ALGUI_OBJECT* obj, int id, void* data, const ALGUI_BUFFER* access_token) {
+    //actual message ids start from an offset so as that they are not mixed up with property ids
+    id += MESSAGE_HANDLER_ID_OFFSET;
+
+    //get the entry
+    ENTRY* entry = (ENTRY*)algui_get_map_element(&obj->data, &id);
+
+    //if the entry is not found, return
+    if (entry == NULL) {
+        errno = EINVAL;
+        return 0;
+    }
+
+    //if the entry is not a message, return
+    if (entry->type != ENTRY_TYPE_MSG_HANDLER) {
+        errno = EINVAL;
+        return 0;
+    }
+
+    //check access
+    if (!check_access(entry, access_token)) {
+        errno = EINVAL;
+        return 0;
+    }
+
+    //invoke the message handler
+    return entry->msg_handler(obj, data);
+}
+
+
+/*************************************************************************************************/
+
+
 //init object
 ALGUI_BOOL algui_init_object(ALGUI_OBJECT* obj) {
     //check the obj
@@ -453,7 +487,7 @@ ALGUI_BOOL algui_cleanup_object(ALGUI_OBJECT* obj) {
     }
 
     //send the cleanup message to the object
-    algui_do_object_message(obj, ALGUI_MSG_CLEANUP, NULL, NULL);
+    do_object_message(obj, ALGUI_MSG_CLEANUP, NULL, NULL);
 
     //cleanup the data
     return algui_cleanup_map(&obj->data);
@@ -860,39 +894,27 @@ ALGUI_BOOL algui_set_object_message_handler(ALGUI_OBJECT* obj, int id, ALGUI_OBJ
 
 
 //do object message
-uintptr_t algui_do_object_message(ALGUI_OBJECT* obj, int id, void* data, const ALGUI_BUFFER* access_token) {
+ALGUI_RESULT  algui_do_object_message(ALGUI_OBJECT* obj, int id, void* data, const ALGUI_BUFFER* access_token) {
     //check the obj
     if (obj == NULL) {
         errno = EINVAL;
         return 0;
     }
 
-    //actual message ids start from an offset so as that they are not mixed up with property ids
-    id += MESSAGE_HANDLER_ID_OFFSET;
+    //do the message
+    errno = 0;
+    ALGUI_RESULT result = do_object_message(obj, id, data, access_token);
 
-    //get the entry
-    ENTRY* entry = (ENTRY*)algui_get_map_element(&obj->data, &id);
-
-    //if the entry is not found, return
-    if (entry == NULL) {
-        errno = EINVAL;
-        return 0;
+    //if there was no error, it means the message was executed, therefore return the result
+    if (errno == 0) {
+        return result;
     }
 
-    //if the entry is not a message, return
-    if (entry->type != ENTRY_TYPE_MSG_HANDLER) {
-        errno = EINVAL;
-        return 0;
-    }
+    //set up an unknown message
+    ALGUI_MESSAGE unknown_message = { id, data, access_token };
 
-    //check access
-    if (!check_access(entry, access_token)) {
-        errno = EINVAL;
-        return 0;
-    }
-
-    //invoke the message handler
-    return entry->msg_handler(obj, data);
+    //do the unknown message
+    return do_object_message(obj, ALGUI_MSG_UNKNOWN, &unknown_message, NULL);
 }
 
 

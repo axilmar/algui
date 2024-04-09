@@ -13,12 +13,30 @@ enum ALGUI_MSG_ID_TYPE {
     ///null message.
     ALGUI_MSG_NULL,
 
+    ///unknown message.
+    ALGUI_MSG_UNKNOWN,
+
     ///cleanup object.
     ALGUI_MSG_CLEANUP,
 
     ///last message id.
     ALGUI_MSG_LAST = 10000
 };
+
+
+/**
+ * Message structure.
+ */
+typedef struct ALGUI_MESSAGE {
+    ///id of message.
+    int id;
+
+    ///message data.
+    void* data;
+
+    ///access token.
+    const struct ALGUI_BUFFER* access_token;
+} ALGUI_MESSAGE;
 
 
 /**
