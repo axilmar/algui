@@ -510,6 +510,12 @@ ALGUI_BOOL algui_define_object_property(ALGUI_OBJECT* obj, int id, const ALGUI_P
         return ALGUI_FALSE;
     }
 
+    //check the id
+    if (id >= MESSAGE_HANDLER_ID_OFFSET) {
+        errno = EINVAL;
+        return ALGUI_FALSE;
+    }
+
     //check the property type
     if (prop->type != ALGUI_PROPERTY_TYPE_ACCESSOR && prop->type != ALGUI_PROPERTY_TYPE_VALUE) {
         errno = EINVAL;
