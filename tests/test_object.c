@@ -1365,6 +1365,47 @@ static ALGUI_BOOL test_typed_object_property_functions(void* context) {
 }
 
 
+static ALGUI_BOOL test_object_property_macros(void* context) {
+    ALGUI_OBJECT obj;
+    algui_init_object(&obj);
+
+    int value = 10;
+
+    //define property
+    ALGUI_PROPERTY_DEFINITION pd;
+    memset(&pd, 0, sizeof(pd));
+    pd.type = ALGUI_PROPERTY_TYPE_VALUE;
+    errno = 0;
+    ALGUI_DEFINE_OBJECT_PROPERTY(int, &obj, ALGUI_PROP_ID, pd, value, NULL);
+    ALGUI_ENSURE(errno == 0);
+
+    //get property
+    value = 0;
+    errno = 0;
+    ALGUI_GET_OBJECT_PROPERTY(int, value, &obj, ALGUI_PROP_ID, 15, NULL);
+    ALGUI_ENSURE(value == 10);
+    ALGUI_ENSURE(errno == 0);
+
+    //get invalid property
+    value = 0;
+    errno = 0;
+    ALGUI_GET_OBJECT_PROPERTY(int, value, &obj, ALGUI_PROP_ID + 1, 15, NULL);
+    ALGUI_ENSURE(value == 15);
+    ALGUI_ENSURE(errno == EINVAL);
+
+    //set property
+    errno = 0;
+    ALGUI_SET_OBJECT_PROPERTY(int, &obj, ALGUI_PROP_ID, 20, NULL);
+    ALGUI_ENSURE(errno == 0);
+    ALGUI_GET_OBJECT_PROPERTY(int, value, &obj, ALGUI_PROP_ID, 0, NULL);
+    ALGUI_ENSURE(value == 20);
+    ALGUI_ENSURE(errno == 0);
+
+    algui_cleanup_object(&obj);
+    return ALGUI_TRUE;
+}
+
+
 void test_object(ALGUI_TEST_STATISTICS* stats) {
     algui_do_test(stats, "algui_init_object", test_init_object, NULL);
     algui_do_test(stats, "algui_cleanup_object", test_cleanup_object, NULL);
@@ -1375,4 +1416,5 @@ void test_object(ALGUI_TEST_STATISTICS* stats) {
     algui_do_test(stats, "algui_set_object_message_handler", test_set_object_message_handler, NULL);
     algui_do_test(stats, "algui_do_object_message", test_do_object_message, NULL);
     algui_do_test(stats, "typed object property functions", test_typed_object_property_functions, NULL);
+    algui_do_test(stats, "object property macros", test_object_property_macros, NULL);
 }

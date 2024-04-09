@@ -9,6 +9,77 @@
 
 
 /**
+ * Macro that allows the definition of a property for a specific type.
+ * @param TYPE type of property.
+ * @param RESULT result of call to algui_define_object_property(); boolean.
+ * @param OBJECT pointer to object.
+ * @param ID property id.
+ * @param PROPERTY_DEFINITION instance of ALGUI_PROPERTY_DEFINITION that defines the property; value.size need not be set, it is set for sizeof(TYPE).
+ * @param INITIAL_VALUE initial value of property.
+ * @param ACCESS_TOKEN_STRING optional access token string.
+ */
+#define ALGUI_DEFINE_OBJECT_PROPERTY(TYPE, OBJECT, ID, PROPERTY_DEFINITION, INITIAL_VALUE, ACCESS_TOKEN_STRING)\
+{\
+    ALGUI_BUFFER initial_value;\
+    TYPE initial_value_data = INITIAL_VALUE;\
+    algui_init_buffer(&initial_value, &(initial_value_data), sizeof(initial_value_data), ALGUI_FALSE);\
+    ALGUI_BUFFER access_token;\
+    if (ACCESS_TOKEN_STRING) {\
+        algui_init_buffer(&access_token, ACCESS_TOKEN_STRING, strlen(ACCESS_TOKEN_STRING), ALGUI_FALSE);\
+    }\
+    if ((PROPERTY_DEFINITION).type == ALGUI_PROPERTY_TYPE_VALUE) {\
+        (PROPERTY_DEFINITION).value.size = sizeof(TYPE);\
+    }\
+    algui_define_object_property(OBJECT, ID, &(PROPERTY_DEFINITION), &initial_value, (ACCESS_TOKEN_STRING) != NULL ? &access_token : NULL);\
+}
+
+
+/**
+ * Macro that allows the retrieval of a property for a specific type.
+ * @param TYPE type of property.
+ * @param RESULT variable to store the property value.
+ * @param OBJECT pointer to object.
+ * @param ID property id.
+ * @param DEFAULT_VALUE default value of property.
+ * @param ACCESS_TOKEN_STRING optional access token string.
+ */
+#define ALGUI_GET_OBJECT_PROPERTY(TYPE, RESULT, OBJECT, ID, DEFAULT_VALUE, ACCESS_TOKEN_STRING)\
+{\
+    ALGUI_BUFFER result_value;\
+    algui_init_buffer(&result_value, &RESULT, sizeof(TYPE), ALGUI_FALSE);\
+    ALGUI_BUFFER default_value;\
+    TYPE default_value_data = DEFAULT_VALUE;\
+    algui_init_buffer(&default_value, &default_value_data, sizeof(default_value_data), ALGUI_FALSE);\
+    ALGUI_BUFFER access_token;\
+    if (ACCESS_TOKEN_STRING) {\
+        algui_init_buffer(&access_token, ACCESS_TOKEN_STRING, strlen(ACCESS_TOKEN_STRING), ALGUI_FALSE);\
+    }\
+    algui_get_object_property(OBJECT, ID, &result_value, &default_value, (ACCESS_TOKEN_STRING) != NULL ? &access_token : NULL);\
+}
+
+
+/**
+ * Macro that allows to set a property from a specific type.
+ * @param TYPE type of property.
+ * @param OBJECT pointer to object.
+ * @param ID property id.
+ * @param DEFAULT_VALUE default value of property.
+ * @param ACCESS_TOKEN_STRING optional access token string.
+ */
+#define ALGUI_SET_OBJECT_PROPERTY(TYPE, OBJECT, ID, VALUE, ACCESS_TOKEN_STRING)\
+{\
+    ALGUI_BUFFER value;\
+    TYPE value_data = VALUE;\
+    algui_init_buffer(&value, &value_data, sizeof(value_data), ALGUI_FALSE);\
+    ALGUI_BUFFER access_token;\
+    if (ACCESS_TOKEN_STRING) {\
+        algui_init_buffer(&access_token, ACCESS_TOKEN_STRING, strlen(ACCESS_TOKEN_STRING), ALGUI_FALSE);\
+    }\
+    algui_set_object_property(OBJECT, ID, &value, (ACCESS_TOKEN_STRING) != NULL ? &access_token : NULL);\
+}
+
+
+/**
  * An object structure.
  */
 typedef struct ALGUI_OBJECT {

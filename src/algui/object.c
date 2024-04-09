@@ -25,7 +25,9 @@ ALGUI_BOOL algui_define_##TYPE##_object_property(ALGUI_OBJECT* obj, int id, ALGU
     if (access_token != NULL) {\
         algui_init_buffer(&access_token_buffer, (void*)access_token, strlen(access_token), ALGUI_FALSE);\
     }\
-    prop->value.size = sizeof(TYPE);\
+    if (prop->type == ALGUI_PROPERTY_TYPE_VALUE) {\
+        prop->value.size = sizeof(TYPE);\
+    }\
     return algui_define_object_property(obj, id, prop, &initial_value_buffer, access_token ? &access_token_buffer : NULL);\
 }
 
@@ -962,8 +964,12 @@ ALGUI_BOOL algui_define_string_object_property(ALGUI_OBJECT* obj, int id, ALGUI_
         algui_init_buffer(&access_token_buffer, (void*)access_token, strlen(access_token), ALGUI_FALSE);
     }
 
+    //since strings are dynamic, set the value size to ensure proper operation
+    if (prop->type == ALGUI_PROPERTY_TYPE_VALUE) {
+        prop->value.size = 0;
+    }
+
     //define the property
-    prop->value.size = 0;
     return algui_define_object_property(obj, id, prop, &initial_value_buffer, access_token ? &access_token_buffer : NULL);
 }
 
