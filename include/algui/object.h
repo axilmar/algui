@@ -170,6 +170,16 @@ ALGUI_BOOL algui_define_object_property(ALGUI_OBJECT* obj, int id, const ALGUI_P
 
 
 /**
+ * Deletes a property from an object.
+ * @param obj object to delete a property of; if null, then false is returned and errno is set to EINVAL.
+ * @param id id of property to delete; if it does not exist, then false is returned and errno is set to EINVAL.
+ * @param access_token optional access token; if the property is protected, then it must match the original access token, otherwise false is returned and errno is set to EINVAL.
+ * @return true on success, false on error.
+ */
+ALGUI_BOOL algui_delete_object_property(ALGUI_OBJECT* obj, int id, const ALGUI_BUFFER* access_token);
+
+
+/**
  * Retrieves an object's property.
  * If the property is not defined, it returns false and sets errno to EINVAL.
  * @param obj object to get a property of; if null, then false is returned and errno is set to EINVAL.
@@ -226,6 +236,968 @@ ALGUI_BOOL algui_set_object_message_handler(ALGUI_OBJECT* obj, int id, ALGUI_OBJ
  * @return what the message handler returns or 0 if there was an error.
  */
 ALGUI_RESULT algui_do_object_message(ALGUI_OBJECT* obj, int id, void* data, const ALGUI_BUFFER* access_token);
+
+
+/**
+ * Defines a property of type char.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_char_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, char initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type char.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or the default value, if there is an error; for error handling, see the function algui_get_object_property().
+ */
+char algui_get_char_object_property(ALGUI_OBJECT* obj, int id, char default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type char.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_char_object_property(ALGUI_OBJECT* obj, int id, char value, const char* access_token);
+
+
+/**
+ * Defines a property of type short.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_short_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, short initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type short.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or the default value, if there is an error; for error handling, see the function algui_get_object_property().
+ */
+short algui_get_short_object_property(ALGUI_OBJECT* obj, int id, short default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type short.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_short_object_property(ALGUI_OBJECT* obj, int id, short value, const char* access_token);
+
+
+/**
+ * Defines a property of type int.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_int_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, int initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type int.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or the default value, if there is an error; for error handling, see the function algui_get_object_property().
+ */
+int algui_get_int_object_property(ALGUI_OBJECT* obj, int id, int default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type int.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_int_object_property(ALGUI_OBJECT* obj, int id, int value, const char* access_token);
+
+
+/**
+ * Defines a property of type long.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_long_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, long initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type long.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or the default value, if there is an error; for error handling, see the function algui_get_object_property().
+ */
+long algui_get_long_object_property(ALGUI_OBJECT* obj, int id, long default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type long.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_long_object_property(ALGUI_OBJECT* obj, int id, long value, const char* access_token);
+
+
+/**
+ * Defines a property of type long long.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_long_long_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, long long initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type long long.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or the default value, if there is an error; for error handling, see the function algui_get_object_property().
+ */
+long long algui_get_long_long_object_property(ALGUI_OBJECT* obj, int id, long long default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type long long.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_long_long_object_property(ALGUI_OBJECT* obj, int id, long long value, const char* access_token);
+
+
+/**
+ * Defines a property of type unsigned char.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_unsigned_char_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, unsigned char initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type unsigned char.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or the default value, if there is an error; for error handling, see the function algui_get_object_property().
+ */
+unsigned char algui_get_unsigned_char_object_property(ALGUI_OBJECT* obj, int id, unsigned char default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type unsigned char.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_unsigned_char_object_property(ALGUI_OBJECT* obj, int id, unsigned char value, const char* access_token);
+
+
+/**
+ * Defines a property of type unsigned short.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_unsigned_short_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, unsigned short initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type unsigned short.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or the default value, if there is an error; for error handling, see the function algui_get_object_property().
+ */
+unsigned short algui_get_unsigned_short_object_property(ALGUI_OBJECT* obj, int id, unsigned short default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type unsigned short.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_unsigned_short_object_property(ALGUI_OBJECT* obj, int id, unsigned short value, const char* access_token);
+
+
+/**
+ * Defines a property of type unsigned int.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_unsigned_int_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, unsigned int initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type unsigned int.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or the default value, if there is an error; for error handling, see the function algui_get_object_property().
+ */
+unsigned int algui_get_unsigned_int_object_property(ALGUI_OBJECT* obj, int id, unsigned int default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type unsigned int.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_unsigned_int_object_property(ALGUI_OBJECT* obj, int id, unsigned int value, const char* access_token);
+
+
+/**
+ * Defines a property of type unsigned long.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_unsigned_long_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, unsigned long initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type unsigned long.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or the default value, if there is an error; for error handling, see the function algui_get_object_property().
+ */
+unsigned long algui_get_unsigned_long_object_property(ALGUI_OBJECT* obj, int id, unsigned long default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type unsigned long.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_unsigned_long_object_property(ALGUI_OBJECT* obj, int id, unsigned long value, const char* access_token);
+
+
+/**
+ * Defines a property of type unsigned long long.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_unsigned_long_long_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, unsigned long long initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type unsigned long long.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or the default value, if there is an error; for error handling, see the function algui_get_object_property().
+ */
+unsigned long long algui_get_unsigned_long_long_object_property(ALGUI_OBJECT* obj, int id, unsigned long long default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type unsigned long long.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_unsigned_long_long_object_property(ALGUI_OBJECT* obj, int id, unsigned long long value, const char* access_token);
+
+
+/**
+ * Defines a property of type float.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_float_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, float initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type float.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or the default value, if there is an error; for error handling, see the function algui_get_object_property().
+ */
+float algui_get_float_object_property(ALGUI_OBJECT* obj, int id, float default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type float.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_float_object_property(ALGUI_OBJECT* obj, int id, float value, const char* access_token);
+
+
+/**
+ * Defines a property of type double.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_double_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, double initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type double.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or the default value, if there is an error; for error handling, see the function algui_get_object_property().
+ */
+double algui_get_double_object_property(ALGUI_OBJECT* obj, int id, double default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type double.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_double_object_property(ALGUI_OBJECT* obj, int id, double value, const char* access_token);
+
+
+/**
+ * Defines a property of type long double.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_long_double_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, long double initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type long double.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or the default value, if there is an error; for error handling, see the function algui_get_object_property().
+ */
+long double algui_get_long_double_object_property(ALGUI_OBJECT* obj, int id, long double default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type long double.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_long_double_object_property(ALGUI_OBJECT* obj, int id, long double value, const char* access_token);
+
+
+/**
+ * Defines a property of type ALGUI_BOOL.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_bool_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, ALGUI_BOOL initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type ALGUI_BOOL.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or the default value, if there is an error; for error handling, see the function algui_get_object_property().
+ */
+ALGUI_BOOL algui_get_bool_object_property(ALGUI_OBJECT* obj, int id, ALGUI_BOOL default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type ALGUI_BOOL.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_bool_object_property(ALGUI_OBJECT* obj, int id, ALGUI_BOOL value, const char* access_token);
+
+
+/**
+ * Defines a property of type string.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_string_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, const char* initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type string.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or a copy of the default value, if there is an error; in both cases, the result should be freed by the caller; for error handling, see the function algui_get_object_property().
+ */
+char* algui_get_string_object_property(ALGUI_OBJECT* obj, int id, const char* default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type string.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_string_object_property(ALGUI_OBJECT* obj, int id, const char* value, const char* access_token);
+
+
+/**
+ * Defines a property of type pointer.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_ptr_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, const void* initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type pointer.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or a copy of the default value, if there is an error; in both cases, the result should be freed by the caller; for error handling, see the function algui_get_object_property().
+ */
+void* algui_get_ptr_object_property(ALGUI_OBJECT* obj, int id, void* default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type pointer.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_ptr_object_property(ALGUI_OBJECT* obj, int id, void* value, const char* access_token);
+
+
+/**
+ * Defines a property of type int8_t.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_int8_t_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, int8_t initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type int8_t.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or the default value, if there is an error; for error handling, see the function algui_get_object_property().
+ */
+int8_t algui_get_int8_t_object_property(ALGUI_OBJECT* obj, int id, int8_t default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type int8_t.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_int8_t_object_property(ALGUI_OBJECT* obj, int id, int8_t value, const char* access_token);
+
+
+/**
+ * Defines a property of type int16_t.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_int16_t_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, int16_t initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type int16_t.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or the default value, if there is an error; for error handling, see the function algui_get_object_property().
+ */
+int16_t algui_get_int16_t_object_property(ALGUI_OBJECT* obj, int id, int16_t default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type int16_t.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_int16_t_object_property(ALGUI_OBJECT* obj, int id, int16_t value, const char* access_token);
+
+
+/**
+ * Defines a property of type int32_t.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_int32_t_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, int32_t initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type int32_t.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or the default value, if there is an error; for error handling, see the function algui_get_object_property().
+ */
+int32_t algui_get_int32_t_object_property(ALGUI_OBJECT* obj, int id, int32_t default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type int32_t.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_int32_t_object_property(ALGUI_OBJECT* obj, int id, int32_t value, const char* access_token);
+
+
+/**
+ * Defines a property of type int64_t.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_int64_t_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, int64_t initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type int64_t.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or the default value, if there is an error; for error handling, see the function algui_get_object_property().
+ */
+int64_t algui_get_int64_t_object_property(ALGUI_OBJECT* obj, int id, int64_t default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type int64_t.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_int64_t_object_property(ALGUI_OBJECT* obj, int id, int64_t value, const char* access_token);
+
+
+/**
+ * Defines a property of type uint8_t.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_uint8_t_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, uint8_t initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type uint8_t.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or the default value, if there is an error; for error handling, see the function algui_get_object_property().
+ */
+uint8_t algui_get_uint8_t_object_property(ALGUI_OBJECT* obj, int id, uint8_t default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type uint8_t.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_uint8_t_object_property(ALGUI_OBJECT* obj, int id, uint8_t value, const char* access_token);
+
+
+/**
+ * Defines a property of type uint16_t.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_uint16_t_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, uint16_t initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type uint16_t.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or the default value, if there is an error; for error handling, see the function algui_get_object_property().
+ */
+uint16_t algui_get_uint16_t_object_property(ALGUI_OBJECT* obj, int id, uint16_t default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type uint16_t.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_uint16_t_object_property(ALGUI_OBJECT* obj, int id, uint16_t value, const char* access_token);
+
+
+/**
+ * Defines a property of type uint32_t.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_uint32_t_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, uint32_t initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type uint32_t.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or the default value, if there is an error; for error handling, see the function algui_get_object_property().
+ */
+uint32_t algui_get_uint32_t_object_property(ALGUI_OBJECT* obj, int id, uint32_t default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type uint32_t.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_uint32_t_object_property(ALGUI_OBJECT* obj, int id, uint32_t value, const char* access_token);
+
+
+/**
+ * Defines a property of type uint64_t.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_uint64_t_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, uint64_t initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type uint64_t.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or the default value, if there is an error; for error handling, see the function algui_get_object_property().
+ */
+uint64_t algui_get_uint64_t_object_property(ALGUI_OBJECT* obj, int id, uint64_t default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type uint64_t.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_uint64_t_object_property(ALGUI_OBJECT* obj, int id, uint64_t value, const char* access_token);
+
+
+/**
+ * Defines a property of type intptr_t.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_intptr_t_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, intptr_t initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type intptr_t.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or the default value, if there is an error; for error handling, see the function algui_get_object_property().
+ */
+intptr_t algui_get_intptr_t_object_property(ALGUI_OBJECT* obj, int id, intptr_t default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type intptr_t.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_intptr_t_object_property(ALGUI_OBJECT* obj, int id, intptr_t value, const char* access_token);
+
+
+/**
+ * Defines a property of type uintptr_t.
+ * Shortcut for algui_define_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param prop property definition.
+ * @param initial_value initial value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_define_object_property().
+ */
+ALGUI_BOOL algui_define_uintptr_t_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, uintptr_t initial_value, const char* access_token);
+
+
+/**
+ * Retrieves a property of type uintptr_t.
+ * Shortcut for algui_get_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param default_value value to return in case of error.
+ * @param access_token optional access token.
+ * @return The property value or the default value, if there is an error; for error handling, see the function algui_get_object_property().
+ */
+uintptr_t algui_get_uintptr_t_object_property(ALGUI_OBJECT* obj, int id, uintptr_t default_value, const char* access_token);
+
+
+/**
+ * Sets a property of type uintptr_t.
+ * Shortcut for algui_set_object_property().
+ * @param obj target object.
+ * @param id property id.
+ * @param value property value.
+ * @param access_token optional access token.
+ * @return true on success, false on error; for error handling, see the function algui_set_object_property().
+ */
+ALGUI_BOOL algui_set_uintptr_t_object_property(ALGUI_OBJECT* obj, int id, uintptr_t value, const char* access_token);
 
 
 #endif //ALGUI_OBJECT_H

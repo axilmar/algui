@@ -5,6 +5,16 @@
 #include "util.h"
 
 
+typedef long long long_long;
+typedef unsigned char unsigned_char;
+typedef unsigned short unsigned_short;
+typedef unsigned int unsigned_int;
+typedef unsigned long unsigned_long;
+typedef unsigned long long unsigned_long_long;
+typedef long double long_double;
+typedef ALGUI_BOOL bool;
+
+
 enum TEST_MESSAGES {
     MSG_TEST = ALGUI_MSG_LAST
 };
@@ -284,6 +294,60 @@ static ALGUI_BOOL test_define_object_property(void* context) {
         ALGUI_ENSURE_ERROR(algui_define_object_property(&test.object, ALGUI_PROP_ID, &pd, &initial_value, NULL) == ALGUI_TRUE, 0);
 
         algui_cleanup_object(&test.object);
+    }
+
+    return ALGUI_TRUE;
+}
+
+
+static ALGUI_BOOL test_delete_object_property(void* context) {
+    //null object
+    {
+        ALGUI_ENSURE_ERROR(algui_delete_object_property(NULL, ALGUI_PROP_ID, NULL) == ALGUI_FALSE, EINVAL);
+    }
+
+    //non-existent property
+    {
+        ALGUI_OBJECT object;
+        algui_init_object(&object);
+        ALGUI_ENSURE_ERROR(algui_delete_object_property(&object, ALGUI_PROP_ID, NULL) == ALGUI_FALSE, EINVAL);
+        algui_cleanup_object(&object);
+    }
+
+    //existing property
+    {
+        ALGUI_OBJECT object;
+        algui_init_object(&object);
+
+        ALGUI_PROPERTY_DEFINITION pd;
+        memset(&pd, 0, sizeof(pd));
+        pd.type = ALGUI_PROPERTY_TYPE_VALUE;
+        pd.value.size = sizeof(int);
+        algui_define_object_property(&object, ALGUI_PROP_ID, &pd, NULL, NULL);
+
+        ALGUI_ENSURE_ERROR(algui_delete_object_property(&object, ALGUI_PROP_ID, NULL) == ALGUI_TRUE, 0);
+
+        algui_cleanup_object(&object);
+    }
+
+    //existing property with access token
+    {
+        ALGUI_OBJECT object;
+        algui_init_object(&object);
+
+        ALGUI_PROPERTY_DEFINITION pd;
+        memset(&pd, 0, sizeof(pd));
+        pd.type = ALGUI_PROPERTY_TYPE_VALUE;
+        pd.value.size = sizeof(int);
+        ALGUI_BUFFER access_token;
+        char access_token_data[] = "secret_password";
+        algui_init_buffer(&access_token, access_token_data, sizeof(access_token_data), ALGUI_FALSE);
+        algui_define_object_property(&object, ALGUI_PROP_ID, &pd, NULL, &access_token);
+
+        ALGUI_ENSURE_ERROR(algui_delete_object_property(&object, ALGUI_PROP_ID, NULL) == ALGUI_FALSE, EINVAL);
+        ALGUI_ENSURE_ERROR(algui_delete_object_property(&object, ALGUI_PROP_ID, &access_token) == ALGUI_TRUE, 0);
+
+        algui_cleanup_object(&object);
     }
 
     return ALGUI_TRUE;
@@ -1182,12 +1246,111 @@ static ALGUI_BOOL test_do_object_message(void* context) {
 }
 
 
+#define TYPED_PROPERTY_TEST(TYPE)\
+{\
+    ALGUI_OBJECT obj;\
+    algui_init_object(&obj);\
+    ALGUI_ENSURE_ERROR(algui_get_##TYPE##_object_property(&obj, ALGUI_PROP_ID, 10, NULL) == 10, EINVAL);\
+    ALGUI_PROPERTY_DEFINITION pd;\
+    memset(&pd, 0, sizeof(pd));\
+    pd.type = ALGUI_PROPERTY_TYPE_VALUE;\
+    pd.value.size = sizeof(TYPE);\
+    ALGUI_ENSURE_ERROR(algui_define_##TYPE##_object_property(&obj, ALGUI_PROP_ID, &pd, 5, NULL) == ALGUI_TRUE, 0);\
+    ALGUI_ENSURE_ERROR(algui_get_##TYPE##_object_property(&obj, ALGUI_PROP_ID, 10, NULL) == 5, 0);\
+    ALGUI_ENSURE_ERROR(algui_set_##TYPE##_object_property(&obj, ALGUI_PROP_ID, 15, NULL) == ALGUI_TRUE, 0);\
+    ALGUI_ENSURE_ERROR(algui_get_##TYPE##_object_property(&obj, ALGUI_PROP_ID, 10, NULL) == 15, 0);\
+    algui_delete_object_property(&obj, ALGUI_PROP_ID, NULL);\
+    ALGUI_ENSURE_ERROR(algui_define_##TYPE##_object_property(&obj, ALGUI_PROP_ID, &pd, 5, "secret_password") == ALGUI_TRUE, 0);\
+    ALGUI_ENSURE_ERROR(algui_get_##TYPE##_object_property(&obj, ALGUI_PROP_ID, 10, NULL) == 10, EINVAL);\
+    ALGUI_ENSURE_ERROR(algui_get_##TYPE##_object_property(&obj, ALGUI_PROP_ID, 10, "secret_password") == 5, 0);\
+    ALGUI_ENSURE_ERROR(algui_set_##TYPE##_object_property(&obj, ALGUI_PROP_ID, 15, NULL) == ALGUI_FALSE, EINVAL);\
+    ALGUI_ENSURE_ERROR(algui_set_##TYPE##_object_property(&obj, ALGUI_PROP_ID, 15, "secret_password") == ALGUI_TRUE, 0);\
+    ALGUI_ENSURE_ERROR(algui_get_##TYPE##_object_property(&obj, ALGUI_PROP_ID, 10, "secret_password") == 15, 0);\
+    algui_cleanup_object(&obj);\
+}
+
+
+static ALGUI_BOOL test_string_property(ALGUI_OBJECT* object, int id, const char* test_value, const char* access_token) {
+    char* value = algui_get_string_object_property(object, id, NULL, access_token);
+    const ALGUI_BOOL result = value != NULL && strcmp(value, test_value) == 0;
+    free(value);
+    return result;
+}
+
+
+static ALGUI_BOOL test_typed_object_property_functions(void* context) {
+    TYPED_PROPERTY_TEST(char);
+    TYPED_PROPERTY_TEST(short);
+    TYPED_PROPERTY_TEST(int);
+    TYPED_PROPERTY_TEST(long);
+    TYPED_PROPERTY_TEST(long_long);
+    TYPED_PROPERTY_TEST(unsigned_char);
+    TYPED_PROPERTY_TEST(unsigned_short);
+    TYPED_PROPERTY_TEST(unsigned_int);
+    TYPED_PROPERTY_TEST(unsigned_long);
+    TYPED_PROPERTY_TEST(unsigned_long_long);
+    TYPED_PROPERTY_TEST(float);
+    TYPED_PROPERTY_TEST(double);
+    TYPED_PROPERTY_TEST(long_double);
+    TYPED_PROPERTY_TEST(bool);
+    TYPED_PROPERTY_TEST(int8_t);
+    TYPED_PROPERTY_TEST(int16_t);
+    TYPED_PROPERTY_TEST(int32_t);
+    TYPED_PROPERTY_TEST(int64_t);
+    TYPED_PROPERTY_TEST(uint8_t);
+    TYPED_PROPERTY_TEST(uint16_t);
+    TYPED_PROPERTY_TEST(uint32_t);
+    TYPED_PROPERTY_TEST(uint64_t);
+
+    //string
+    {
+        ALGUI_OBJECT obj;
+        algui_init_object(&obj);
+
+        //get default value if the property does not exist
+        ALGUI_ENSURE_ERROR(algui_get_string_object_property(&obj, ALGUI_PROP_ID, NULL, NULL) == NULL, EINVAL);
+
+        //define property
+        ALGUI_PROPERTY_DEFINITION pd;
+        memset(&pd, 0, sizeof(pd));
+        pd.type = ALGUI_PROPERTY_TYPE_VALUE;
+        ALGUI_ENSURE_ERROR(algui_define_string_object_property(&obj, ALGUI_PROP_ID, &pd, "test", NULL) == ALGUI_TRUE, 0);
+
+        //get initial value
+        ALGUI_ENSURE_ERROR(test_string_property(&obj, ALGUI_PROP_ID, "test", NULL) == ALGUI_TRUE, 0);
+
+        //set new value
+        ALGUI_ENSURE_ERROR(algui_set_string_object_property(&obj, ALGUI_PROP_ID, "new_test", NULL) == ALGUI_TRUE, 0);
+        ALGUI_ENSURE_ERROR(test_string_property(&obj, ALGUI_PROP_ID, "new_test", NULL) == ALGUI_TRUE, 0);
+
+        //reinstall the property, this time with an access token
+        algui_delete_object_property(&obj, ALGUI_PROP_ID, NULL);
+        ALGUI_ENSURE_ERROR(algui_define_string_object_property(&obj, ALGUI_PROP_ID, &pd, "5", "secret_password") == ALGUI_TRUE, 0);
+
+        //get initial value
+        ALGUI_ENSURE_ERROR(algui_get_string_object_property(&obj, ALGUI_PROP_ID, NULL, NULL) == NULL, EINVAL);
+        ALGUI_ENSURE_ERROR(test_string_property(&obj, ALGUI_PROP_ID, "5", "secret_password") == ALGUI_TRUE, 0);
+
+        //set new value
+        ALGUI_ENSURE_ERROR(algui_set_string_object_property(&obj, ALGUI_PROP_ID, "15", NULL) == ALGUI_FALSE, EINVAL);
+        ALGUI_ENSURE_ERROR(algui_set_string_object_property(&obj, ALGUI_PROP_ID, "15", "secret_password") == ALGUI_TRUE, 0);
+        ALGUI_ENSURE_ERROR(test_string_property(&obj, ALGUI_PROP_ID, "15", "secret_password") == ALGUI_TRUE, 0);
+
+        algui_cleanup_object(&obj);
+    }
+
+    return ALGUI_TRUE;
+}
+
+
 void test_object(ALGUI_TEST_STATISTICS* stats) {
     algui_do_test(stats, "algui_init_object", test_init_object, NULL);
     algui_do_test(stats, "algui_cleanup_object", test_cleanup_object, NULL);
     algui_do_test(stats, "algui_define_object_property", test_define_object_property, NULL);
+    algui_do_test(stats, "algui_delete_object_property", test_delete_object_property, NULL);
     algui_do_test(stats, "algui_set_object_property", test_set_object_property, NULL);
     algui_do_test(stats, "algui_get_object_message_handler", test_get_object_message_handler, NULL);
     algui_do_test(stats, "algui_set_object_message_handler", test_set_object_message_handler, NULL);
     algui_do_test(stats, "algui_do_object_message", test_do_object_message, NULL);
+    algui_do_test(stats, "typed object property functions", test_typed_object_property_functions, NULL);
 }

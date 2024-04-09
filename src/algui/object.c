@@ -6,6 +6,69 @@
 #include "algui/bool.h"
 
 
+typedef long long long_long;
+typedef unsigned char unsigned_char;
+typedef unsigned short unsigned_short;
+typedef unsigned int unsigned_int;
+typedef unsigned long unsigned_long;
+typedef unsigned long long unsigned_long_long;
+typedef long double long_double;
+typedef ALGUI_BOOL bool;
+
+
+//define property for specific type
+#define DEFINE_PROPERTY_FUNCTION(TYPE)\
+ALGUI_BOOL algui_define_##TYPE##_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, TYPE initial_value, const char* access_token) {\
+    ALGUI_BUFFER initial_value_buffer;\
+    algui_init_buffer(&initial_value_buffer, &initial_value, sizeof(initial_value), ALGUI_FALSE);\
+    ALGUI_BUFFER access_token_buffer;\
+    if (access_token != NULL) {\
+        algui_init_buffer(&access_token_buffer, (void*)access_token, strlen(access_token), ALGUI_FALSE);\
+    }\
+    prop->value.size = sizeof(TYPE);\
+    return algui_define_object_property(obj, id, prop, &initial_value_buffer, access_token ? &access_token_buffer : NULL);\
+}
+
+
+//get property of specific type
+#define GET_PROPERTY_FUNCTION(TYPE)\
+TYPE algui_get_##TYPE##_object_property(ALGUI_OBJECT* obj, int id, TYPE default_value, const char* access_token) {\
+    ALGUI_BUFFER result_buffer;\
+    TYPE result;\
+    algui_init_buffer(&result_buffer, &result, sizeof(result), ALGUI_FALSE);\
+    ALGUI_BUFFER default_value_buffer;\
+    algui_init_buffer(&default_value_buffer, &default_value, sizeof(default_value), ALGUI_FALSE);\
+    ALGUI_BUFFER access_token_buffer;\
+    if (access_token != NULL) {\
+        algui_init_buffer(&access_token_buffer, (void*)access_token, strlen(access_token), ALGUI_FALSE);\
+    }\
+    if (!algui_get_object_property(obj, id, &result_buffer, &default_value_buffer, access_token ? &access_token_buffer : NULL)) {\
+        return ALGUI_FALSE;\
+    }\
+    return result;\
+}
+
+
+//set property of specific type
+#define SET_PROPERTY_FUNCTION(TYPE)\
+ALGUI_BOOL algui_set_##TYPE##_object_property(ALGUI_OBJECT* obj, int id, TYPE value, const char* access_token) {\
+    ALGUI_BUFFER value_buffer;\
+    algui_init_buffer(&value_buffer, &value, sizeof(value), ALGUI_FALSE);\
+    ALGUI_BUFFER access_token_buffer;\
+    if (access_token != NULL) {\
+        algui_init_buffer(&access_token_buffer, (void*)access_token, strlen(access_token), ALGUI_FALSE);\
+    }\
+    return algui_set_object_property(obj, id, &value_buffer, access_token ? &access_token_buffer : NULL);\
+}
+
+
+//declare property functions for given type
+#define PROPERTY_FUNCTIONS(TYPE)\
+    DEFINE_PROPERTY_FUNCTION(TYPE)\
+    GET_PROPERTY_FUNCTION(TYPE)\
+    SET_PROPERTY_FUNCTION(TYPE)
+
+
 //entry type
 enum ENTRY_TYPE {
     ENTRY_TYPE_EMBEDDED_VALUE,
@@ -529,6 +592,41 @@ ALGUI_BOOL algui_define_object_property(ALGUI_OBJECT* obj, int id, const ALGUI_P
 }
 
 
+//delete object property
+ALGUI_BOOL algui_delete_object_property(ALGUI_OBJECT* obj, int id, const ALGUI_BUFFER* access_token) {
+    //check the obj
+    if (obj == NULL) {
+        errno = EINVAL;
+        return ALGUI_FALSE;
+    }
+
+    //find the entry
+    ENTRY* entry = (ENTRY*)algui_get_map_element(&obj->data, &id);
+
+    //if the entry is not found, return false
+    if (entry == NULL) {
+        errno = EINVAL;
+        return ALGUI_FALSE;
+    }
+
+    //if the entry is not a property, then return false
+    if (entry->type == ENTRY_TYPE_MSG_HANDLER) {
+        errno = EINVAL;
+        return ALGUI_FALSE;
+    }
+
+    //check access
+    if (!check_access(entry, access_token)) {
+        errno = EINVAL;
+        return ALGUI_FALSE;
+    }
+
+    //remove the entry
+    return algui_remove_map_element(&obj->data, &id);
+}
+
+
+
 //get property
 ALGUI_BOOL algui_get_object_property(ALGUI_OBJECT* obj, int id, ALGUI_BUFFER* prop, const ALGUI_BUFFER* default_value, const ALGUI_BUFFER* access_token) {
     //check the obj
@@ -795,4 +893,113 @@ uintptr_t algui_do_object_message(ALGUI_OBJECT* obj, int id, void* data, const A
 
     //invoke the message handler
     return entry->msg_handler(obj, data);
+}
+
+
+//declare property functions for common types, except string which requires special handling
+PROPERTY_FUNCTIONS(char);
+PROPERTY_FUNCTIONS(short);
+PROPERTY_FUNCTIONS(int);
+PROPERTY_FUNCTIONS(long);
+PROPERTY_FUNCTIONS(long_long);
+PROPERTY_FUNCTIONS(unsigned_char);
+PROPERTY_FUNCTIONS(unsigned_short);
+PROPERTY_FUNCTIONS(unsigned_int);
+PROPERTY_FUNCTIONS(unsigned_long);
+PROPERTY_FUNCTIONS(unsigned_long_long);
+PROPERTY_FUNCTIONS(float);
+PROPERTY_FUNCTIONS(double);
+PROPERTY_FUNCTIONS(long_double);
+PROPERTY_FUNCTIONS(bool);
+PROPERTY_FUNCTIONS(int8_t);
+PROPERTY_FUNCTIONS(int16_t);
+PROPERTY_FUNCTIONS(int32_t);
+PROPERTY_FUNCTIONS(int64_t);
+PROPERTY_FUNCTIONS(uint8_t);
+PROPERTY_FUNCTIONS(uint16_t);
+PROPERTY_FUNCTIONS(uint32_t);
+PROPERTY_FUNCTIONS(uint64_t);
+PROPERTY_FUNCTIONS(intptr_t);
+PROPERTY_FUNCTIONS(uintptr_t);
+
+
+//define string property
+ALGUI_BOOL algui_define_string_object_property(ALGUI_OBJECT* obj, int id, ALGUI_PROPERTY_DEFINITION* prop, const char* initial_value, const char* access_token) {
+    //initial value buffer
+    ALGUI_BUFFER initial_value_buffer;
+    algui_init_buffer(&initial_value_buffer, (void*)initial_value, initial_value != NULL ? strlen(initial_value) : 0, ALGUI_FALSE);
+
+    //access token buffer
+    ALGUI_BUFFER access_token_buffer;
+    if (access_token != NULL) {
+        algui_init_buffer(&access_token_buffer, (void*)access_token, strlen(access_token), ALGUI_FALSE);
+    }
+
+    //define the property
+    prop->value.size = 0;
+    return algui_define_object_property(obj, id, prop, &initial_value_buffer, access_token ? &access_token_buffer : NULL);
+}
+
+
+//retrieve string property.
+char* algui_get_string_object_property(ALGUI_OBJECT* obj, int id, const char* default_value, const char* access_token) {
+    ALGUI_BUFFER result_buffer = ALGUI_BUFFER_INIT;
+
+    //default value buffer
+    ALGUI_BUFFER default_value_buffer;
+    algui_init_buffer(&default_value_buffer, (void*)default_value, default_value != NULL ? strlen(default_value) : 0, ALGUI_FALSE);
+
+    //access token buffer
+    ALGUI_BUFFER access_token_buffer;
+    if (access_token != NULL) {
+        algui_init_buffer(&access_token_buffer, (void*)access_token, strlen(access_token), ALGUI_FALSE);
+    }
+
+    //get property
+    if (!algui_get_object_property(obj, id, &result_buffer, &default_value_buffer, access_token ? &access_token_buffer : NULL)) {
+        return ALGUI_FALSE;
+    }
+
+    //empty buffer
+    if (result_buffer.size == 0) {
+        return NULL;
+    }
+
+    //if the result buffer ends in '\0', return the buffer result
+    if (result_buffer.data[result_buffer.size - 1] == '\0') {
+        return result_buffer.data;
+    }
+
+    //make room for '\0' in the end
+    char* null_terminated_str = realloc(result_buffer.data, result_buffer.size + 1);
+
+    //if reallocation failed
+    if (null_terminated_str == NULL) {
+        errno = ENOMEM;
+        algui_cleanup_buffer(&result_buffer);
+        return NULL;
+    }
+
+    //set the null-terminated character
+    null_terminated_str[result_buffer.size] = '\0';
+
+    //success; buffer is not freed, it should be freed by the caller
+    return null_terminated_str;
+}
+
+
+//set string property.
+ALGUI_BOOL algui_set_string_object_property(ALGUI_OBJECT* obj, int id, const char* value, const char* access_token) {
+    //value buffer
+    ALGUI_BUFFER value_buffer;
+    algui_init_buffer(&value_buffer, (void*)value, value != NULL ? strlen(value) : 0, ALGUI_FALSE);
+
+    //access token buffer
+    ALGUI_BUFFER access_token_buffer;
+    if (access_token != NULL) {
+        algui_init_buffer(&access_token_buffer, (void*)access_token, strlen(access_token), ALGUI_FALSE);
+    }
+
+    //set property
+    return algui_set_object_property(obj, id, &value_buffer, access_token ? &access_token_buffer : NULL);
 }
