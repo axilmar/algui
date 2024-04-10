@@ -9,16 +9,25 @@
 
 
 /**
+ * Macro that executes a specific action if the expression evaluates to false.
+ * It prints a message to stderr about the file and line of the error.
+ * @param EXPR expression to evaluate.
+ * @param ACTION code to execute if the expression evaluates to false.
+ */
+#define ALGUI_ON_TEST_FAILURE(EXPR, ACTION) {\
+    if (!(EXPR)) {\
+        fprintf(stderr, "\033[0;91mFAILURE\033[0m\n    \033[0;97mERROR: %s, %i: %s\033[0m\n", __FILE__, __LINE__, #EXPR);\
+        {ACTION;}\
+    }\
+}
+
+
+ /**
  * Macro that returns false if the given expresion evaluates to false.
  * It prints a message to stderr about the file and line of the error.
  * @param EXPR expression to evaluate.
  */
-#define ALGUI_ENSURE(EXPR) {\
-    if (!(EXPR)) {\
-        fprintf(stderr, "\033[0;91mFAILURE\033[0m\n    \033[0;97mERROR: %s, %i: %s\033[0m\n", __FILE__, __LINE__, #EXPR);\
-        return ALGUI_FALSE;\
-    }\
-}
+#define ALGUI_ENSURE(EXPR) ALGUI_ON_TEST_FAILURE(EXPR, return ALGUI_FALSE)
 
 
 /**

@@ -2,6 +2,7 @@
 #define ALGUI_MAP_H
 
 
+#include <stdint.h>
 #include "array.h"
 
 
@@ -17,11 +18,11 @@ typedef struct ALGUI_MAP {
     ALGUI_COMPARATOR compare;
     ALGUI_DESTRUCTOR key_dtor;
     ALGUI_DESTRUCTOR value_dtor;
-    size_t counter : 32;
-    size_t size : 32;
-    ALGUI_BOOL sorted : 1;
-    size_t key_size : ALGUI_MAX_ELEMENT_SIZE_BITS;
-    size_t value_size : ALGUI_MAX_ELEMENT_SIZE_BITS;
+    uint32_t counter;
+    uint32_t size;
+    uint32_t sorted : 1;
+    uint32_t key_size : ALGUI_MAX_ELEMENT_SIZE_BITS;
+    uint32_t value_size : ALGUI_MAX_ELEMENT_SIZE_BITS;
 } ALGUI_MAP;
 
 
