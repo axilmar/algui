@@ -20,7 +20,6 @@ typedef struct ALGUI_MAP {
     size_t counter : 32;
     size_t size : 32;
     ALGUI_BOOL sorted : 1;
-    size_t bucket_size : 7;
     size_t key_size : ALGUI_MAX_ELEMENT_SIZE_BITS;
     size_t value_size : ALGUI_MAX_ELEMENT_SIZE_BITS;
 } ALGUI_MAP;

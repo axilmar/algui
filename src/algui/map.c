@@ -143,6 +143,29 @@ static void elem_dtor(void* elem) {
 }
 
 
+//get extended size of array
+static size_t calc_new_size(size_t size) {
+    //if size is 0, start with a minimum specific size
+    if (size == 0) {
+        return 32;
+    }
+
+    //if curr size is below a certain limit, try to double it
+    if (size < 4096) {
+        do {
+            size = size * 2;
+        } while (size < 4096);
+        return size;
+    }
+
+    //increment the size by a fixed amount of data
+    return size + 4096;
+}
+
+
+/*************************************************************************************************/
+
+
 //init map
 ALGUI_BOOL algui_init_map(ALGUI_MAP* map, size_t key_size, size_t value_size, ALGUI_COMPARATOR compare, ALGUI_DESTRUCTOR key_dtor, ALGUI_DESTRUCTOR value_dtor) {
     //check the map
@@ -180,7 +203,6 @@ ALGUI_BOOL algui_init_map(ALGUI_MAP* map, size_t key_size, size_t value_size, AL
     map->size = 0;
     map->value_size = value_size;
     map->sorted = ALGUI_TRUE;
-    map->bucket_size = 32;
     map->key_dtor = key_dtor;
     map->value_dtor = value_dtor;
 
@@ -291,8 +313,9 @@ void* algui_set_map_element(ALGUI_MAP* map, const void* key, const void* value) 
     
     //make room into the array if needed; on error, return false
     if (map->size == map->array.size) {
-        if (algui_set_array_size(&map->array, map->size + map->bucket_size) == ALGUI_FALSE) {
-            return NULL ;
+        const size_t new_size = calc_new_size(map->size);
+        if (algui_set_array_size(&map->array, new_size) == ALGUI_FALSE) {
+            return NULL;
         }
     }
 
