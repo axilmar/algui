@@ -5,11 +5,6 @@
 #include "util.h"
 
 
-#ifndef NDEBUG
-extern uint32_t max_map_size;
-#endif
-
-
 static size_t key_test_counter = 0;
 static size_t value_test_counter = 0;
 
@@ -468,7 +463,7 @@ static ALGUI_BOOL test_for_each_map_element_reverse(void* external_data) {
 #ifndef NDEBUG
 
 
-static uintptr_t test_tidy_map_callback(const void* k, void* v, void* data) {
+static uintptr_t test_fix_map_callback(const void* k, void* v, void* data) {
     //get the typed pointer values
     int* key = (int*)k;
     int* value = (int*)v;
@@ -485,11 +480,11 @@ static uintptr_t test_tidy_map_callback(const void* k, void* v, void* data) {
 }
 
 
-static ALGUI_BOOL test_tidy_map(void* external_data) {
-    const uint32_t prev_last_map_size = max_map_size;
-
-    //limit the map size to specific number of entries for the test
-    max_map_size = 6;
+static ALGUI_BOOL test_optimize_map(void* external_data) {
+    //null map
+    {
+        ALGUI_ENSURE_ERROR(algui_optimize_map(NULL) == ALGUI_FALSE, EINVAL);
+    }
 
     //test without element destructor
     {
@@ -506,19 +501,18 @@ static ALGUI_BOOL test_tidy_map(void* external_data) {
         v = 1; algui_set_map_element(&map, &v, &v);
         v = 2; algui_set_map_element(&map, &v, &v);
 
-        //insert another entry; this will cause the tidy_map function to run
-        v = 3; 
-        algui_set_map_element(&map, &v, &v);
+        //optimize the map
+        algui_optimize_map(&map);
 
         //ensure the number of elements in the map
         ALGUI_ENSURE(map.size == v + 1);
 
-        //ensure the map counter is 2, since a new element was added
-        ALGUI_ENSURE(map.counter == 2);
+        //ensure the map counter is 1
+        ALGUI_ENSURE(map.counter == 1);
 
         //ensure all elements in the map are the numbers without duplicates.
         int test_counter = 0;
-        algui_for_each_map_element(&map, test_tidy_map_callback, &test_counter);
+        algui_for_each_map_element(&map, test_fix_map_callback, &test_counter);
         ALGUI_ENSURE(test_counter == v + 1);
 
         algui_cleanup_map(&map);
@@ -539,10 +533,9 @@ static ALGUI_BOOL test_tidy_map(void* external_data) {
         v = 1; algui_set_map_element(&map, &v, &v);
         v = 2; algui_set_map_element(&map, &v, &v);
 
-        //insert another entry; this will cause the tidy_map function to run
-        v = 3;
+        //optimize the map
         value_test_counter = 0;
-        algui_set_map_element(&map, &v, &v);
+        algui_optimize_map(&map);
 
         //ensure the number of destroyed elements
         ALGUI_ENSURE(value_test_counter == 3);
@@ -550,19 +543,16 @@ static ALGUI_BOOL test_tidy_map(void* external_data) {
         //ensure the number of elements in the map
         ALGUI_ENSURE(map.size == v + 1);
 
-        //ensure the map counter is 2, since a new element was added
-        ALGUI_ENSURE(map.counter == 2);
+        //ensure the map counter is 1
+        ALGUI_ENSURE(map.counter == 1);
 
         //ensure all elements in the map are the numbers without duplicates.
         int test_counter = 0;
-        algui_for_each_map_element(&map, test_tidy_map_callback, &test_counter);
+        algui_for_each_map_element(&map, test_fix_map_callback, &test_counter);
         ALGUI_ENSURE(test_counter == v + 1);
 
         algui_cleanup_map(&map);
     }
-
-    //restore the last map size variable
-    max_map_size = prev_last_map_size;
 
     return ALGUI_TRUE;
 }
@@ -579,6 +569,6 @@ void test_map(ALGUI_TEST_STATISTICS* stats) {
     algui_do_test(stats, "algui_for_each_map_element", test_for_each_map_element, NULL);
     algui_do_test(stats, "algui_for_each_map_element_reverse", test_for_each_map_element_reverse, NULL);
     #ifndef NDEBUG
-    algui_do_test(stats, "tidy map", test_tidy_map, NULL);
+    algui_do_test(stats, "algui_optimize_map", test_optimize_map, NULL);
     #endif
 }

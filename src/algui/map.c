@@ -5,17 +5,6 @@
 #include "algui/array_util.h"
 
 
-//on release, these values are constant
-#ifdef NDEBUG
-#define MAX_MAP_SIZE UINT32_MAX
-
-//else on debug, they are variables, which can be changed in order to test the tidy function.
-#else
-uint32_t max_map_size = UINT32_MAX;
-#define MAX_MAP_SIZE max_map_size
-#endif
-
-
 //element header
 typedef struct ELEMENT_HEADER {
     ALGUI_MAP* map;
@@ -79,6 +68,26 @@ static int sort_comparator(const void* a, const void* b) {
 
     //the keys are equal, therefore compare counters; later is greater
     return ha->counter < hb->counter;
+}
+
+
+//grows the map array
+static ALGUI_BOOL grow_array(ALGUI_MAP* map, uint32_t new_size) {
+    //reallocate data
+    char* new_data = realloc(map->array.data, map->array.element_size * new_size);
+
+    //check for reallocation failure
+    if (new_data == NULL) {
+        errno = ENOMEM;
+        return ALGUI_FALSE;
+    }
+
+    //save the new array data and size
+    map->array.data = new_data;
+    map->array.size = new_size;
+
+    //success
+    return ALGUI_TRUE;
 }
 
 
@@ -222,8 +231,8 @@ static uint32_t calc_new_size(uint32_t size) {
 }
 
 
-//sorts the map, removes duplicate elements, fixes the counters
-static void tidy_map(ALGUI_MAP* map) {
+//sorts the map, removes duplicate elements, fixes the counters.
+static void fix_map(ALGUI_MAP* map) {
     //sort the map so as that elements are grouped by key
     sort_unsorted_map(map);
 
@@ -508,16 +517,15 @@ void* algui_set_map_element(ALGUI_MAP* map, const void* key, const void* value) 
         return NULL;
     }
 
-    //check the value, but only if map value size is greater than zero
+    //check the value against the value size; null values are permitted only when the value size is 0
     if ((map->value_size > 0 && value == NULL) || (map->value_size == 0 && value != NULL)) {
         errno = EINVAL;
         return NULL;
     }
 
-    //if the maximum size or maximum counter is reached, then tidy the map: sort it, and remove duplicate elements.
-    //If the size is still maximum, then abort, since there is not enough memory.
-    if (map->size == MAX_MAP_SIZE || map->counter == UINT32_MAX) {
-        tidy_map(map);
+    //if the maximum size or maximum counter is reached, then fix the map; if the map cannot be fixed, abort.
+    if (map->size == UINT32_MAX || map->counter == UINT32_MAX) {
+        fix_map(map);
         if (map->size == UINT32_MAX || map->counter == UINT32_MAX) {
             errno = ENOMEM;
             return NULL;
@@ -527,7 +535,7 @@ void* algui_set_map_element(ALGUI_MAP* map, const void* key, const void* value) 
     //make room into the array if needed; on error, return false
     if (map->size == map->array.size) {
         const uint32_t new_size = calc_new_size(map->size);
-        if (algui_set_array_size(&map->array, new_size) == ALGUI_FALSE) {
+        if (grow_array(map, new_size) == ALGUI_FALSE) {
             return NULL;
         }
     }
@@ -708,4 +716,19 @@ uintptr_t algui_for_each_map_element_reverse(ALGUI_MAP* map, uintptr_t(*func)(co
 
     //the loop didn't stop at any element
     return (uintptr_t)NULL;
+}
+
+
+//optimize map
+ALGUI_BOOL algui_optimize_map(ALGUI_MAP* map) {
+    //check the map
+    if (map == NULL) {
+        errno = EINVAL;
+        return ALGUI_FALSE;
+    }
+
+    fix_map(map);
+
+    //success
+    return ALGUI_TRUE;
 }

@@ -104,4 +104,12 @@ uintptr_t algui_for_each_map_element(ALGUI_MAP* map, uintptr_t (*func)(const voi
 uintptr_t algui_for_each_map_element_reverse(ALGUI_MAP* map, uintptr_t(*func)(const void* key, void* value, void* data), void* data);
 
 
+/**
+ * Sorts the map elements, removes duplicates, resets the most recent element counter, resizes the map array to the same size as the map.
+ * @param map map to opimize; if null, then false is returned and errno is set to EINVAL.
+ * @return true on success, false on error.
+ */
+ALGUI_BOOL algui_optimize_map(ALGUI_MAP* map);
+
+
 #endif //ALGUI_MAP_H
