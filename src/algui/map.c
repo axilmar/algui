@@ -163,6 +163,12 @@ static size_t calc_new_size(size_t size) {
 }
 
 
+//get the pointer to the value
+static inline char* get_value(const ALGUI_MAP* map, const ELEMENT_HEADER* elem) {
+    return (char*)(elem + 1) + map->key_size;
+}
+
+
 /*************************************************************************************************/
 
 
@@ -265,6 +271,26 @@ void* algui_get_map_element(ALGUI_MAP* map, const void* key) {
         return NULL;
     }
 
+    //if the map is unsorted, try to find the latest element linearly, starting from the last element,
+    //for a specific amount of elements; it may be faster than sorting the array and removing duplicates.
+    if (!map->sorted) {
+        //calculate the end index
+        const size_t end_index = map->size >= 32 ? map->size - 32 : 0;
+
+        //search up until the end index
+        for (size_t index = map->size; index > end_index; --index) {
+            const ELEMENT_HEADER* const elem = ALGUI_GET_ARRAY_ELEMENT_UTIL(ELEMENT_HEADER, map->array.data, map->array.element_size, index - 1);
+            if (search_comparator(elem, key) == 0) {
+                return get_value(map, elem);
+            }
+        }
+
+        //if end index was 0, there is no point in sorting the map and removing duplicates
+        if (end_index == 0) {
+            return NULL;
+        }
+    }
+
     //sort the map, if needed
     if (!sort_map(map)) {
         return NULL;
@@ -285,8 +311,7 @@ void* algui_get_map_element(ALGUI_MAP* map, const void* key) {
     const ELEMENT_HEADER* const elem = ALGUI_GET_ARRAY_ELEMENT_UTIL(ELEMENT_HEADER, map->array.data, map->array.element_size, index);
 
     //return the value
-    char* const value = (char*)(elem + 1) + map->key_size;
-    return value;
+    return get_value(map, elem);
 
 }
 
@@ -330,7 +355,7 @@ void* algui_set_map_element(ALGUI_MAP* map, const void* key, const void* value) 
     memmove(elem + 1, key, map->key_size);
 
     //copy the value to the element value
-    char* elem_value = (char*)(elem + 1) + map->key_size;
+    char* elem_value = get_value(map, elem);
     memmove(elem_value, value, map->value_size);
 
     //setup the map after the insertion
