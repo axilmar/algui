@@ -7,19 +7,19 @@
 
 //on release, these values are constant
 #ifdef NDEBUG
-#define LAST_MAP_SIZE UINT32_MAX
+#define MAX_MAP_SIZE UINT32_MAX
 
 //else on debug, they are variables, which can be changed in order to test the tidy function.
 #else
-uint32_t last_map_size = UINT32_MAX;
-#define LAST_MAP_SIZE last_map_size
+uint32_t max_map_size = UINT32_MAX;
+#define MAX_MAP_SIZE max_map_size
 #endif
 
 
 //element header
 typedef struct ELEMENT_HEADER {
     ALGUI_MAP* map;
-    size_t counter;
+    uint32_t counter;
 } ELEMENT_HEADER;
 
 
@@ -48,8 +48,8 @@ static inline ELEMENT_HEADER* get_next_element(ALGUI_MAP* map, const ELEMENT_HEA
 
 
 //compute the map element size
-static inline size_t compute_element_size(size_t key_size, size_t value_size) {
-    return sizeof(ELEMENT_HEADER) + key_size + value_size;
+static inline uint32_t compute_element_size(uint32_t key_size, uint32_t value_size) {
+    return (uint32_t)sizeof(ELEMENT_HEADER) + key_size + value_size;
 }
 
 
@@ -82,43 +82,43 @@ static int sort_comparator(const void* a, const void* b) {
 }
 
 
-//sorts the map
-static ALGUI_BOOL sort_map(ALGUI_MAP* map) {
-    //if sorted, do nothing else
-    if (is_sorted(map)) {
-        return ALGUI_TRUE;
+//resizes the array so as that it contains the exact number of elements the map contains
+static void shrink_array_to_fit_map(ALGUI_MAP* map) {
+    //the difference of array size to map size must exceed a certain limit
+    if (map->array.size - map->size < 32) {
+        return;
     }
 
-    //sort the array
-    qsort(map->array.data, map->size, map->array.element_size, sort_comparator);
-
-    //resize the array to match the map size;
-    //do not use the function algui_set_array_size
-    //because we don't want destructors to be invoked for 
-    //uninitialized elements.
     char* new_data = realloc(map->array.data, map->array.element_size * map->size);
 
-    //check reallocation failure
+    //check reallocation failure;
+    //the error is not critical, the previous array size still exists
     if (new_data == NULL) {
-        errno = ENOMEM;
-        return ALGUI_FALSE;
+        return;
     }
 
     //save the new array data
     map->array.data = new_data;
     map->array.size = map->size;
+}
 
-    //the map is sorted
+
+//sorts the map
+static void sort_map(ALGUI_MAP* map) {
+    //sort the array
+    qsort(map->array.data, map->size, map->array.element_size, sort_comparator);
+
+    //the whole map is now sorted
     map->sorted_count = map->size;
-
-    //success
-    return ALGUI_TRUE;
 }
 
 
 //sorts the map if it is unsorted
-static ALGUI_BOOL sort_unsorted_map(ALGUI_MAP* map) {
-    return is_sorted(map) ? ALGUI_TRUE : sort_map(map);
+static void sort_unsorted_map(ALGUI_MAP* map) {
+    if (is_sorted(map)) {
+        return;
+    }
+    sort_map(map);
 }
 
 
@@ -135,11 +135,11 @@ static int search_comparator(const void* a, const void* b) {
 }
 
 
-//find index of previous entry with the same key
-static size_t find_lowest_same_index(ALGUI_MAP* map, const void* key, size_t index) {
+//find lowest index with the same key
+static uint32_t find_same_key_lowest_index(ALGUI_MAP* map, const void* key, uint32_t index) {
     for (; index > 0; --index) {
         ELEMENT_HEADER* prev_elem = ALGUI_GET_ARRAY_ELEMENT_UTIL(ELEMENT_HEADER, map->array.data, map->array.size, index - 1);
-        if (map->compare(prev_elem + 1, key) != 0) {
+        if (map->compare(prev_elem, key) != 0) {
             break;
         }
     }
@@ -147,25 +147,34 @@ static size_t find_lowest_same_index(ALGUI_MAP* map, const void* key, size_t ind
 }
 
 
+//removes elements from map
+static void remove_map_elements(ALGUI_MAP* map, uint32_t index, uint32_t count) {
+    algui_remove_array_elements(&map->array, index, count);
+    map->size -= count;
+    if (index < map->sorted_count) {
+        map->sorted_count -= map->sorted_count - index;
+    }
+    shrink_array_to_fit_map(map);
+}
+
+
 //remove older entries for the given key at the given index on a sorted map; returns adjusted index
-static size_t remove_older_entries(ALGUI_MAP* map, const void* key, size_t index) {
+static uint32_t remove_older_entries(ALGUI_MAP* map, const void* key, uint32_t index) {
     //if there are no previous entries, do nothing else
     if (index == 0) {
         return index;
     }
 
     //find first index of previous entries with same key    
-    const size_t prev_index = find_lowest_same_index(map, key, index);
+    const uint32_t prev_index = find_same_key_lowest_index(map, key, index);
 
-    const size_t same_key_count = index - prev_index;
+    //calculate number of entries with same key to remove
+    const uint32_t same_key_count = index - prev_index;
 
     //if there are previous entries with the same key, remove those entries
     if (same_key_count > 0) {
-        algui_remove_array_elements(&map->array, prev_index, same_key_count);
+        remove_map_elements(map, prev_index, same_key_count);
     }
-
-    //adjust the map size by the removed entries count
-    map->size -= same_key_count;
 
     //return the adjusted index
     return prev_index;
@@ -192,7 +201,7 @@ static void elem_dtor(void* elem) {
 
 
 //get extended size of array
-static size_t calc_new_size(size_t size) {
+static uint32_t calc_new_size(uint32_t size) {
     //if size is small, start with a minimum specific size
     if (size < 32) {
         return 32;
@@ -201,7 +210,7 @@ static size_t calc_new_size(size_t size) {
     //if curr size is below a certain limit, try to allocate more based on power-of-2
     if (size <= 2048) {
         size *= 2;
-        size_t new_size = 1;
+        uint32_t new_size = 1;
         do {
             new_size *= 2;
         } while (new_size < size);
@@ -214,11 +223,9 @@ static size_t calc_new_size(size_t size) {
 
 
 //sorts the map, removes duplicate elements, fixes the counters
-static ALGUI_BOOL tidy_map(ALGUI_MAP* map) {
+static void tidy_map(ALGUI_MAP* map) {
     //sort the map so as that elements are grouped by key
-    if (!sort_unsorted_map(map)) {
-        return ALGUI_FALSE;
-    }
+    sort_unsorted_map(map);
 
     //start with the first element
     ELEMENT_HEADER* first_elem = (ELEMENT_HEADER*)map->array.data;
@@ -322,20 +329,11 @@ static ALGUI_BOOL tidy_map(ALGUI_MAP* map) {
     //recompute the map size from the last shift position
     map->size = ((char*)shift_pos - (char*)map->array.data) / map->array.element_size;
 
-    //reallocate the array to have the same size as the map
-    char* new_data = realloc(map->array.data, map->size * map->array.element_size);
-    if (new_data == NULL) {
-        errno = ENOMEM;
-        return ALGUI_FALSE;
-    }
-    map->array.data = new_data;
-    map->array.size = map->size;
-
     //the current counter for the map is 0; next elements will get counter 1
     map->counter = 1;
 
-    //success
-    return ALGUI_TRUE;
+    //reallocate the array to have the same size as the map
+    shrink_array_to_fit_map(map);
 }
 
 
@@ -343,7 +341,7 @@ static ALGUI_BOOL tidy_map(ALGUI_MAP* map) {
 
 
 //init map
-ALGUI_BOOL algui_init_map(ALGUI_MAP* map, size_t key_size, size_t value_size, ALGUI_COMPARATOR compare, ALGUI_DESTRUCTOR key_dtor, ALGUI_DESTRUCTOR value_dtor) {
+ALGUI_BOOL algui_init_map(ALGUI_MAP* map, uint32_t key_size, uint32_t value_size, ALGUI_COMPARATOR compare, ALGUI_DESTRUCTOR key_dtor, ALGUI_DESTRUCTOR value_dtor) {
     //check the map
     if (map == NULL) {
         errno = EINVAL;
@@ -369,7 +367,7 @@ ALGUI_BOOL algui_init_map(ALGUI_MAP* map, size_t key_size, size_t value_size, AL
     }
 
     //compute map element size
-    const size_t element_size = compute_element_size(key_size, value_size);
+    const uint32_t element_size = compute_element_size(key_size, value_size);
 
     //setup the map
     algui_init_array(&map->array, element_size, 0, key_dtor || value_dtor ? elem_dtor : NULL);
@@ -429,7 +427,7 @@ ALGUI_BOOL algui_is_empty_map(ALGUI_MAP* map) {
 
 //get element
 void* algui_get_map_element(ALGUI_MAP* map, const void* key) {
-    size_t found_index;
+    uint32_t found_index;
 
     //check the map
     if (map == NULL) {
@@ -463,10 +461,18 @@ void* algui_get_map_element(ALGUI_MAP* map, const void* key) {
             }
         }
 
-        //not found in the already sorted part of the map, or there isn't a sorted part, so sort the map and search the whole of it
-        if (!sort_map(map)) {
-            return NULL;
+        //if the unsorted part is small, then search it in reverse order in order to find the most recent entry
+        if (map->size - map->sorted_count <= 32) {
+            for (uint32_t index = map->size; index > map->sorted_count; --index) {
+                const ELEMENT_HEADER* elem = ALGUI_GET_ARRAY_ELEMENT_UTIL(ELEMENT_HEADER, map->array.data, map->array.element_size, index - 1);
+                if (map->compare(elem + 1, key) == 0) {
+                    return get_value(map, elem);
+                }
+            }
         }
+
+        //nothing from the above worked, so sort the map and search the whole of it
+        sort_map(map);
         found_index = algui_find_array_element_index_binary_search_util(map->array.data, map->size, map->array.element_size, key, search_comparator);
     }
 
@@ -510,11 +516,9 @@ void* algui_set_map_element(ALGUI_MAP* map, const void* key, const void* value) 
 
     //if the maximum size or maximum counter is reached, then tidy the map: sort it, and remove duplicate elements.
     //If the size is still maximum, then abort, since there is not enough memory.
-    if (map->size == LAST_MAP_SIZE || map->counter == UINT32_MAX) {
-        if (!tidy_map(map)) {
-            return NULL;
-        }
-        if (map->size == UINT32_MAX) {
+    if (map->size == MAX_MAP_SIZE || map->counter == UINT32_MAX) {
+        tidy_map(map);
+        if (map->size == UINT32_MAX || map->counter == UINT32_MAX) {
             errno = ENOMEM;
             return NULL;
         }
@@ -522,7 +526,7 @@ void* algui_set_map_element(ALGUI_MAP* map, const void* key, const void* value) 
     
     //make room into the array if needed; on error, return false
     if (map->size == map->array.size) {
-        const size_t new_size = calc_new_size(map->size);
+        const uint32_t new_size = calc_new_size(map->size);
         if (algui_set_array_size(&map->array, new_size) == ALGUI_FALSE) {
             return NULL;
         }
@@ -538,15 +542,13 @@ void* algui_set_map_element(ALGUI_MAP* map, const void* key, const void* value) 
     //copy the key
     memmove(elem + 1, key, map->key_size);
 
-    //copy the value to the element value
+    //copy the value
     char* elem_value = get_value(map, elem);
     memmove(elem_value, value, map->value_size);
 
     //setup the map after the insertion
     ++map->counter;
-    if (++map->size == 1) {
-        map->sorted_count = 1;
-    }
+    ++map->size;
 
     //success
     return elem_value;
@@ -573,12 +575,10 @@ ALGUI_BOOL algui_remove_map_element(ALGUI_MAP* map, const void* key) {
     }
 
     //sort the map, if need, so as that we can find the entry
-    if (!sort_unsorted_map(map)) {
-        return ALGUI_FALSE;
-    }
+    sort_unsorted_map(map);
 
     //find the entry, based on the map search comparator
-    const size_t index = algui_find_array_element_index_binary_search_util(map->array.data, map->size, map->array.element_size, key, search_comparator);
+    const uint32_t index = algui_find_array_element_index_binary_search_util(map->array.data, map->size, map->array.element_size, key, search_comparator);
 
     //if not found
     if (index == ALGUI_INVALID_INDEX) {
@@ -586,16 +586,13 @@ ALGUI_BOOL algui_remove_map_element(ALGUI_MAP* map, const void* key) {
     }
 
     //find prev entry index
-    const size_t prev_index = find_lowest_same_index(map, key, index);
+    const uint32_t prev_index = find_same_key_lowest_index(map, key, index);
 
     //find same key count; include the found element
-    const size_t same_key_count = index + 1 - prev_index;
+    const uint32_t same_key_count = index + 1 - prev_index;
 
     //remove the entries
-    algui_remove_array_elements(&map->array, prev_index, same_key_count);
-
-    //adjust the map size by the removed entries count
-    map->size -= same_key_count;
+    remove_map_elements(map, prev_index, same_key_count);
 
     //success
     return ALGUI_TRUE;
@@ -617,12 +614,10 @@ uintptr_t algui_for_each_map_element(ALGUI_MAP* map, uintptr_t(*func)(const void
     }
 
     //sort the map, if needed
-    if (!sort_unsorted_map(map)) {
-        return (uintptr_t)NULL;
-    }
+    sort_unsorted_map(map);
 
     //loop
-    for (size_t i = 0; i < map->size; ) {
+    for (uint32_t i = 0; i < map->size; ) {
         //get element
         ELEMENT_HEADER* eh = ALGUI_GET_ARRAY_ELEMENT_UTIL(ELEMENT_HEADER, map->array.data, map->array.element_size, i);
 
@@ -675,12 +670,10 @@ uintptr_t algui_for_each_map_element_reverse(ALGUI_MAP* map, uintptr_t(*func)(co
     }
 
     //sort the map, if needed
-    if (!sort_unsorted_map(map)) {
-        return (uintptr_t)NULL;
-    }
+    sort_unsorted_map(map);
 
     //loop
-    for (size_t i = map->size; i > 0; ) {
+    for (uint32_t i = map->size; i > 0; ) {
         //get element
         ELEMENT_HEADER* eh = ALGUI_GET_ARRAY_ELEMENT_UTIL(ELEMENT_HEADER, map->array.data, map->array.element_size, i - 1);
 

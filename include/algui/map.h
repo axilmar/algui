@@ -8,6 +8,7 @@
 
 /**
  * A map of keys to values.
+ * The map is 32-bit, i.e. it can hold up to UINT32_MAX elements.
  * The map is backed up by an array.
  * The map is lazy: when adding elements, the elements are added at the end of the table.
  * When the map is accessed, the map is sorted, if not sorted yet, and then the element is retrieved by its key using binary search.
@@ -36,7 +37,7 @@ typedef struct ALGUI_MAP {
  * @param value_dtor optional value destructor.
  * @return true on success, false on error.
  */
-ALGUI_BOOL algui_init_map(ALGUI_MAP* map, size_t key_size, size_t value_size, ALGUI_COMPARATOR compare, ALGUI_DESTRUCTOR key_dtor, ALGUI_DESTRUCTOR value_dtor);
+ALGUI_BOOL algui_init_map(ALGUI_MAP* map, uint32_t key_size, uint32_t value_size, ALGUI_COMPARATOR compare, ALGUI_DESTRUCTOR key_dtor, ALGUI_DESTRUCTOR value_dtor);
 
 
 /**

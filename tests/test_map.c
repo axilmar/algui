@@ -6,7 +6,7 @@
 
 
 #ifndef NDEBUG
-extern uint32_t last_map_size;
+extern uint32_t max_map_size;
 #endif
 
 
@@ -486,10 +486,10 @@ static uintptr_t test_tidy_map_callback(const void* k, void* v, void* data) {
 
 
 static ALGUI_BOOL test_tidy_map(void* external_data) {
-    const uint32_t prev_last_map_size = last_map_size;
+    const uint32_t prev_last_map_size = max_map_size;
 
     //limit the map size to specific number of entries for the test
-    last_map_size = 6;
+    max_map_size = 6;
 
     //test without element destructor
     {
@@ -562,7 +562,7 @@ static ALGUI_BOOL test_tidy_map(void* external_data) {
     }
 
     //restore the last map size variable
-    last_map_size = prev_last_map_size;
+    max_map_size = prev_last_map_size;
 
     return ALGUI_TRUE;
 }
