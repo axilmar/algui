@@ -485,7 +485,6 @@ void* algui_get_map_element(ALGUI_MAP* map, const void* key) {
 
     //return the value
     return get_value(map, elem);
-
 }
 
 
