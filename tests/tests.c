@@ -9,7 +9,7 @@ void algui_run_tests() {
     ALGUI_TEST_STATISTICS stats;
     algui_init_test(&stats);
     //test_array(&stats);
-    //test_map(&stats);
+    test_map(&stats);
     //test_buffer(&stats);
     test_object(&stats);
     algui_print_test_statistics(&stats);

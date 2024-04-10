@@ -20,7 +20,7 @@ typedef struct ALGUI_MAP {
     ALGUI_DESTRUCTOR value_dtor;
     uint32_t counter;
     uint32_t size;
-    uint32_t sorted : 1;
+    uint32_t sorted_count;
     uint32_t key_size : ALGUI_MAX_ELEMENT_SIZE_BITS;
     uint32_t value_size : ALGUI_MAX_ELEMENT_SIZE_BITS;
 } ALGUI_MAP;
