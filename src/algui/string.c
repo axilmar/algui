@@ -1,7 +1,7 @@
 #include <string.h>
-#include <stdlib.h>
 #include <errno.h>
 #include "algui/string.h"
+#include "algui/stdlib.h"
 
 
 #ifdef _WIN32

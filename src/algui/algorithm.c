@@ -1,8 +1,8 @@
 #include <errno.h>
-#include <stdlib.h>
 #include <memory.h>
 #include <stdio.h>
 #include "algui/algorithm.h"
+#include "algui/stdlib.h"
 
 
 #ifdef _WIN32

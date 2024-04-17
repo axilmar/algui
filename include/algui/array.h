@@ -322,7 +322,7 @@ void* algui_array_remove_element_sorted(ALGUI_ARRAY* arr, const void* elem, int 
  * Executes a callback function for each element of the array.
  * @param arr array to invoke the callback for; if null, errno is set to EINVAL and 0 is returned.
  * @param index start index; if out of bounds, errno is set to EINVAL and 0 is returned.
- * @param size number of elements to invoke the callback for; if -1, size is set to the array size; if index and size is beyond array size, errno is set to EINVAL and 0 is returned.
+ * @param size number of elements to invoke the callback for; if -1, size is set to the array size; if index + size is beyond array size, errno is set to EINVAL and 0 is returned.
  * @param callback the callback to invoke for each element; if null, errno is set to EINVAL and 0 is returned.
  * @param context optional context; if not given, then the array is passed as context.
  * @return what the callback returns or 0 if all the elements were examined or there was an error.
@@ -334,7 +334,7 @@ uintptr_t algui_array_for_each_element(ALGUI_ARRAY* arr, size_t index, size_t si
  * Executes a callback function for each element of the array in reverse order.
  * @param arr array to invoke the callback for; if null, errno is set to EINVAL and 0 is returned.
  * @param index start index; if -1, it is set to the index of the last element; if out of bounds, errno is set to EINVAL and 0 is returned.
- * @param size number of elements to invoke the callback for; if -1, it is set to the array size; if index and size is beyond array size, errno is set to EINVAL and 0 is returned.
+ * @param size number of elements to invoke the callback for; if -1, it is set to the array size; if index + size is beyond array size, errno is set to EINVAL and 0 is returned.
  * @param callback the callback to invoke for each element; if null, errno is set to EINVAL and 0 is returned.
  * @param context optional context; if not given, then the array is passed as context.
  * @return what the callback returns or 0 if all the elements were examined or there was an error.
@@ -346,7 +346,7 @@ uintptr_t algui_array_for_each_element_reverse(ALGUI_ARRAY* arr, size_t index, s
  * Sorts an array (or part of it), using quicksort.
  * @param array to sort; if null, no sorting happens and errno is set to EINVAL.
  * @param index start index; if -1, it is set to 0; if out of bounds, errno is set to EINVAL and 0 is returned.
- * @param size number of elements to sort; if -1, it is set to the array size; if index and size is beyond array size, errno is set to EINVAL and 0 is returned.
+ * @param size number of elements to sort; if -1, it is set to the array size; if index + size is beyond array size, errno is set to EINVAL and 0 is returned.
  * @param compare the comparison function; context is either the given context or the array itself; if null, errno is set to EINVAL and NULL is returned.
  * @param context optional context; if not given, then the array is passed as context.
  */

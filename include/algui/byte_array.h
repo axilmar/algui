@@ -49,6 +49,7 @@ void algui_byte_array_construct_copy(ALGUI_BYTE_ARRAY* arr, const ALGUI_BYTE_ARR
 
 /**
  * Copies an array into another array.
+ * If the source array is the same as the destination array, nothing happens.
  * @param arr destination array; if NULL, errno is set to EINVAL.
  * @param src source array; if null, errno is set to EINVAL.
  */

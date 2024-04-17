@@ -1,7 +1,7 @@
-#include <stdlib.h>
 #include <memory.h>
 #include <errno.h>
 #include "algui/byte_array.h"
+#include "algui/stdlib.h"
 
 
 //construct from data
@@ -88,8 +88,14 @@ void algui_byte_array_construct(ALGUI_BYTE_ARRAY* arr) {
 
 //initializes a byte array from data.
 void algui_byte_array_construct_from_data(ALGUI_BYTE_ARRAY* arr, const char* data, size_t size) {
-    //check the args
-    if (!arr || data == arr->data || (!data && size) || (data && !size)) {
+    //check arr
+    if (!arr) {
+        errno = EINVAL;
+        return;
+    }
+
+    //check the rest of the args
+    if (data == arr->data || (!data && size) || (data && !size)) {
         errno = EINVAL;
         arr->data = NULL;
         arr->size = 0;
@@ -136,8 +142,14 @@ void algui_byte_array_construct_from_size(ALGUI_BYTE_ARRAY* arr, size_t size) {
 
 //initializes a byte array from another byte array.
 void algui_byte_array_construct_copy(ALGUI_BYTE_ARRAY* arr, const ALGUI_BYTE_ARRAY* src) {
-    //check the args
-    if (!arr || !src || src == arr) {
+    //check the array
+    if (!arr) {
+        errno = EINVAL;
+        return;
+    }
+
+    //check the rest of the args
+    if (!src || src == arr) {
         errno = EINVAL;
         arr->data = NULL;
         arr->size = 0;
@@ -152,8 +164,13 @@ void algui_byte_array_construct_copy(ALGUI_BYTE_ARRAY* arr, const ALGUI_BYTE_ARR
 //copies an array into another array.
 void algui_byte_array_copy(ALGUI_BYTE_ARRAY* arr, const ALGUI_BYTE_ARRAY* src) {
     //check the args
-    if (!arr || !src || src == arr) {
+    if (!arr || !src) {
         errno = EINVAL;
+        return;
+    }
+
+    //if src is equal to arr, then do nothing else
+    if (src == arr) {
         return;
     }
 

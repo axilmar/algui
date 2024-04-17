@@ -1,7 +1,7 @@
-#include <stdlib.h>
 #include <errno.h>
 #include <memory.h>
 #include "algui/ref_counted.h"
+#include "algui/stdlib.h"
 
 
 //ref counted ptr default constructor; pointers are initialized to null.

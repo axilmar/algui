@@ -1,8 +1,8 @@
 #include <errno.h>
 #include <memory.h>
-#include <stdlib.h>
 #include "algui/array.h"
 #include "algui/algorithm.h"
+#include "algui/stdlib.h"
 
 
 #ifndef ALGUI_ARRAY_SMALLEST_CAPACITY
