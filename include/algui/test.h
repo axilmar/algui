@@ -25,7 +25,7 @@
 }
 
 
- /**
+/**
  * Macro that returns false if the given expresion evaluates to false.
  * It prints a message to stderr about the file and line of the error.
  * @param EXPR expression to evaluate.
@@ -107,17 +107,52 @@ ALGUI_BOOL algui_test_run(ALGUI_TEST* test, const char* name, ALGUI_TEST_FUNCTIO
 ALGUI_BOOL algui_test_print(const ALGUI_TEST* test);
 
 
-///global variables for test malloc/realloc/free.
-extern void* algui_realloc_ptr;
-extern size_t algui_realloc_new_size;
-extern size_t algui_malloc_size;
-extern void* algui_free_ptr;
+///test realloc.
+extern void* (*algui_realloc)(void* ptr, size_t new_size);
 
 
-///test malloc/realloc/free.
+///test malloc.
+extern void* (*algui_malloc)(size_t size);
+
+
+///test free.
+extern void (*algui_free)(void* ptr);
+
+
+///original realloc.
+extern void* (*const algui_original_realloc)(void* ptr, size_t new_size);
+
+
+///original malloc.
+extern void* (*const algui_original_malloc)(size_t size);
+
+
+///original free.
+extern void (*const algui_original_free)(void* ptr);
+
+
+///realloc for testing; counts the number of allocated bytes.
 void* algui_test_realloc(void* ptr, size_t new_size);
+
+
+///malloc for testing; counts the number of allocated bytes.
 void* algui_test_malloc(size_t size);
+
+
+///free for testing; counts the number of allocated bytes.
 void algui_test_free(void* ptr);
+
+
+///returns number of allocated bytes.
+size_t algui_test_get_allocated_bytes();
+
+
+///sets pointers to malloc, realloc and free to point to the test functions.
+void algui_test_enable_test_memory_allocation_functions();
+
+
+///sets pointers to malloc, realloc and free to point to the original functions.
+void algui_test_disable_test_memory_allocation_functions();
 
 
 #endif //ALGUI_CONFIG_TEST

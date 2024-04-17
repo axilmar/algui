@@ -72,7 +72,9 @@ static ALGUI_BOOL test_algui_byte_array_construct_from_data(void* context) {
         ALGUI_ENSURE(ba.data != data);
         ALGUI_ENSURE(ba.size == sizeof(data));
         ALGUI_ENSURE(memcmp(ba.data, data, sizeof(data)) == 0);
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == sizeof(data));
         free(ba.data);
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == 0);
     }
 
     return ALGUI_TRUE;
@@ -115,7 +117,9 @@ static ALGUI_BOOL test_algui_byte_array_construct_from_size(void* context) {
         ALGUI_ENSURE_STATEMENT(algui_byte_array_construct_from_size(&ba, 32), 0);
         ALGUI_ENSURE(ba.data != NULL);
         ALGUI_ENSURE(ba.size == 32);
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == 32);
         free(ba.data);
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == 0);
     }
 
     return ALGUI_TRUE;
@@ -165,7 +169,10 @@ static ALGUI_BOOL test_algui_byte_array_construct_copy(void* context) {
         ALGUI_ENSURE(dst.size == src.size);
         ALGUI_ENSURE(memcmp(dst.data, src.data, sizeof(data)) == 0);
 
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == src.size + dst.size);
         free(src.data);
+        free(dst.data);
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == 0);
     }
 
     return ALGUI_TRUE;
@@ -220,8 +227,10 @@ static ALGUI_BOOL test_algui_byte_array_copy(void* context) {
         ALGUI_ENSURE(dst.size == src.size);
         ALGUI_ENSURE(memcmp(dst.data, src.data, sizeof(data)) == 0);
 
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == src.size + dst.size);
         free(src.data);
         free(dst.data);
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == 0);
     }
 
     //non empty source array to non-empty source array
@@ -230,17 +239,21 @@ static ALGUI_BOOL test_algui_byte_array_copy(void* context) {
 
         char data[] = "the quick brown fox jumps over the lazy dog";
         algui_byte_array_construct_from_data(&src, data, sizeof(data));
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == src.size);
 
         char dst_data[] = "destination data";
         algui_byte_array_construct_from_data(&dst, dst_data, sizeof(dst_data));
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == src.size + dst.size);
 
         ALGUI_ENSURE_STATEMENT(algui_byte_array_copy(&dst, &src), 0);
         ALGUI_ENSURE(dst.data != src.data);
         ALGUI_ENSURE(dst.size == src.size);
         ALGUI_ENSURE(memcmp(dst.data, src.data, sizeof(data)) == 0);
 
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == src.size * 2);
         free(src.data);
         free(dst.data);
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == 0);
     }
 
     return ALGUI_TRUE;
@@ -258,7 +271,15 @@ static ALGUI_BOOL test_algui_byte_array_destruct(void* context) {
         ALGUI_BYTE_ARRAY ba;
         algui_byte_array_construct(&ba);
         ALGUI_ENSURE_STATEMENT(algui_byte_array_destruct(&ba), 0);
-        ALGUI_ENSURE(algui_free_ptr == ba.data);
+    }
+
+    //non empty array
+    {
+        ALGUI_BYTE_ARRAY ba;
+        algui_byte_array_construct_from_size(&ba, 32);
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == 32);
+        ALGUI_ENSURE_STATEMENT(algui_byte_array_destruct(&ba), 0);
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == 0);
     }
 
     return ALGUI_TRUE;
@@ -361,7 +382,10 @@ static ALGUI_BOOL test_algui_byte_array_set_data(void* context) {
         ALGUI_ENSURE_STATEMENT(algui_byte_array_set_data(&ba, data, sizeof(data)), 0);
         ALGUI_ENSURE(ba.data != NULL);
         ALGUI_ENSURE(ba.size == sizeof(data));
+
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == sizeof(data));
         algui_byte_array_destruct(&ba);
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == 0);
     }
 
     return ALGUI_TRUE;
@@ -416,7 +440,10 @@ static ALGUI_BOOL test_algui_byte_array_set_size(void* context) {
         ALGUI_ENSURE_STATEMENT(algui_byte_array_set_size(&ba, 10), 0);
         ALGUI_ENSURE(ba.data != NULL);
         ALGUI_ENSURE(ba.size == 10);
+
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == 10);
         algui_byte_array_destruct(&ba);
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == 0);
     }
 
     //non empty array to 0
@@ -426,12 +453,16 @@ static ALGUI_BOOL test_algui_byte_array_set_size(void* context) {
 
         char data[] = "the quick brown fox jumps over the lazy dog";
         algui_byte_array_set_data(&ba, data, sizeof(data));
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == sizeof(data));
 
         ALGUI_ENSURE_STATEMENT(algui_byte_array_set_size(&ba, 0), 0);
         ALGUI_ENSURE(ba.data == NULL);
         ALGUI_ENSURE(ba.size == 0);
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == 0);
 
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == 0);
         algui_byte_array_destruct(&ba);
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == 0);
     }
 
     //non empty array to greater size
@@ -441,13 +472,16 @@ static ALGUI_BOOL test_algui_byte_array_set_size(void* context) {
 
         char data[] = "the quick brown fox jumps over the lazy dog";
         algui_byte_array_set_data(&ba, data, sizeof(data));
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == sizeof(data));
 
         ALGUI_ENSURE_STATEMENT(algui_byte_array_set_size(&ba, sizeof(data) * 2), 0);
         ALGUI_ENSURE(ba.data != NULL);
         ALGUI_ENSURE(ba.size == sizeof(data) * 2);
         ALGUI_ENSURE(memcmp(ba.data, data, sizeof(data)) == 0);
 
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == sizeof(data) * 2);
         algui_byte_array_destruct(&ba);
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == 0);
     }
 
     //non empty array to smaller size
@@ -457,13 +491,16 @@ static ALGUI_BOOL test_algui_byte_array_set_size(void* context) {
 
         char data[] = "the quick brown fox jumps over the lazy dog";
         algui_byte_array_set_data(&ba, data, sizeof(data));
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == sizeof(data));
 
         ALGUI_ENSURE_STATEMENT(algui_byte_array_set_size(&ba, sizeof(data) / 2), 0);
         ALGUI_ENSURE(ba.data != NULL);
         ALGUI_ENSURE(ba.size == sizeof(data) / 2);
         ALGUI_ENSURE(memcmp(ba.data, data, sizeof(data) / 2) == 0);
 
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == sizeof(data) / 2);
         algui_byte_array_destruct(&ba);
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == 0);
     }
 
     return ALGUI_TRUE;
@@ -491,12 +528,15 @@ static ALGUI_BOOL test_algui_byte_array_clear(void* context) {
 
         char data[] = "the quick brown fox jumps over the lazy dog";
         algui_byte_array_set_data(&ba, data, sizeof(data));
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == sizeof(data));
 
         ALGUI_ENSURE_STATEMENT(algui_byte_array_clear(&ba), 0);
         ALGUI_ENSURE(ba.data == NULL);
         ALGUI_ENSURE(ba.size == 0);
 
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == 0);
         algui_byte_array_destruct(&ba);
+        ALGUI_ENSURE(algui_test_get_allocated_bytes() == 0);
     }
 
     return ALGUI_TRUE;

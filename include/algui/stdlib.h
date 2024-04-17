@@ -17,9 +17,9 @@
 #undef free
 
 
-#define realloc algui_test_realloc
-#define malloc  algui_test_malloc
-#define free    algui_test_free
+#define realloc (*algui_realloc)
+#define malloc  (*algui_malloc)
+#define free    (*algui_free)
 
 
 #endif
