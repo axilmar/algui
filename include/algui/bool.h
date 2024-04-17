@@ -5,19 +5,19 @@
 /**
  * False value.
  */
-#define ALGUI_FALSE 0
+#define ALGUI_FALSE ((ALGUI_BOOL)0)
 
 
- /**
-  * True value.
-  */
-#define ALGUI_TRUE 1
+/**
+ * True value.
+ */
+#define ALGUI_TRUE ((ALGUI_BOOL)1)
 
 
 /**
  * Boolean type.
  */
-typedef unsigned ALGUI_BOOL;
+typedef int ALGUI_BOOL;
 
 
 #endif //ALGUI_BOOL_H
