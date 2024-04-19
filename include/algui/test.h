@@ -2,13 +2,9 @@
 #define ALGUI_TEST_H
 
 
-#ifdef ALGUI_CONFIG_TEST
-
-
 #include <stdio.h>
 #include <errno.h>
-#include <limits.h>
-#include "bool.h"
+#include <stdbool.h>
 
 
 /**
@@ -30,7 +26,7 @@
  * It prints a message to stderr about the file and line of the error.
  * @param EXPR expression to evaluate.
  */
-#define ALGUI_ENSURE(EXPR) ALGUI_ON_TEST_FAILURE(EXPR, return ALGUI_FALSE)
+#define ALGUI_ENSURE(EXPR) ALGUI_ON_TEST_FAILURE(EXPR, return false)
 
 
 /**
@@ -73,10 +69,10 @@ typedef struct ALGUI_TEST {
 
 /**
  * Test function. 
- * @param data user data.
+ * @param context test context.
  * @return true for success, false for failure.
  */
-typedef ALGUI_BOOL(*ALGUI_TEST_FUNCTION)(void* data);
+typedef bool (*ALGUI_TEST_FUNCTION)(void* context);
 
 
 /**
@@ -85,7 +81,7 @@ typedef ALGUI_BOOL(*ALGUI_TEST_FUNCTION)(void* data);
  * @param test pointer to test test to initialize; shall not be null.
  * @return true if the test is not null, false otherwise.
  */
-ALGUI_BOOL algui_test_init(ALGUI_TEST* test);
+bool algui_init_test(ALGUI_TEST* test);
 
 
 /**
@@ -93,10 +89,10 @@ ALGUI_BOOL algui_test_init(ALGUI_TEST* test);
  * @param test test to update.
  * @param name name of test.
  * @param func test function.
- * @param data user data to pass to the test function.
+ * @param context test context.
  * @return true for success, false on failure or on invalid argument.
  */
-ALGUI_BOOL algui_test_run(ALGUI_TEST* test, const char* name, ALGUI_TEST_FUNCTION func, void* data);
+bool algui_run_test_case(ALGUI_TEST* test, const char* name, ALGUI_TEST_FUNCTION func, void* context);
 
 
 /**
@@ -104,58 +100,7 @@ ALGUI_BOOL algui_test_run(ALGUI_TEST* test, const char* name, ALGUI_TEST_FUNCTIO
  * @param test test with results to print.
  * @return true if the argument was not null, false otherwise.
  */
-ALGUI_BOOL algui_test_print(const ALGUI_TEST* test);
-
-
-///test realloc.
-extern void* (*algui_realloc)(void* ptr, size_t new_size);
-
-
-///test malloc.
-extern void* (*algui_malloc)(size_t size);
-
-
-///test free.
-extern void (*algui_free)(void* ptr);
-
-
-///original realloc.
-extern void* (*const algui_original_realloc)(void* ptr, size_t new_size);
-
-
-///original malloc.
-extern void* (*const algui_original_malloc)(size_t size);
-
-
-///original free.
-extern void (*const algui_original_free)(void* ptr);
-
-
-///realloc for testing; counts the number of allocated bytes.
-void* algui_test_realloc(void* ptr, size_t new_size);
-
-
-///malloc for testing; counts the number of allocated bytes.
-void* algui_test_malloc(size_t size);
-
-
-///free for testing; counts the number of allocated bytes.
-void algui_test_free(void* ptr);
-
-
-///returns number of allocated bytes.
-size_t algui_test_get_allocated_bytes();
-
-
-///sets pointers to malloc, realloc and free to point to the test functions.
-void algui_test_enable_test_memory_allocation_functions();
-
-
-///sets pointers to malloc, realloc and free to point to the original functions.
-void algui_test_disable_test_memory_allocation_functions();
-
-
-#endif //ALGUI_CONFIG_TEST
+bool algui_print_test(const ALGUI_TEST* test);
 
 
 #endif //ALGUI_TEST_H
