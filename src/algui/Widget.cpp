@@ -5,7 +5,15 @@ namespace algui {
 
 
     static bool acceptsEvents(Widget* wgt) {
-        return wgt && wgt->visible && wgt->enabled;
+        if (!wgt) {
+            return false;
+        }
+        for (; wgt; wgt = wgt->parent) {
+            if (!wgt->visible || !wgt->enabled) {
+                return false;
+            }
+        }
+        return true;
     }
 
 
