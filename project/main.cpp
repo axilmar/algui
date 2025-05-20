@@ -14,8 +14,8 @@ using namespace algui;
 class TestWidget : public Widget {
 public:
     void onPaint() const override {
-        al_draw_filled_rectangle(screenX, screenY, screenX + width, screenY + height, al_map_rgb(255, 255, 255));
-        al_draw_rectangle(screenX, screenY, screenX + width, screenY + height, al_map_rgb(0, 0, 0), hasFocus() ? 2 : 1);
+        al_draw_filled_rectangle(screenX1, screenY1, screenX2, screenY2, al_map_rgb(255, 255, 255));
+        al_draw_rectangle(screenX1, screenY1, screenX2, screenY2, al_map_rgb(0, 0, 0), hasFocus() ? 2 : 1);
     }
 
     void onGotFocus() override {
@@ -102,6 +102,8 @@ int main(int argc, char** argv) {
     root->id = "root";
     root->width = 800;
     root->height = 600;
+    root->xScaling = 0.5f;
+    root->yScaling = 0.5f;
 
     TestWidget* form1 = new TestWidget();
     root->addChild(form1);
@@ -118,6 +120,8 @@ int main(int argc, char** argv) {
     form2->y = 150;
     form2->width = 200;
     form2->height = 150;
+    form2->xScaling = 0.5f;
+    form2->yScaling = 0.5f;
 
     TestWidget* form3 = new TestWidget();
     root->addChild(form3);

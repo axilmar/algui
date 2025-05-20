@@ -32,6 +32,7 @@ namespace algui {
 
 
     Widget::Widget() :
+        id(nullptr),
         parent(nullptr),
         prevSibling(nullptr),
         nextSibling(nullptr),
@@ -39,16 +40,24 @@ namespace algui {
         lastChild(nullptr),
         x(0),
         y(0),
-        screenX(0),
-        screenY(0),
         width(0),
         height(0),
+        xScaling(1),
+        yScaling(1),
         focusable(true),
         visible(true),
         enabled(true),
         highlighted(false),
         pressed(false),
         selected(false),
+        screenX1(0),
+        screenY1(0),
+        screenX2(0),
+        screenY2(0),
+        screenWidth(0),
+        screenHeight(0),
+        screenXScaling(0),
+        screenYScaling(0),
         screenEnabled(true),
         screenHighlighted(false),
         screenPressed(false),
@@ -58,6 +67,7 @@ namespace algui {
     }
     
     Widget::Widget(const Widget& src) :
+        id(src.id),
         parent(nullptr),
         prevSibling(nullptr),
         nextSibling(nullptr),
@@ -65,16 +75,24 @@ namespace algui {
         lastChild(nullptr),
         x(src.x),
         y(src.y),
-        screenX(0),
-        screenY(0),
         width(src.width),
         height(src.height),
+        xScaling(src.xScaling),
+        yScaling(src.yScaling),
         focusable(src.focusable),
         visible(src.visible),
         enabled(src.enabled),
         highlighted(false),
         pressed(false),
         selected(false),
+        screenX1(0),
+        screenY1(0),
+        screenX2(0),
+        screenY2(0),
+        screenWidth(0),
+        screenHeight(0),
+        screenXScaling(0),
+        screenYScaling(0),
         screenEnabled(true),
         screenHighlighted(false),
         screenPressed(false),
@@ -149,16 +167,28 @@ namespace algui {
     void Widget::draw() {
         if (visible) {
             if (parent) {
-                screenX = x + parent->screenX;
-                screenY = y + parent->screenY;
+                screenX1 = x * parent->screenXScaling + parent->screenX1;
+                screenY1 = y * parent->screenYScaling + parent->screenY1;
+                screenWidth = width * parent->screenXScaling;
+                screenHeight = height * parent->screenYScaling;
+                screenX2 = screenX1 + screenWidth;
+                screenY2 = screenY1 + screenHeight;
+                screenXScaling = xScaling * parent->screenXScaling;
+                screenYScaling = yScaling * parent->screenYScaling;
                 screenEnabled = enabled && parent->screenEnabled;
                 screenHighlighted = highlighted || parent->screenHighlighted;
                 screenPressed = pressed || parent->screenPressed;
                 screenSelected = selected || parent->screenSelected;
             }
             else {
-                screenX = x;
-                screenY = y;
+                screenX1 = x;
+                screenY1 = y;
+                screenWidth = width;
+                screenHeight = height;
+                screenX2 = screenX1 + screenWidth;
+                screenY2 = screenY1 + screenHeight;
+                screenXScaling = xScaling;
+                screenYScaling = yScaling;
                 screenEnabled = enabled;
                 screenHighlighted = highlighted;
                 screenPressed = pressed;

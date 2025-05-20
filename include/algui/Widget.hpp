@@ -37,17 +37,23 @@ namespace algui {
         /** top coordinate of the widget relative to its parent. */
         float y;
 
-        /** left coordinate of the widget relative to the screen. */
-        float screenX;
-
-        /** top coordinate of the widget relative to the screen. */
-        float screenY;
-
         /** width of widget. */
         float width;
 
         /** height of widget. */
         float height;
+
+        /**
+         * Scaling factor of children along the X axis.
+         * By default, it is 1.
+         */
+        float xScaling;
+
+        /**
+         * Scaling factor of children along the Y axis.
+         * By default, it is 1.
+         */
+        float yScaling;
 
         /** if true, the widget can get the focus, otherwise it does not get the focus. */
         bool focusable : 1;
@@ -79,6 +85,44 @@ namespace algui {
          * If true, then a widget and its children are drawn in selected style.
          */
         bool selected : 1;
+
+        /** left coordinate of the widget relative to the screen. */
+        float screenX1;
+
+        /** top coordinate of the widget relative to the screen. */
+        float screenY1;
+
+        /** right coordinate of the widget relative to the screen. */
+        float screenX2;
+
+        /** bottom coordinate of the widget relative to the screen. */
+        float screenY2;
+
+        /**
+         * Screen width of the widget.
+         * The screen width of a widget might be different than the set width,
+         * if scaling is activated.
+         */
+        float screenWidth;
+
+        /**
+         * Screen height of the widget.
+         * The screen height of a widget might be different than the set height,
+         * if scaling is activated.
+         */
+        float screenHeight;
+
+        /**
+         * Scaling of children along the X axis,
+         * which also includes the scaling of ancestors.
+         */
+        float screenXScaling;
+
+        /**
+         * Scaling of children along the X axis,
+         * which also includes the scaling of ancestors.
+         */
+        float screenYScaling;
 
         /**
          * Set to true if this and all its ancestors are enabled.
@@ -126,7 +170,7 @@ namespace algui {
 
         /**
          * The copy constructor.
-         * The only properties copied are: x, y, width, height, focusable, visible, enabled.
+         * The only properties copied are: id, x, y, width, height, focusable, visible, enabled, xScaling, yScaling.
          * @param src the source widget.
          */
         Widget(const Widget& src);
@@ -145,7 +189,7 @@ namespace algui {
 
         /**
          * The copy assignment operator.
-         * The only properties copied are: x, y, width, height, focusable, visible, enabled.
+         * The only properties copied are: x, y, width, height, focusable, visible, enabled, xScaling, yScaling.
          * @param src the source widget.
          * @return reference to this.
          */
@@ -216,7 +260,7 @@ namespace algui {
          * @param screenY screen Y coordinate.
          */
         virtual bool intersects(float screenX, float screenY) const {
-            return screenX >= this->screenX && screenY >= this->screenY && screenX < this->screenX + this->width && screenY < this->screenY + this->height;
+            return screenX >= this->screenX1 && screenY >= this->screenY1 && screenX < this->screenX2 && screenY < this->screenY2;
         }
 
         /**
