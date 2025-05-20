@@ -1,5 +1,6 @@
 #include <iostream>
 #include <memory>
+#include <string>
 
 #pragma warning (disable: 4309)
 #include "allegro5/allegro.h"
@@ -13,6 +14,9 @@ using namespace algui;
 
 class TestWidget : public Widget {
 public:
+    bool dragTarget = false;
+    bool dropTarget = false;
+
     void onPaint() const override {
         al_draw_filled_rectangle(screenX1, screenY1, screenX2, screenY2, al_map_rgb(255, 255, 255));
         al_draw_rectangle(screenX1, screenY1, screenX2, screenY2, al_map_rgb(0, 0, 0), hasFocus() ? 2 : 1);
@@ -51,6 +55,11 @@ public:
 
     bool onMouseButtonDown(const ALLEGRO_EVENT& event) override {
         std::cout << "onMouseButtonDown: " << id << std::endl;
+        if (dragTarget) {
+            Widget::dragAndDrop = true;
+            Widget::draggedContent = "The quick brown fox jumps over the lazy dog.";
+            return true;
+        }
         return Widget::onMouseButtonDown(event);
     }
 
@@ -77,6 +86,31 @@ public:
         std::cout << "onKeyChar: " << id << std::endl;
         return true;
     }
+
+    bool onDragEnter(const ALLEGRO_EVENT& event) override {
+        std::cout << "onDragEnter: " << id << std::endl;
+        return Widget::onDragEnter(event);
+    }
+
+    bool onDrag(const ALLEGRO_EVENT& event) override {
+        std::cout << "onDrag: " << id << std::endl;
+        return Widget::onDrag(event);
+    }
+
+    bool onDragLeave(const ALLEGRO_EVENT& event) override {
+        std::cout << "onDragLeave: " << id << std::endl;
+        return Widget::onDragLeave(event);
+    }
+
+    bool onDrop(const ALLEGRO_EVENT& event) override {
+        std::cout << "onDrop: " << id << std::endl;
+        if (dropTarget) {
+            const char* msg = std::any_cast<const char*>(Widget::draggedContent);
+            std::cout << id << ": dropped message: " << msg << std::endl;
+            return true;
+        }
+        return Widget::onDrop(event);
+    }
 };
 
 int main(int argc, char** argv) {
@@ -102,8 +136,8 @@ int main(int argc, char** argv) {
     root->id = "root";
     root->width = 800;
     root->height = 600;
-    root->xScaling = 0.5f;
-    root->yScaling = 0.5f;
+    //root->xScaling = 0.5f;
+    //root->yScaling = 0.5f;
 
     TestWidget* form1 = new TestWidget();
     root->addChild(form1);
@@ -120,8 +154,8 @@ int main(int argc, char** argv) {
     form2->y = 150;
     form2->width = 200;
     form2->height = 150;
-    form2->xScaling = 0.5f;
-    form2->yScaling = 0.5f;
+    //form2->xScaling = 0.5f;
+    //form2->yScaling = 0.5f;
 
     TestWidget* form3 = new TestWidget();
     root->addChild(form3);
@@ -130,6 +164,7 @@ int main(int argc, char** argv) {
     form3->y = 250;
     form3->width = 200;
     form3->height = 150;
+    form3->dropTarget = true;
 
     TestWidget* button1 = new TestWidget();
     form2->addChild(button1);
@@ -138,6 +173,7 @@ int main(int argc, char** argv) {
     button1->y = 40;
     button1->width = 50;
     button1->height = 40;
+    button1->dragTarget = true;
 
     TestWidget* button2 = new TestWidget();
     form2->addChild(button2);

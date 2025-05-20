@@ -2,6 +2,7 @@
 #define ALGUI_WIDGET_HPP
 
 
+#include <any>
 #include "allegro5/allegro.h"
 
 
@@ -162,6 +163,19 @@ namespace algui {
          * and a widget that loses the mouse also loses the focus.
          */
         static bool focusFollowsMouse;
+
+        /**
+         * Global flag that, if true, mouse events are translated to drag and drop events.
+         * By default, it is false.
+         */
+        static bool dragAndDrop;
+
+        /**
+         * Global variable for the dragged content.
+         * A widget that wishes to have its content dragged, must set this variable,
+         * so as that other widgets read this and respond accordingly to drag events.
+         */
+        static std::any draggedContent;
 
         /**
          * The default constructor.
@@ -412,6 +426,41 @@ namespace algui {
          * @return true if the event was processed, false otherwise.
          */
         virtual bool onJoystickButtonUp(const ALLEGRO_EVENT& event) { return false; }
+
+        /**
+         * Invoked when the mouse cursor enters the widget area, while drag and drop is active.
+         * By default, it dispatches events to children.
+         * @param event the allegro event to process.
+         * @return true if the event was processed, false otherwise.
+         */
+        virtual bool onDragEnter(const ALLEGRO_EVENT& event);
+
+        /**
+         * Invoked when the mouse cursor moves over the widget area, including its children, while drag and drop is active.
+         * By default, it dispatches either a mouse move event to one of its children,
+         * or mouse enter/leave events if the mouse moved over to another child.
+         * @param event the allegro event to process.
+         * @return true if the event was processed, false otherwise.
+         */
+        virtual bool onDrag(const ALLEGRO_EVENT& event);
+
+        /**
+         * Invoked when the mouse cursor leaves the widget area, while drag and drop is active.
+         * By default, it dispatches events to children.
+         * @param event the allegro event to process.
+         * @return true if the event was processed, false otherwise.
+         */
+        virtual bool onDragLeave(const ALLEGRO_EVENT& event);
+
+        /**
+         * Invoked when a mouse button is released over the widget, while drag and drop is active.
+         * The widget for release might be different than the widget for press,
+         * depending on mouse position.
+         * By default, it dispatches events to children.
+         * @param event the allegro event to process.
+         * @return true if the event was processed, false otherwise.
+         */
+        virtual bool onDrop(const ALLEGRO_EVENT& event);
     };
 
 

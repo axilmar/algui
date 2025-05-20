@@ -29,6 +29,8 @@ namespace algui {
 
     Widget* Widget::focusWidget = nullptr;
     bool Widget::focusFollowsMouse = false;
+    bool Widget::dragAndDrop = false;
+    std::any Widget::draggedContent;
 
 
     Widget::Widget() :
@@ -287,13 +289,28 @@ namespace algui {
                             const bool oldHasMouse = hasMouse;
                             hasMouse = intersects(event.mouse.x, event.mouse.y);
                             if (hasMouse && oldHasMouse) {
-                                result = result || onMouseMove(event);
+                                if (!dragAndDrop) {
+                                    result = result || onMouseMove(event);
+                                }
+                                else {
+                                    result = result || onDrag(event);
+                                }
                             }
                             else if (hasMouse) {
-                                result = result || onMouseEnter(event);
+                                if (!dragAndDrop) {
+                                    result = result || onMouseEnter(event);
+                                }
+                                else {
+                                    result = result || onDragEnter(event);
+                                }
                             }
                             else if (oldHasMouse) {
-                                result = result || onMouseLeave(event);
+                                if (!dragAndDrop) {
+                                    result = result || onMouseLeave(event);
+                                }
+                                else {
+                                    result = result || onDragLeave(event);
+                                }
                             }
                         }
                     }
@@ -308,16 +325,26 @@ namespace algui {
                 }
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
-                if (acceptsEvents(this)) {
-                    hasMouse = intersects(event.mouse.x, event.mouse.y);
-                    return onMouseButtonDown(event);
+                if (!dragAndDrop) {
+                    if (acceptsEvents(this)) {
+                        hasMouse = intersects(event.mouse.x, event.mouse.y);
+                        return onMouseButtonDown(event);
+                    }
                 }
                 break;
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
                 if (acceptsEvents(this)) {
                     hasMouse = intersects(event.mouse.x, event.mouse.y);
-                    return onMouseButtonUp(event);
+                    if (!dragAndDrop) {
+                        return onMouseButtonUp(event);
+                    }
+                    else {
+                        const bool result = onDrop(event);
+                        dragAndDrop = false;
+                        draggedContent = std::any();
+                        return result;
+                    }
                 }
                 break;
 
@@ -417,6 +444,70 @@ namespace algui {
             }
         }
         return result;
+    }
+
+
+    bool Widget::onDragEnter(const ALLEGRO_EVENT& event) {
+        Widget* child = getChild(event.mouse.x, event.mouse.y);
+        if (child) {
+            child->hasMouse = true;
+            if (child->enabled) {
+                return child->onDragEnter(event);
+            }
+        }
+        return false;
+    }
+
+
+    bool Widget::onDrag(const ALLEGRO_EVENT& event) {
+        Widget* oldMouseChild = getChildWithMouse(this);
+        Widget* newMouseChild = getChild(event.mouse.x, event.mouse.y);
+
+        if (newMouseChild == oldMouseChild) {
+            if (newMouseChild && newMouseChild->enabled) {
+                return newMouseChild->onDrag(event);
+            }
+        }
+
+        bool result = false;
+
+        if (oldMouseChild) {
+            oldMouseChild->hasMouse = false;
+            if (oldMouseChild->enabled) {
+                result = result || oldMouseChild->onDragLeave(event);
+            }
+        }
+
+        if (newMouseChild) {
+            newMouseChild->hasMouse = true;
+            if (newMouseChild->enabled) {
+                result = result || newMouseChild->onDragEnter(event);
+            }
+        }
+
+        return result;
+    }
+
+
+    bool Widget::onDragLeave(const ALLEGRO_EVENT& event) {
+        Widget* child = getChildWithMouse(this);
+        if (child) {
+            child->hasMouse = false;
+            if (child->enabled) {
+                return child->onDragLeave(event);
+            }
+        }
+        return false;
+    }
+
+
+
+    bool Widget::onDrop(const ALLEGRO_EVENT& event) {
+        Widget* child = getChild(event.mouse.x, event.mouse.y);
+        if (child && child->enabled) {
+            return child->onDrop(event);
+        }
+        return false;
     }
 
 
