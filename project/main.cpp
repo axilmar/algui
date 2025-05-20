@@ -16,6 +16,18 @@ class TestWidget : public Widget {
 public:
     bool dragTarget = false;
     bool dropTarget = false;
+    bool doLayout = false;
+
+    void onLayout() const override {
+        if (doLayout) {
+            float x = 0;
+            for (Widget* child = firstChild; child; child = child->nextSibling) {
+                child->x = x;
+                child->y = 0;
+                x += child->width;
+            }
+        }
+    }
 
     void onPaint() const override {
         al_draw_filled_rectangle(screenX1, screenY1, screenX2, screenY2, al_map_rgb(255, 255, 255));
@@ -156,6 +168,7 @@ int main(int argc, char** argv) {
     form2->height = 150;
     //form2->xScaling = 0.5f;
     //form2->yScaling = 0.5f;
+    form2->doLayout = true;
 
     TestWidget* form3 = new TestWidget();
     root->addChild(form3);

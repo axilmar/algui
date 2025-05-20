@@ -297,7 +297,7 @@ namespace algui {
          * Invoked just before a widget's children are drawn,
          * in order to allow a widget to arrange its children to a specific layout.
          */
-        virtual void onLayout() {}
+        virtual void onLayout() const {}
 
         /**
          * Invoked to paint this widget.
