@@ -197,6 +197,7 @@ namespace algui {
                 screenSelected = selected;
             }
             onPaint();
+            onLayout();
             for (Widget* child = firstChild; child; child = child->nextSibling) {
                 child->draw();
             }

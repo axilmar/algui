@@ -294,6 +294,12 @@ namespace algui {
         virtual bool dispatch(const ALLEGRO_EVENT& event);
 
         /**
+         * Invoked just before a widget's children are drawn,
+         * in order to allow a widget to arrange its children to a specific layout.
+         */
+        virtual void onLayout() {}
+
+        /**
          * Invoked to paint this widget.
          * The screen properties can be used to paint it.
          */
