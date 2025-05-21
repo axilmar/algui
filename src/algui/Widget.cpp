@@ -198,9 +198,7 @@ namespace algui {
             }
             onPaint();
             onLayout();
-            for (Widget* child = firstChild; child; child = child->nextSibling) {
-                child->draw();
-            }
+            onPaintChildren();
             onPaintOverlay();
         }
     }
@@ -354,6 +352,13 @@ namespace algui {
         }
 
         return false;
+    }
+
+
+    void Widget::onPaintChildren() const {
+        for (Widget* child = firstChild; child; child = child->nextSibling) {
+            child->draw();
+        }
     }
 
 

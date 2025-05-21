@@ -306,6 +306,12 @@ namespace algui {
         virtual void onPaint() const = 0;
 
         /**
+         * Invoked after onPaint() but before onPaintOverlay(), to paint children.
+         * By default, it paints all children.
+         */
+        virtual void onPaintChildren() const;
+
+        /**
          * Invoked to paint this widget's overlay over its children.
          */
         virtual void onPaintOverlay() const {}
