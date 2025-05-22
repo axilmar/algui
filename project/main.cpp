@@ -9,8 +9,10 @@
 #include "allegro5/allegro_color.h"
 #include "allegro5/allegro_font.h"
 #include "allegro5/allegro_ttf.h"
+#include "allegro5/allegro_audio.h"
 
 #include "algui/Widget.hpp"
+#include "algui/Theme.hpp"
 using namespace algui;
 
 class TestWidget : public Widget {
@@ -136,6 +138,7 @@ int main(int argc, char** argv) {
     al_install_keyboard();
     al_install_mouse();
     al_install_joystick();
+    al_install_audio();
 
     ALLEGRO_DISPLAY* display = al_create_display(800, 600);
     ALLEGRO_EVENT_QUEUE* eventQueue = al_create_event_queue();
@@ -145,6 +148,8 @@ int main(int argc, char** argv) {
     al_register_event_source(eventQueue, al_get_mouse_event_source());
     al_register_event_source(eventQueue, al_get_joystick_event_source());
     al_register_event_source(eventQueue, al_get_timer_event_source(timer));
+
+    std::shared_ptr<Theme> theme1 = std::make_shared<Theme>("theme1.txt");
 
     std::shared_ptr<Widget> root = std::make_shared<TestWidget>();
     root->id = "root";
