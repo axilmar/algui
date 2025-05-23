@@ -355,6 +355,13 @@ namespace algui {
     }
 
 
+    void Widget::setTheme(const Theme& theme) {
+        for (Widget* child = firstChild; child; child = child->nextSibling) {
+            child->setTheme(theme);
+        }
+    }
+
+
     void Widget::onPaintChildren() const {
         for (Widget* child = firstChild; child; child = child->nextSibling) {
             child->draw();

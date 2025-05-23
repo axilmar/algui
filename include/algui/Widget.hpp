@@ -3,7 +3,7 @@
 
 
 #include <any>
-#include "allegro5/allegro.h"
+#include "Theme.hpp"
 
 
 namespace algui {
@@ -292,6 +292,14 @@ namespace algui {
          * @return true if the event was processed, false otherwise.
          */
         virtual bool dispatch(const ALLEGRO_EVENT& event);
+
+        /**
+         * Invoked to change the theme of the widget tree.
+         * Widgets can then modify their style according to the given theme.
+         * The default implementation invokes the children.
+         * @param theme theme to set.
+         */
+        virtual void setTheme(const Theme& theme);
 
         /**
          * Invoked just before a widget's children are drawn,
