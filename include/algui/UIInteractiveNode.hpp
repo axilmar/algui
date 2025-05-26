@@ -3,9 +3,29 @@
 
 
 #include "UIVisualStateNode.hpp"
+#include "EventTarget.hpp"
 
 
 namespace algui {
+
+
+    /**
+     * Event types.
+     */
+    class EventType {
+    public:
+        /** focus; received by node that gets the focus; does not bubble. */
+        static const std::string focus;
+
+        /** focus in; received by node that gets the focus; bubbles up to root. */
+        static const std::string focusIn;
+
+        /** blur; received by node that loses the focus; does not bubble. */
+        static const std::string blur;
+
+        /** focus out; received by node that loses the focus; bubbles up to root. */
+        static const std::string focusOut;
+    };
 
 
     /**
@@ -13,7 +33,7 @@ namespace algui {
      * 
      * Interactive nodes have event handlers, and can accept the input focus.
      */
-    class UIInteractiveNode : public UIVisualStateNode {
+    class UIInteractiveNode : public UIVisualStateNode, public EventTarget {
     public:
         /**
          * Takes care of resetting the global focused node pointer,
@@ -39,8 +59,10 @@ namespace algui {
 
         /**
          * Sets or resets the input focus.
-         * If the node receives the input focus, then the method `onGotFocus()` is invoked;
-         * if the node loses the input focus, then the method `onLostFocus()` is invoked.
+         * If the node receives the input focus, then the event `focus` is fired,
+         * followed by a `focusin` event which bubbles up to root.
+         * If the node loses the input focus, then the event `blur` is fired, followed
+         * by a `focusout` event which bubbles up to root.
          * @param v the new focused state.
          */
         void setFocused(bool v) override;
@@ -53,20 +75,20 @@ namespace algui {
             return focusedNode;
         }
 
-    protected:
         /**
-         * Invoked when the node gets the focus.
-         * It does nothing by default.
+         * Returns the closest ancestor node that is an interactive node.
+         * @return the closest ancestor node that is an interactive node.
          */
-        virtual void onGotFocus() {
-        }
+        UIInteractiveNode* getInteractiveParent() const;
 
         /**
-         * Invoked when the node loses the focus.
-         * It does nothing by default.
+         * Dispatches an event to this and all its ancestors,
+         * stopping when the event is succesfully dispatched.
+         * @param eventName event name.
+         * @param event event data.
+         * @return true if the event was processed, false otherwise.
          */
-        virtual void onLostFocus() {
-        }
+        bool dispatchEventUp(const std::string& eventName, void* event = nullptr) const;
 
     private:
         static UIInteractiveNode* focusedNode;

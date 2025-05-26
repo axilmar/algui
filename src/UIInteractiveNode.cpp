@@ -4,7 +4,10 @@
 namespace algui {
 
 
-    UIInteractiveNode* UIInteractiveNode::focusedNode = nullptr;
+    const std::string EventType::focus = "focus";
+    const std::string EventType::focusIn = "focusin";
+    const std::string EventType::blur = "blur";
+    const std::string EventType::focusOut = "focusout";
 
 
     UIInteractiveNode::~UIInteractiveNode() {
@@ -32,15 +35,41 @@ namespace algui {
                 }
                 UIVisualStateNode::setFocused(true);
                 focusedNode = this;
-                onGotFocus();
+                dispatchEvent(EventType::focus);
+                dispatchEventUp(EventType::focusIn);
             }
             else {
                 UIVisualStateNode::setFocused(false);
                 focusedNode = nullptr;
-                onLostFocus();
+                dispatchEvent(EventType::blur);
+                dispatchEventUp(EventType::focusOut);
             }
         }
     }
+
+
+    UIInteractiveNode* UIInteractiveNode::getInteractiveParent() const {
+        UINode* node = getParentPtr();
+        for (; node; node = node->getParentPtr()) {
+            if (node->IsInteractiveNode()) {
+                return static_cast<UIInteractiveNode*>(node);
+            }
+        }
+        return nullptr;
+    }
+
+
+    bool UIInteractiveNode::dispatchEventUp(const std::string& eventName, void* event) const {
+        for (const UIInteractiveNode* node = this; node; node = node->getInteractiveParent()) {
+            if (node->dispatchEvent(eventName, event)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    UIInteractiveNode* UIInteractiveNode::focusedNode = nullptr;
 
 
 } //namespace algui
