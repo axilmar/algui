@@ -16,7 +16,7 @@ namespace algui {
      * An event target.
      * It is modelled after the Javascript EventTarget class.
      * It allows registration/unregistration of event handlers.
-     * Event handlers are executed in the reverse order they are registered.
+     * Event handlers are executed in the order they are registered.
      */
     class EventTarget {
     public:
@@ -39,9 +39,10 @@ namespace algui {
          * Adds an event handler.
          * @param eventName name of event.
          * @param handler the event handler to add.
+         * @param prioritized if true, the handler is added at the beginning of the list, otherwise at the end of the list.
          * @return the event handler id to use for unregistration.
          */
-        EventHandlerId addEventHandler(const std::string& eventName, const EventHandler& handler);
+        EventHandlerId addEventHandler(const std::string& eventName, const EventHandler& handler, bool prioritized = false);
 
         /**
          * Removes an event handler.

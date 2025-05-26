@@ -4,9 +4,9 @@
 namespace algui {
 
 
-    EventTarget::EventHandlerId EventTarget::addEventHandler(const std::string& eventName, const EventHandler& handler) {
+    EventTarget::EventHandlerId EventTarget::addEventHandler(const std::string& eventName, const EventHandler& handler, bool prioritized) {
         EventHandlerList& eventList = m_eventHandlers[eventName];
-        auto it = eventList.insert(eventList.begin(), handler);
+        auto it = eventList.insert(prioritized ? eventList.begin() : eventList.end(), handler);
         return std::make_tuple(eventName, it);
     }
 
