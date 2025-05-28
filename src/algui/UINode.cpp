@@ -4,20 +4,34 @@
 namespace algui {
 
 
+    void UINode::addChild(const std::shared_ptr<UINode>& child, const std::shared_ptr<UINode>& nextSibling) {
+        TreeNode<UINode>::addChild(child, nextSibling);
+        if (m_rendered) {
+            child->setRendered(true);
+        }
+    }
+
+
     void UINode::removeChild(const std::shared_ptr<UINode>& child) {
         TreeNode<UINode>::removeChild(child);
-        child->resetState();
+        if (m_rendered) {
+            child->setRendered(false);
+        }
     }
 
 
     void UINode::renderTree() {
         if (m_visible) {
+            m_rendered = true;
             getParent() ? onCalcChildState(getParent()) : onCalcRootState();
             onLayout();
             onPaint();
             for (UINode* child = getFirstChild(); child; child = child->getNextSibling()) {
                 child->renderTree();
             }
+        }
+        else if (!m_rendered) {
+            setRendered(true);
         }
     }
 
@@ -42,10 +56,10 @@ namespace algui {
     }
 
 
-    void UINode::resetState() {
-        onResetState();
+    void UINode::setRendered(bool rendered) {
+        m_rendered = rendered;
         for (UINode* child = getFirstChild(); child; child = child->getNextSibling()) {
-            child->resetState();
+            child->setRendered(rendered);
         }
     }
 

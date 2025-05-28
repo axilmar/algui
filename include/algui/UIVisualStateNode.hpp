@@ -90,6 +90,14 @@ namespace algui {
         }
 
         /**
+         * Checks if this node belongs to a tree where this and all ancestors are enabled.
+         * @return true if this and all ancestors are enabled, false otherwise.
+         */
+        bool isEnabledTree() const {
+            return isEnabled() && (!getParent() || getParent()->isEnabledTree());
+        }
+
+        /**
          * Sets the enabled state.
          * If the enabled state is removed, all the other states are removed as well.
          * @param v the new state.

@@ -55,16 +55,19 @@ namespace algui {
             throw std::invalid_argument("UIInteractiveNode: removeChild: invalid child.");
         }
 
-        //if the child that is to be removed contains the focus, reset the focus
-        //before removing the child, so as that focus events bubble up
-        resetFocus();
+        //reset the focus before removing the child,
+        //so as that focus events bubble up to ancestors
+        if (child->isInteractiveNode()) {
+            static_cast<UIInteractiveNode*>(child.get())->resetFocus();
+        }
 
-        //remove the child; will invoke `onResetState()` for all nodes in the child tree.
+        //remove the child
         UIVisualStateNode::removeChild(child);
 
         //if the removed child was the child with the mouse, reset the child with the mouse
-        if (childWithMouse == child.get()) {
-            childWithMouse = nullptr;
+        if (m_childWithMouse == child.get()) {
+            m_childWithMouse->resetMouseState();
+            m_childWithMouse = nullptr;
         }
     }
 
@@ -75,15 +78,19 @@ namespace algui {
             return;
         }
 
-        //set enabled
+        //enable
         if (v) {
             UIVisualStateNode::setEnabled(true);
         }
 
-        //else reset enabled (i.e. disable)
+        //disable
         else {
             resetFocus();
             UIVisualStateNode::setEnabled(false);
+            resetMouseState();
+            if (getParent() && getParent()->m_childWithMouse == this) {
+                getParent()->m_childWithMouse = nullptr;
+            }
         }
     }
 
@@ -96,8 +103,8 @@ namespace algui {
 
         //set the focus
         if (v) {
-            //can't give the focus to a disabled node or to a descentant of a disabled node
-            if (!isEnabled() || getTreeVisualState() == VisualState::Disabled) {
+            //can't give the focus to a disabled or non-rendered node
+            if (!isEnabledTree() || !isRenderedTree()) {
                 return false;
             }
 
@@ -193,8 +200,13 @@ namespace algui {
     }
 
 
-    void UIInteractiveNode::onResetState() {
-        childWithMouse = nullptr;
+    UIInteractiveNode* UIInteractiveNode::getChildFromPoint(float screenX, float screenY) const {
+        for (UIInteractiveNode* child = getLastChild(); child; child = child->getPrevSibling()) {
+            if (child->isVisible() && child->intersects(screenX, screenY)) {
+                return child;
+            }
+        }
+        return nullptr;
     }
 
 
@@ -204,12 +216,18 @@ namespace algui {
     void UIInteractiveNode::resetFocus() {
         if (contains(focusedNode)) {
             focusedNode->setFocused(false);
-
-            //the focused node may have refused losing the focus,
-            //so force reset of focused node
             if (contains(focusedNode)) {
                 focusedNode = nullptr;
             }
+        }
+    }
+
+
+    void UIInteractiveNode::resetMouseState() {
+        m_hasMouse = false;
+        if (m_childWithMouse) {
+            m_childWithMouse->resetMouseState();
+            m_childWithMouse = nullptr;
         }
     }
 

@@ -202,17 +202,6 @@ namespace algui {
         UIInteractiveNode* getRoot() const;
 
         /**
-         * Dispatches an event.
-         * @param eventName event name.
-         * @param event event data.
-         * @param phase event phase.
-         * @return true if the event was processed, false otherwise.
-         */
-        virtual bool dispatchEvent(const std::string& eventName, const void* event = nullptr, EventPhase phase = EventPhase::Capture) const {
-            return EventTarget::dispatchEvent(eventName, event, (int)phase);
-        }
-
-        /**
          * Checks if the given point lies within the node.
          * The comparison is done in screen coordinates, which means the node
          * must have been rendered on the screen at least once.
@@ -223,14 +212,23 @@ namespace algui {
          */
         virtual bool intersects(float screenX, float screenY) const;
 
-    protected:
-        void onResetState() override;
+        /**
+         * Returns the child under the given coordinates.
+         * The child must be visible in order to be tested for intersection with the coordinates,
+         * using the method `intersects(screenX, screenY)`.
+         * @param screenX the horizontal coordinate.
+         * @param screenY the vertical coordinate.
+         * @return child under the given coordinates, null otherwise.
+         */
+        UIInteractiveNode* getChildFromPoint(float screenX, float screenY) const;
 
     private:
         static UIInteractiveNode* focusedNode;
-        UIInteractiveNode* childWithMouse{ nullptr };
+        UIInteractiveNode* m_childWithMouse{ nullptr };
+        bool m_hasMouse{ false };
 
         void resetFocus();
+        void resetMouseState();
         bool dispatchEventUp(const std::string& eventName, const void* event = nullptr) const;
 
         bool doMouseEnter(const ALLEGRO_EVENT& event);

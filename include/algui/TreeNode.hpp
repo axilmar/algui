@@ -136,11 +136,13 @@ namespace algui {
                 m_firstChild = child;
                 m_lastChild = child;
             }
+
+            child->onAdded();
         }
 
         /**
          * Removes a child node.
-         * @param child child node to remove.
+         * @param child child node to remove; the method `child->onRemoved()` is invoked.
          * @exception std::invalid_argument thrown if child is null or if not a child of this node.
          */
         virtual void removeChild(const std::shared_ptr<T>& child) {
@@ -163,6 +165,8 @@ namespace algui {
             else {
                 m_lastChild = child->m_prevSibling;
             }
+
+            child->onRemoved();
         }
 
         /**
@@ -181,6 +185,21 @@ namespace algui {
             while (m_lastChild) {
                 removeChild(m_lastChild);
             }
+        }
+
+    protected:
+        /**
+         * Invoked when this node is added as a child to another node.
+         * The default implementation does nothing.
+         */
+        virtual void onAdded() {
+        }
+
+        /**
+         * Invoked when this node is removed from another node.
+         * The default implementation does nothing.
+         */
+        virtual void onRemoved() {
         }
 
     private:

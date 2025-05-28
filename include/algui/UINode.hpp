@@ -19,13 +19,24 @@ namespace algui {
     class UINode : public TreeNode<UINode> {
     public:
         /**
-         * Removes the given child.
-         * Invokes the `onResetState()` method for every node of the tree that starts with the removed child.
-         * @param child child to remove.
+         * Adds a child node.
+         * If this is rendered, then the child tree is set to be rendered.
+         * @param child child node to add.
+         * @param nextSibling the next sibling; if null, the child is added after the last child.
+         * @exception std::invalid_argument thrown if child is null or belongs to another tree,
+         *  or if nextSibling is not null and not a child of this.
+         */
+        void addChild(const std::shared_ptr<UINode>& child, const std::shared_ptr<UINode>& nextSibling = nullptr) override;
+
+        /**
+         * Removes a child node.
+         * The child is set to unrendered state.
+         * @param child child node to remove; the method `child->onRemoved()` is invoked.
+         * @exception std::invalid_argument thrown if child is null or if not a child of this node.
          */
         void removeChild(const std::shared_ptr<UINode>& child) override;
 
-            /**
+        /**
          * Returns the x (left) coordinate of the node, relative to its parent, or to the screen.
          * @return the x coordinate of the node.
          */
@@ -228,6 +239,22 @@ namespace algui {
             return false;
         }
 
+        /**
+         * Checks if this is rendered currently on the screen.
+         * @return true if it is rendered, false otherwise.
+         */
+        bool isRendered() const {
+            return m_rendered;
+        }
+
+        /**
+         * Checks if this and all ancestors are rendered.
+         * @return true if this and all ancestors are rendered, false otherwise.
+         */
+        bool isRenderedTree() const {
+            return m_rendered && (!getParent() || getParent()->isRenderedTree());
+        }
+
     protected:
         /**
          * Invoked from `renderTree()` to allow a UI node to compute its state, based on the state of parent.
@@ -245,13 +272,6 @@ namespace algui {
         virtual void onCalcRootState();
 
         /**
-         * Invoked from removeChild, on removed children and their descentants,
-         * in order to reset state after removal.
-         */
-        virtual void onResetState() {
-        }
-
-        /**
          * Invoked from `renderTree()` to allow a node to layout its children,
          * according to some layout algorihm.
          * The default implementation does nothing.
@@ -267,6 +287,7 @@ namespace algui {
         }
 
     private:
+        bool m_rendered{ false };
         float m_x{ 0 };
         float m_y{ 0 };
         float m_width{ 0 };
@@ -281,7 +302,7 @@ namespace algui {
         float m_screenScalingX{ 1 };
         float m_screenScalingY{ 1 };
 
-        void resetState();
+        void setRendered(bool rendered);
     };
 
 
