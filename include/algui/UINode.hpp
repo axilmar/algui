@@ -19,6 +19,12 @@ namespace algui {
     class UINode : public TreeNode<UINode> {
     public:
         /**
+         * Invokes the `onResetState()` method for the child.
+         * @param child child to remove.
+         */
+        void removeChild(const std::shared_ptr<UINode>& child) override;
+
+            /**
          * Returns the x (left) coordinate of the node, relative to its parent, or to the screen.
          * @return the x coordinate of the node.
          */
@@ -237,6 +243,13 @@ namespace algui {
         virtual void onCalcRootState();
 
         /**
+         * Invoked from removeChild, on removed children and their descentants,
+         * in order to reset state after removal.
+         */
+        virtual void onResetState() {
+        }
+
+        /**
          * Invoked from `renderTree()` to allow a node to layout its children,
          * according to some layout algorihm.
          * The default implementation does nothing.
@@ -264,6 +277,8 @@ namespace algui {
         float m_screenY2{ 0 };
         float m_screenScalingX{ 1 };
         float m_screenScalingY{ 1 };
+
+        void resetState();
     };
 
 

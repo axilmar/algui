@@ -1,3 +1,4 @@
+#include <stdexcept>
 #pragma warning (disable: 4309)
 #include "algui/UIInteractiveNode.hpp"
 
@@ -9,31 +10,63 @@ namespace algui {
     const std::string EventType::focusIn = "focusin";
     const std::string EventType::blur = "blur";
     const std::string EventType::focusOut = "focusout";
+
     static const std::string mouseEnter = "mouseenter";
     static const std::string mouseMove = "mousemove";
     static const std::string mouseLeave = "mouseleave";
     static const std::string mouseButtonDown = "mousebuttondown";
     static const std::string mouseButtonHeldDown = "mousebuttonhelddown";
     static const std::string mouseButtonUp = "mousebuttonup";
+    
     static const std::string mousewheel = "mousewheel";
     static const std::string click = "click";
     static const std::string doubleClick = "doubleclick";
+    
     static const std::string dragEnter = "dragenter";
     static const std::string drag = "drag";
     static const std::string dragLeave = "dragleave";
     static const std::string drop = "drop";
+
     static const std::string keyDown = "keydown";
     static const std::string keyUp = "keyup";
     static const std::string keyChar = "keychar";
     static const std::string unusedKeyDown = "unusedkeydown";
     static const std::string unusedKeyUp = "unusedkeyup";
     static const std::string unusedKeyChar = "unusedkeychar";
+
     static const std::string timer = "timer";
 
 
     UIInteractiveNode::~UIInteractiveNode() {
-        if (contains(focusedNode)) {
-            focusedNode = nullptr;
+        //invoked here instead of TreeNode::~TreeNode in order to call the virtual method for 'removeChild',
+        //which has some side effects.
+        removeAllChildren();
+
+        //if this still has the focus, then blur it
+        if (isFocused()) {
+            setFocused(false);
+        }
+    }
+
+
+    void UIInteractiveNode::removeChild(const std::shared_ptr<UINode>& child) {
+        //check the child
+        if (!child || child->getParent() != this) {
+            throw std::invalid_argument("UIInteractiveNode: removeChild: invalid child.");
+        }
+
+        //if the child that is to be removed contains the focus, reset the focus
+        //before removing the child, so as that focus events bubble up
+        if (child->contains(focusedNode)) {
+            focusedNode->setFocused(false);
+        }
+
+        //remove the child; will invoke `onResetState()` for all nodes in the child tree.
+        UIVisualStateNode::removeChild(child);
+
+        //if the removed child was the child with the mouse, reset the child with the mouse
+        if (childWithMouse == child.get()) {
+            childWithMouse = nullptr;
         }
     }
 
@@ -72,8 +105,7 @@ namespace algui {
 
 
     UIInteractiveNode* UIInteractiveNode::getParent() const {
-        UINode* node = getParentPtr();
-        for (; node; node = node->getParentPtr()) {
+        for (UINode* node = UINode::getParent(); node; node = node->UINode::getParent()) {
             if (node->isInteractiveNode()) {
                 return static_cast<UIInteractiveNode*>(node);
             }
@@ -83,7 +115,7 @@ namespace algui {
 
 
     UIInteractiveNode* UIInteractiveNode::getPrevSibling() const {
-        for (UINode* prevSibling = UINode::getPrevSibling().get(); prevSibling; prevSibling = prevSibling->UINode::getPrevSibling().get()) {
+        for (UINode* prevSibling = UINode::getPrevSibling(); prevSibling; prevSibling = prevSibling->UINode::getPrevSibling()) {
             if (prevSibling->isInteractiveNode()) {
                 return static_cast<UIInteractiveNode*>(prevSibling);
             }
@@ -93,7 +125,7 @@ namespace algui {
 
 
     UIInteractiveNode* UIInteractiveNode::getNextSibling() const {
-        for (UINode* nextSibling = UINode::getNextSibling().get(); nextSibling; nextSibling = nextSibling->UINode::getNextSibling().get()) {
+        for (UINode* nextSibling = UINode::getNextSibling(); nextSibling; nextSibling = nextSibling->UINode::getNextSibling()) {
             if (nextSibling->isInteractiveNode()) {
                 return static_cast<UIInteractiveNode*>(nextSibling);
             }
@@ -103,7 +135,7 @@ namespace algui {
 
 
     UIInteractiveNode* UIInteractiveNode::getFirstChild() const {
-        for (UINode* child = UINode::getFirstChild().get(); child; child = child->UINode::getNextSibling().get()) {
+        for (UINode* child = UINode::getFirstChild(); child; child = child->UINode::getNextSibling()) {
             if (child->isInteractiveNode()) {
                 return static_cast<UIInteractiveNode*>(child);
             }
@@ -113,7 +145,7 @@ namespace algui {
 
 
     UIInteractiveNode* UIInteractiveNode::getLastChild() const {
-        for (UINode* child = UINode::getLastChild().get(); child; child = child->UINode::getPrevSibling().get()) {
+        for (UINode* child = UINode::getLastChild(); child; child = child->UINode::getPrevSibling()) {
             if (child->isInteractiveNode()) {
                 return static_cast<UIInteractiveNode*>(child);
             }
@@ -129,7 +161,7 @@ namespace algui {
             if (node->isInteractiveNode()) {
                 result = static_cast<UIInteractiveNode*>(node);
             }
-            node = node->getParentPtr();
+            node = node->getParent();
         } while (node);
         return result;
     }
@@ -137,6 +169,11 @@ namespace algui {
 
     bool UIInteractiveNode::intersects(float screenX, float screenY) const {
         return screenX >= getScreenX1() && screenX < getScreenX2() && screenY >= getScreenY1() && screenY < getScreenY2();
+    }
+
+
+    void UIInteractiveNode::onResetState() {
+        childWithMouse = nullptr;
     }
 
 

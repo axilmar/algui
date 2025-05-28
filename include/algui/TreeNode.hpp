@@ -20,24 +20,14 @@ namespace algui {
          * Removes all children, starting from last child.
          */
         virtual ~TreeNode() {
-            while (m_lastChild) {
-                removeChild(m_lastChild);
-            }
+            removeAllChildren();
         }
 
         /**
          * Returns the parent node.
          * @return the parent node, or a null pointer if this does not have a parent.
          */
-        std::shared_ptr<T> getParent() const {
-            return m_parent ? std::static_pointer_cast<T>(m_parent->shared_from_this()) : nullptr;
-        }
-
-        /**
-         * Returns pointer to parent without conversion to std::shared_ptr.
-         * @return pointer to parent.
-         */
-        T* getParentPtr() const {
+        T* getParent() const {
             return m_parent;
         }
 
@@ -45,42 +35,42 @@ namespace algui {
          * Returns the previous sibling node.
          * @return the previous sibling node.
          */
-        const std::shared_ptr<T>& getPrevSibling() const {
-            return m_prevSibling;
+        T* getPrevSibling() const {
+            return m_prevSibling.get();
         }
 
         /**
          * Returns the next sibling node.
          * @return the next sibling node.
          */
-        const std::shared_ptr<T>& getNextSibling() const {
-            return m_nextSibling;
+        T* getNextSibling() const {
+            return m_nextSibling.get();
         }
 
         /**
          * Returns the first child node.
          * @return the first child node.
          */
-        const std::shared_ptr<T>& getFirstChild() const {
-            return m_firstChild;
+        T* getFirstChild() const {
+            return m_firstChild.get();
         }
 
         /**
          * Returns the last child node.
          * @return the last child node.
          */
-        const std::shared_ptr<T>& getLastChild() const {
-            return m_lastChild;
+        T* getLastChild() const {
+            return m_lastChild.get();
         }
 
         /**
          * Returns the root node of this tree.
          * @return the root node of this tree.
          */
-        std::shared_ptr<T> getRoot() const {
+        T* getRoot() const {
             T* node = const_cast<T*>(static_cast<const T*>(this));
             for (; node->m_parent; node = node->m_parent) {}
-            return std::static_pointer_cast<T>(node->shared_from_this());
+            return node;
         }
 
         /**
@@ -181,6 +171,15 @@ namespace algui {
         void detach() {
             if (m_parent) {
                 m_parent->removeChild(std::static_pointer_cast<T>(this->shared_from_this()));
+            }
+        }
+
+        /**
+         * Removes all children.
+         */
+        virtual void removeAllChildren() {
+            while (m_lastChild) {
+                removeChild(m_lastChild);
             }
         }
 

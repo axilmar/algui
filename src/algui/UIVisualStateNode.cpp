@@ -70,8 +70,7 @@ namespace algui {
 
 
     UIVisualStateNode* UIVisualStateNode::getParent() const {
-        UINode* node = getParentPtr();
-        for (; node; node = node->getParentPtr()) {
+        for (UINode* node = UINode::getParent(); node; node = node->UINode::getParent()) {
             if (node->isVisualStateNode()) {
                 return static_cast<UIVisualStateNode*>(node);
             }
@@ -81,7 +80,7 @@ namespace algui {
 
 
     UIVisualStateNode* UIVisualStateNode::getPrevSibling() const {
-        for (UINode* prevSibling = UINode::getPrevSibling().get(); prevSibling; prevSibling = prevSibling->UINode::getPrevSibling().get()) {
+        for (UINode* prevSibling = UINode::getPrevSibling(); prevSibling; prevSibling = prevSibling->UINode::getPrevSibling()) {
             if (prevSibling->isVisualStateNode()) {
                 return static_cast<UIVisualStateNode*>(prevSibling);
             }
@@ -91,7 +90,7 @@ namespace algui {
 
 
     UIVisualStateNode* UIVisualStateNode::getNextSibling() const {
-        for (UINode* nextSibling = UINode::getNextSibling().get(); nextSibling; nextSibling = nextSibling->UINode::getNextSibling().get()) {
+        for (UINode* nextSibling = UINode::getNextSibling(); nextSibling; nextSibling = nextSibling->UINode::getNextSibling()) {
             if (nextSibling->isVisualStateNode()) {
                 return static_cast<UIVisualStateNode*>(nextSibling);
             }
@@ -101,7 +100,7 @@ namespace algui {
 
 
     UIVisualStateNode* UIVisualStateNode::getFirstChild() const {
-        for (UINode* child = UINode::getFirstChild().get(); child; child = child->UINode::getNextSibling().get()) {
+        for (UINode* child = UINode::getFirstChild(); child; child = child->UINode::getNextSibling()) {
             if (child->isVisualStateNode()) {
                 return static_cast<UIVisualStateNode*>(child);
             }
@@ -111,7 +110,7 @@ namespace algui {
 
 
     UIVisualStateNode* UIVisualStateNode::getLastChild() const {
-        for (UINode* child = UINode::getLastChild().get(); child; child = child->UINode::getPrevSibling().get()) {
+        for (UINode* child = UINode::getLastChild(); child; child = child->UINode::getPrevSibling()) {
             if (child->isVisualStateNode()) {
                 return static_cast<UIVisualStateNode*>(child);
             }
@@ -127,7 +126,7 @@ namespace algui {
             if (node->isVisualStateNode()) {
                 result = static_cast<UIVisualStateNode*>(node);
             }
-            node = node->getParentPtr();
+            node = node->getParent();
         } while (node);
         return result;
     }
@@ -148,7 +147,7 @@ namespace algui {
                 m_treeVisualState = (VisualState)((s | ps) * e * pe);
                 return;
             }
-            parent = parent->getParentPtr();
+            parent = parent->getParent();
         } while (parent);
 
         m_treeVisualState = m_visualState;

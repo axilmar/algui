@@ -126,6 +126,12 @@ namespace algui {
         ~UIInteractiveNode();
 
         /**
+         * Takes care of internally resetting state when a child is removed.
+         * @param child child to remove.
+         */
+        void removeChild(const std::shared_ptr<UINode>& child) override;
+
+            /**
          * Interface for checking if the underlying node is an interactive node.
          * @return always true.
          */
@@ -217,9 +223,37 @@ namespace algui {
          */
         virtual bool intersects(float screenX, float screenY) const;
 
+    protected:
+        void onResetState() override;
+
+        virtual bool onMouseEnter(const ALLEGRO_EVENT& event);
+        virtual bool onMouseMove(const ALLEGRO_EVENT& event);
+        virtual bool onMouseLeave(const ALLEGRO_EVENT& event);
+        virtual bool onMouseButtonDown(const ALLEGRO_EVENT& event);
+        virtual bool onMouseButtonHeldDown(const ALLEGRO_EVENT& event);
+        virtual bool onMouseButtonUp(const ALLEGRO_EVENT& event);
+
+        virtual bool onMouseWheel(const ALLEGRO_EVENT& event);
+        virtual bool onClick(const ALLEGRO_EVENT& event);
+        virtual bool onDoubleClick(const ALLEGRO_EVENT& event);
+
+        virtual bool onDragEnter(const ALLEGRO_EVENT& event);
+        virtual bool onDrag(const ALLEGRO_EVENT& event);
+        virtual bool onDragLeave(const ALLEGRO_EVENT& event);
+        virtual bool onDrop(const ALLEGRO_EVENT& event);
+
+        virtual bool onKeyDown(const ALLEGRO_EVENT& event);
+        virtual bool onKeyUp(const ALLEGRO_EVENT& event);
+        virtual bool onKeyChar(const ALLEGRO_EVENT& event);
+        virtual bool onUnusedKeyDown(const ALLEGRO_EVENT& event);
+        virtual bool onUnusedKeyUp(const ALLEGRO_EVENT& event);
+        virtual bool onUnusedKeyChar(const ALLEGRO_EVENT& event);
+
+        virtual bool onTimer(const ALLEGRO_EVENT& event);
+
     private:
         static UIInteractiveNode* focusedNode;
-
+        UIInteractiveNode* childWithMouse{ nullptr };
         bool dispatchEventUp(const std::string& eventName, const void* event = nullptr) const;
     };
 

@@ -4,9 +4,15 @@
 namespace algui {
 
 
+    void UINode::removeChild(const std::shared_ptr<UINode>& child) {
+        TreeNode<UINode>::removeChild(child);
+        child->resetState();
+    }
+
+
     void UINode::renderTree() {
         if (m_visible) {
-            getParentPtr() ? onCalcChildState(getParentPtr()) : onCalcRootState();
+            getParent() ? onCalcChildState(getParent()) : onCalcRootState();
             onLayout();
             onPaint();
         }
@@ -34,8 +40,16 @@ namespace algui {
 
 
     void UINode::onPaint() const {
-        for (UINode* child = getFirstChild().get(); child; child = child->getNextSibling().get()) {
+        for (UINode* child = getFirstChild(); child; child = child->getNextSibling()) {
             child->renderTree();
+        }
+    }
+
+
+    void UINode::resetState() {
+        onResetState();
+        for (UINode* child = getFirstChild(); child; child = child->getNextSibling()) {
+            child->resetState();
         }
     }
 
