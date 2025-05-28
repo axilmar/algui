@@ -230,6 +230,7 @@ namespace algui {
         static UIInteractiveNode* focusedNode;
         UIInteractiveNode* childWithMouse{ nullptr };
 
+        void resetFocus();
         bool dispatchEventUp(const std::string& eventName, const void* event = nullptr) const;
 
         bool doMouseEnter(const ALLEGRO_EVENT& event);

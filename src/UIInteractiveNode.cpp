@@ -57,9 +57,7 @@ namespace algui {
 
         //if the child that is to be removed contains the focus, reset the focus
         //before removing the child, so as that focus events bubble up
-        if (child->contains(focusedNode)) {
-            focusedNode->setFocused(false);
-        }
+        resetFocus();
 
         //remove the child; will invoke `onResetState()` for all nodes in the child tree.
         UIVisualStateNode::removeChild(child);
@@ -84,17 +82,7 @@ namespace algui {
 
         //else reset enabled (i.e. disable)
         else {
-            //if it contains the focus, remove the focus
-            if (contains(focusedNode)) {
-                focusedNode->setFocused(false);
-
-                //if the node denied losing the focus, lose it anyway
-                if (contains(focusedNode)) {
-                    focusedNode = nullptr;
-                }
-            }
-
-            //disable
+            resetFocus();
             UIVisualStateNode::setEnabled(false);
         }
     }
@@ -118,14 +106,14 @@ namespace algui {
                 return false;
             }
 
-            //set the focus
+            //set the focus to this node
             UIVisualStateNode::setFocused(true);
             focusedNode = this;
             dispatchEvent(EventType::focus);
             dispatchEventUp(EventType::focusIn);
         }
 
-        //else remove the focus
+        //else remove the focus from this node
         else {
             UIVisualStateNode::setFocused(false);
             focusedNode = nullptr;
@@ -211,6 +199,19 @@ namespace algui {
 
 
     UIInteractiveNode* UIInteractiveNode::focusedNode = nullptr;
+
+
+    void UIInteractiveNode::resetFocus() {
+        if (contains(focusedNode)) {
+            focusedNode->setFocused(false);
+
+            //the focused node may have refused losing the focus,
+            //so force reset of focused node
+            if (contains(focusedNode)) {
+                focusedNode = nullptr;
+            }
+        }
+    }
 
 
     bool UIInteractiveNode::dispatchEventUp(const std::string& eventName, const void* event) const {
