@@ -11,90 +11,6 @@ namespace algui {
 
 
     /**
-     * Event types.
-     */
-    class EventType {
-    public:
-        /** focus; received by node that gets the focus; does not bubble. */
-        static const std::string focus;
-
-        /** focus in; received by node that gets the focus; bubbles up to root. */
-        static const std::string focusIn;
-
-        /** blur; received by node that loses the focus; does not bubble. */
-        static const std::string blur;
-
-        /** focus out; received by node that loses the focus; bubbles up to root. */
-        static const std::string focusOut;
-
-        /** mouse entered; fired when the mouse enters a node's area, including any children. Event points to ALLEGRO_EVENT. */
-        static const std::string mouseEnter;
-
-        /** mouse moved; fired when the mouse moves over a node's area, including any children. Event points to ALLEGRO_EVENT. */
-        static const std::string mouseMove;
-
-        /** mouse left; fired when the mouse leaves node's area. Event points to ALLEGRO_EVENT. */
-        static const std::string mouseLeave;
-
-        /** mouse button pressed; fired when the mouse is pressed over a node. Event points to ALLEGRO_EVENT. */
-        static const std::string mouseButtonDown;
-
-        /** mouse button held pressed; fired when the mouse is pressed continuously over a node. Event points to ALLEGRO_EVENT. */
-        static const std::string mouseButtonHeldDown;
-
-        /** mouse button released; fired when the mouse is released over a node. Event points to ALLEGRO_EVENT. */
-        static const std::string mouseButtonUp;
-
-        /** mouse wheel; fired when the mouse wheel is rolled over a node. Event points to ALLEGRO_EVENT. */
-        static const std::string mouseWheel;
-
-        /** mouse button clicked; fired when the mouse is pressed and then released over the same node within a specified period of time.
-          Event points to ALLEGRO_EVENT. */
-        static const std::string click;
-
-        /** mouse button clicked; fired when the mouse is pressed and then released twice over the same node within a specified period of time.
-          Event points to ALLEGRO_EVENT. */
-        static const std::string doubleClick;
-
-        /** mouse entered while in drag and drop. Event points to ALLEGRO_EVENT. */
-        static const std::string dragEnter;
-
-        /** mouse moved while in drag and drop. Event points to ALLEGRO_EVENT. */
-        static const std::string drag;
-
-        /** mouse left while in drag and drop. Event points to ALLEGRO_EVENT. */
-        static const std::string dragLeave;
-
-        /** mouse released while in drag and drop. Event points to ALLEGRO_EVENT. */
-        static const std::string drop;
-
-        /** a key was pressed when the node has the input focus. Event points to ALLEGRO_EVENT. */
-        static const std::string keyDown;
-
-        /** a key was released when the node has the input focus. Event points to ALLEGRO_EVENT. */
-        static const std::string keyUp;
-
-        /** a character was created from a key press, while the node has the input focus. Event points to ALLEGRO_EVENT. */
-        static const std::string keyChar;
-
-        /** a key was pressed but the node with the input focus ignored it.
-            Fired only in the bubble phase. Event points to ALLEGRO_EVENT. */
-        static const std::string unusedKeyDown;
-
-        /** a key was released but the node with the input focus ignored it.
-            Fired only in the bubble phase. Event points to ALLEGRO_EVENT. */
-        static const std::string unusedKeyUp;
-
-        /** a character was generated as the result of a key press, but the node with the input focus ignored it.
-            Fired only in the bubble phase. Event points to ALLEGRO_EVENT. */
-        static const std::string unusedKeyChar;
-
-        /** a timer event; does not have a phase (so it uses phase 0). Event points to ALLEGRO_EVENT. */
-        static const std::string timer;
-    };
-
-
-    /**
      * Event phase.
      */
     enum class EventPhase {
@@ -125,7 +41,18 @@ namespace algui {
         ~UIInteractiveNode();
 
         /**
-         * Takes care of resetting state that depends on the removed child.
+         * Adds a child node.
+         * It fires the childAdded event.
+         * @param child child node to add.
+         * @param nextSibling the next sibling; if null, the child is added after the last child.
+         * @exception std::invalid_argument thrown if child is null or belongs to another tree,
+         *  or if nextSibling is not null and not a child of this.
+         */
+        void addChild(const std::shared_ptr<UINode>& child, const std::shared_ptr<UINode>& nextSibling = nullptr) override;
+        /**
+         * Removes a child.
+         * It fires the childRemoved event.
+         * Resets the child's internal mouse state, if the child had the mouse.
          * @param child child to remove.
          */
         void removeChild(const std::shared_ptr<UINode>& child) override;
@@ -229,7 +156,7 @@ namespace algui {
 
         void resetFocus();
         void resetMouseState();
-        bool dispatchEventUp(const std::string& eventName, const void* event = nullptr) const;
+        bool dispatchEventUp(const std::string& eventName, const Event& event) const;
 
         bool doMouseEnter(const ALLEGRO_EVENT& event);
         bool doMouseMove(const ALLEGRO_EVENT& event);

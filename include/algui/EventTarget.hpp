@@ -7,6 +7,7 @@
 #include <list>
 #include <functional>
 #include <tuple>
+#include "Event.hpp"
 
 
 namespace algui {
@@ -22,10 +23,12 @@ namespace algui {
     public:
         /**
          * Type of event handler function.
-         * @param event pointer to event structure; it may be null if there are no event data for the event.
+         * @param type event type.
+         * @param event event.
+         * @param phase event phase.
          * @return true if event should not be propagated, false otherwise.
          */
-        using EventHandler = std::function<bool(const void* event)>;
+        using EventHandler = std::function<bool(const std::string& type, const Event& event, int phase)>;
 
         /** Type of event handler list. */
         using EventHandlerList = std::list<EventHandler>;
@@ -56,11 +59,11 @@ namespace algui {
         /**
          * Dispatches an event.
          * @param eventName name of event to dispatch.
-         * @param event event data.
+         * @param event event.
          * @param phase event phase.
          * @return true if the event was processed, false otherwise.
          */
-        virtual bool dispatchEvent(const std::string& eventName, const void* event = nullptr, int phase = 0) const;
+        virtual bool dispatchEvent(const std::string& eventName, const Event& event, int phase = 0) const;
 
     private:
         std::map<std::tuple<std::string, int>, EventHandlerList> m_eventHandlers;

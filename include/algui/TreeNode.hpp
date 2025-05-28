@@ -2,9 +2,8 @@
 #define ALGUI_TREENODE_HPP
 
 
-#include <memory>
 #include <stdexcept>
-#include "Object.hpp"
+#include "SharedObject.hpp"
 
 
 namespace algui {
@@ -14,7 +13,7 @@ namespace algui {
      * Base class for tree nodes.
      * @param T type of derived class.
      */
-    template <class T> class TreeNode : public Object, public std::enable_shared_from_this<T> {
+    template <class T> class TreeNode : public SharedObject<T> {
     public:
         /**
          * Removes all children, starting from last child.

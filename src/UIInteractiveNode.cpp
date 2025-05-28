@@ -1,40 +1,11 @@
 #include <stdexcept>
 #pragma warning (disable: 4309)
 #include "algui/UIInteractiveNode.hpp"
+#include "algui/UIInteractionEvent.hpp"
+#include "algui/EventType.hpp"
 
 
 namespace algui {
-
-
-    const std::string EventType::focus = "focus";
-    const std::string EventType::focusIn = "focusin";
-    const std::string EventType::blur = "blur";
-    const std::string EventType::focusOut = "focusout";
-
-    static const std::string mouseEnter = "mouseenter";
-    static const std::string mouseMove = "mousemove";
-    static const std::string mouseLeave = "mouseleave";
-    static const std::string mouseButtonDown = "mousebuttondown";
-    static const std::string mouseButtonHeldDown = "mousebuttonhelddown";
-    static const std::string mouseButtonUp = "mousebuttonup";
-    
-    static const std::string mousewheel = "mousewheel";
-    static const std::string click = "click";
-    static const std::string doubleClick = "doubleclick";
-    
-    static const std::string dragEnter = "dragenter";
-    static const std::string drag = "drag";
-    static const std::string dragLeave = "dragleave";
-    static const std::string drop = "drop";
-
-    static const std::string keyDown = "keydown";
-    static const std::string keyUp = "keyup";
-    static const std::string keyChar = "keychar";
-    static const std::string unusedKeyDown = "unusedkeydown";
-    static const std::string unusedKeyUp = "unusedkeyup";
-    static const std::string unusedKeyChar = "unusedkeychar";
-
-    static const std::string timer = "timer";
 
 
     UIInteractiveNode::~UIInteractiveNode() {
@@ -46,6 +17,12 @@ namespace algui {
         if (focusedNode == this) {
             focusedNode = nullptr;
         }
+    }
+
+
+    void UIInteractiveNode::addChild(const std::shared_ptr<UINode>& child, const std::shared_ptr<UINode>& nextSibling) {
+        UIVisualStateNode::addChild(child, nextSibling);
+        dispatchEvent(EventType::childAdded, UIEvent(child));
     }
 
 
@@ -69,6 +46,9 @@ namespace algui {
             m_childWithMouse->resetMouseState();
             m_childWithMouse = nullptr;
         }
+
+        //child removed event
+        dispatchEvent(EventType::childRemoved, UIEvent(child));
     }
 
 
@@ -115,17 +95,18 @@ namespace algui {
 
             //set the focus to this node
             UIVisualStateNode::setFocused(true);
-            focusedNode = this;
-            dispatchEvent(EventType::focus);
-            dispatchEventUp(EventType::focusIn);
+            UIInteractionEvent focusEvent(sharedFromThis<UIInteractiveNode>());
+            dispatchEvent(EventType::focus, focusEvent);
+            dispatchEventUp(EventType::focusIn, focusEvent);
         }
 
         //else remove the focus from this node
         else {
             UIVisualStateNode::setFocused(false);
             focusedNode = nullptr;
-            dispatchEvent(EventType::blur);
-            dispatchEventUp(EventType::focusOut);
+            UIInteractionEvent focusEvent(sharedFromThis<UIInteractiveNode>());
+            dispatchEvent(EventType::blur, focusEvent);
+            dispatchEventUp(EventType::focusOut, focusEvent);
         }
 
         return true;
@@ -232,7 +213,7 @@ namespace algui {
     }
 
 
-    bool UIInteractiveNode::dispatchEventUp(const std::string& eventName, const void* event) const {
+    bool UIInteractiveNode::dispatchEventUp(const std::string& eventName, const Event& event) const {
         for (const UIInteractiveNode* node = this; node; node = node->getParent()) {
             if (node->dispatchEvent(eventName, event)) {
                 return true;

@@ -23,12 +23,12 @@ namespace algui {
     }
 
 
-    bool EventTarget::dispatchEvent(const std::string& eventName, const void* event, int phase) const {
+    bool EventTarget::dispatchEvent(const std::string& eventName, const Event& event, int phase) const {
         const auto key = std::make_tuple(eventName, phase);
         const auto& it = m_eventHandlers.find(key);
         if (it != m_eventHandlers.end()) {
             for (const EventHandler& handler : it->second) {
-                if (handler(event)) {
+                if (handler(eventName, event, phase)) {
                     return true;
                 }
             }
