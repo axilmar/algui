@@ -144,9 +144,7 @@ namespace algui {
          * Sets the visible state of the object.
          * @param v the new visible state.
          */
-        virtual void setVisible(bool v) {
-            m_visible = v;
-        }
+        virtual void setVisible(bool v);
 
         /**
          * Returns the left coordinate of the object, relative to the screen.
@@ -214,14 +212,22 @@ namespace algui {
          * Renders this node and its children, recursively.
          * If the node is not visible, it does nothing.
          * It performs the following tasks:
+         *      - if its layout needs to be updated, it invokes the `onLayout()` method to allow the node to position its children according to some layout algorithm,
          *      - it invokes the method `onCalcChildState(parent)` to allow a UI node to compute its state based on its parent,
-         *        or it invokes the medoth `onCalcRootState()` to allow a UI node to compute its state without a parent.
-         *      - it invokes the `onLayout()` method to allow the node to position its children according to some layout algorithm.
+         *        or it invokes the method `onCalcRootState()` to allow a UI node to compute its state without a parent.
          *      - it invokes the `onPaint()` method to allow the node to paint itself.
          *      - it renders the children of this.
          * Nodes are rendered from first to last child, and only if they are visible.
          */
         void renderTree();
+
+        /**
+         * Interface for checking if the underlying node is a positioned node.
+         * @return true if this node is a positioned node, false otherwise.
+         */
+        virtual bool isPositionedNode() const {
+            return false;
+        }
 
         /**
          * Interface for checking if the underlying node is a visual state node.
@@ -253,6 +259,14 @@ namespace algui {
          */
         bool isRenderedTree() const {
             return m_rendered && (!getParent() || getParent()->isRenderedTree());
+        }
+
+        bool isLayoutValid() const {
+            return m_layoutValid;
+        }
+
+        void setLayoutValid(bool valid) {
+            m_layoutValid = valid;
         }
 
     protected:
@@ -287,7 +301,6 @@ namespace algui {
         }
 
     private:
-        bool m_rendered{ false };
         float m_x{ 0 };
         float m_y{ 0 };
         float m_width{ 0 };
@@ -301,6 +314,8 @@ namespace algui {
         float m_screenY2{ 0 };
         float m_screenScalingX{ 1 };
         float m_screenScalingY{ 1 };
+        bool m_rendered{ false };
+        bool m_layoutValid{ false };
 
         void setRendered(bool rendered);
     };

@@ -147,7 +147,7 @@ namespace algui {
 
 
     void UIVisualStateNode::onCalcChildState(UINode* parent) {
-        UINode::onCalcChildState(parent);
+        UIPositionedNode::onCalcChildState(parent);
 
         do {
             if (parent->isVisualStateNode()) {
@@ -169,7 +169,7 @@ namespace algui {
 
 
     void UIVisualStateNode::onCalcRootState() {
-        UINode::onCalcRootState();
+        UIPositionedNode::onCalcRootState();
         m_treeVisualState = m_visualState;
     }
 

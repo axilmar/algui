@@ -8,6 +8,7 @@ namespace algui {
         TreeNode<UINode>::addChild(child, nextSibling);
         if (m_rendered) {
             child->setRendered(true);
+            setLayoutValid(false);
         }
     }
 
@@ -16,6 +17,17 @@ namespace algui {
         TreeNode<UINode>::removeChild(child);
         if (m_rendered) {
             child->setRendered(false);
+            setLayoutValid(false);
+        }
+    }
+
+
+    void UINode::setVisible(bool v) {
+        if (v != m_visible) {
+            m_visible = v;
+            if (getParent()) {
+                getParent()->setLayoutValid(false);
+            }
         }
     }
 
@@ -23,8 +35,11 @@ namespace algui {
     void UINode::renderTree() {
         if (m_visible) {
             m_rendered = true;
+            if (!m_layoutValid) {
+                m_layoutValid = true;
+                onLayout();
+            }
             getParent() ? onCalcChildState(getParent()) : onCalcRootState();
-            onLayout();
             onPaint();
             for (UINode* child = getFirstChild(); child; child = child->getNextSibling()) {
                 child->renderTree();

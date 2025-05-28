@@ -2,7 +2,7 @@
 #define ALGUI_UIVISUALSTATENODE_HPP
 
 
-#include "UINode.hpp"
+#include "UIPositionedNode.hpp"
 
 
 namespace algui {
@@ -18,7 +18,7 @@ namespace algui {
      * 
      * This design allows individual UI nodes to be part of trees which act as a single unit visually.
      */
-    class UIVisualStateNode : public UINode {
+    class UIVisualStateNode : public UIPositionedNode {
     public:
         /**
          * Visual state enumeration.
@@ -174,38 +174,38 @@ namespace algui {
         }
 
         /**
-         * Returns the closest ancestor node that is an visual state node.
-         * @return the closest ancestor node that is an visual state node.
+         * Returns the closest ancestor node that is a visual state node.
+         * @return the closest ancestor node that is a visual state node.
          */
         UIVisualStateNode* getParent() const;
 
         /**
-         * Returns the closest previous sibling node that is an visual state node.
-         * @return the closest previous sibling node that is an visual state node.
+         * Returns the closest previous sibling node that is a visual state node.
+         * @return the closest previous sibling node that is a visual state node.
          */
         UIVisualStateNode* getPrevSibling() const;
 
         /**
-         * Returns the closest next sibling node that is an visual state node.
-         * @return the closest next sibling node that is an visual state node.
+         * Returns the closest next sibling node that is a visual state node.
+         * @return the closest next sibling node that is a visual state node.
          */
         UIVisualStateNode* getNextSibling() const;
 
         /**
-         * Returns the first child node that is an visual state node.
-         * @return the first child node that is an visual state node.
+         * Returns the first child node that is a visual state node.
+         * @return the first child node that is a visual state node.
          */
         UIVisualStateNode* getFirstChild() const;
 
         /**
-         * Returns the last child node that is an visual state node.
-         * @return the last child node that is an visual state node.
+         * Returns the last child node that is a visual state node.
+         * @return the last child node that is a visual state node.
          */
         UIVisualStateNode* getLastChild() const;
 
         /**
-         * Returns the furthest ancestor node that is an visual state node.
-         * @return the furthest ancestor node that is an visual state node.
+         * Returns the furthest ancestor node that is a visual state node.
+         * @return the furthest ancestor node that is a visual state node.
          */
         UIVisualStateNode* getRoot() const;
 
