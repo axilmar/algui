@@ -7,6 +7,9 @@ namespace algui {
     const std::string EventType::childAdded = "childadded";
     const std::string EventType::childRemoved = "childremoved";
 
+    const std::string EventType::enabled = "enabled";
+    const std::string EventType::disabled = "disabled";
+
     const std::string EventType::focus = "focus";
     const std::string EventType::focusIn = "focusin";
     const std::string EventType::blur = "blur";

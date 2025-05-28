@@ -13,22 +13,28 @@ namespace algui {
      */
     class EventType {
     public:
-        /** Child added event; received by the node that a child was added to it; event points to the added child; does not bubble. */
+        /** Child added event; fired by the node that a child was added to it; event points to the added child; does not bubble. */
         static const std::string childAdded;
 
-        /** Child removed event; received by the node that a child was removed from it; event points to the removed child; does not bubble. */
+        /** Child removed event; fired by the node that a child was removed from it; event points to the removed child; does not bubble. */
         static const std::string childRemoved;
 
-        /** focus; received by node that gets the focus; does not bubble. */
+        /** Node enabled event; fired by the node that became enabled. */
+        static const std::string enabled;
+
+        /** Node disabled event; fired by the node that became disabled. */
+        static const std::string disabled;
+
+        /** focus; fired by the node that gets the focus; does not bubble. */
         static const std::string focus;
 
-        /** focus in; received by node that gets the focus; bubbles up to root. */
+        /** focus in; fired by the node that gets the focus; bubbles up to root. */
         static const std::string focusIn;
 
-        /** blur; received by node that loses the focus; does not bubble. */
+        /** blur; fired by the node that loses the focus; does not bubble. */
         static const std::string blur;
 
-        /** focus out; received by node that loses the focus; bubbles up to root. */
+        /** focus out; fired by the node that loses the focus; bubbles up to root. */
         static const std::string focusOut;
 
         /** mouse entered; fired when the mouse enters a node's area, including any children. Event points to ALLEGRO_EVENT. */

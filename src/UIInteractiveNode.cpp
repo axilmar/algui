@@ -61,6 +61,7 @@ namespace algui {
         //enable
         if (v) {
             UIVisualStateNode::setEnabled(true);
+            dispatchEvent(EventType::enabled, UIInteractionEvent(sharedFromThis<UIInteractiveNode>()));
         }
 
         //disable
@@ -71,6 +72,7 @@ namespace algui {
             if (getParent() && getParent()->m_childWithMouse == this) {
                 getParent()->m_childWithMouse = nullptr;
             }
+            dispatchEvent(EventType::disabled, UIInteractionEvent(sharedFromThis<UIInteractiveNode>()));
         }
     }
 

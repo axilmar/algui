@@ -67,6 +67,7 @@ namespace algui {
 
         /**
          * Sets the enabled state.
+         * It fires an 'enabled' or 'disabled' event.
          * If the node is disabled and it contains the input focus,
          * then the input focus is lost.
          * @param v the new enabled state.
