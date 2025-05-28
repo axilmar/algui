@@ -77,7 +77,7 @@ namespace algui {
          * Interface for checking if the underlying node is a visual state node.
          * @return always true.
          */
-        bool IsVisualStateNode() const override {
+        bool isVisualStateNode() const override {
             return true;
         }
 
@@ -163,6 +163,42 @@ namespace algui {
         VisualState getTreeVisualState() const {
             return m_treeVisualState;
         }
+
+        /**
+         * Returns the closest ancestor node that is an visual state node.
+         * @return the closest ancestor node that is an visual state node.
+         */
+        UIVisualStateNode* getParent() const;
+
+        /**
+         * Returns the closest previous sibling node that is an visual state node.
+         * @return the closest previous sibling node that is an visual state node.
+         */
+        UIVisualStateNode* getPrevSibling() const;
+
+        /**
+         * Returns the closest next sibling node that is an visual state node.
+         * @return the closest next sibling node that is an visual state node.
+         */
+        UIVisualStateNode* getNextSibling() const;
+
+        /**
+         * Returns the first child node that is an visual state node.
+         * @return the first child node that is an visual state node.
+         */
+        UIVisualStateNode* getFirstChild() const;
+
+        /**
+         * Returns the last child node that is an visual state node.
+         * @return the last child node that is an visual state node.
+         */
+        UIVisualStateNode* getLastChild() const;
+
+        /**
+         * Returns the furthest ancestor node that is an visual state node.
+         * @return the furthest ancestor node that is an visual state node.
+         */
+        UIVisualStateNode* getRoot() const;
 
     protected:
         /**

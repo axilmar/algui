@@ -208,7 +208,7 @@ namespace algui {
          * Interface for checking if the underlying node is a visual state node.
          * @return true if this node is a visual state node, false otherwise.
          */
-        virtual bool IsVisualStateNode() const {
+        virtual bool isVisualStateNode() const {
             return false;
         }
 
@@ -216,7 +216,7 @@ namespace algui {
          * Interface for checking if the underlying node is an interactive node.
          * @return true if this node is an interactive node, false otherwise.
          */
-        virtual bool IsInteractiveNode() const {
+        virtual bool isInteractiveNode() const {
             return false;
         }
 

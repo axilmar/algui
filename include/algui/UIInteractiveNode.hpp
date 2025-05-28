@@ -129,7 +129,7 @@ namespace algui {
          * Interface for checking if the underlying node is an interactive node.
          * @return always true.
          */
-        bool IsInteractiveNode() const override {
+        bool isInteractiveNode() const override {
             return true;
         }
 

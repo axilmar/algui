@@ -74,7 +74,7 @@ namespace algui {
     UIInteractiveNode* UIInteractiveNode::getParent() const {
         UINode* node = getParentPtr();
         for (; node; node = node->getParentPtr()) {
-            if (node->IsInteractiveNode()) {
+            if (node->isInteractiveNode()) {
                 return static_cast<UIInteractiveNode*>(node);
             }
         }
@@ -84,7 +84,7 @@ namespace algui {
 
     UIInteractiveNode* UIInteractiveNode::getPrevSibling() const {
         for (UINode* prevSibling = UINode::getPrevSibling().get(); prevSibling; prevSibling = prevSibling->UINode::getPrevSibling().get()) {
-            if (prevSibling->IsInteractiveNode()) {
+            if (prevSibling->isInteractiveNode()) {
                 return static_cast<UIInteractiveNode*>(prevSibling);
             }
         }
@@ -94,7 +94,7 @@ namespace algui {
 
     UIInteractiveNode* UIInteractiveNode::getNextSibling() const {
         for (UINode* nextSibling = UINode::getNextSibling().get(); nextSibling; nextSibling = nextSibling->UINode::getNextSibling().get()) {
-            if (nextSibling->IsInteractiveNode()) {
+            if (nextSibling->isInteractiveNode()) {
                 return static_cast<UIInteractiveNode*>(nextSibling);
             }
         }
@@ -104,7 +104,7 @@ namespace algui {
 
     UIInteractiveNode* UIInteractiveNode::getFirstChild() const {
         for (UINode* child = UINode::getFirstChild().get(); child; child = child->UINode::getNextSibling().get()) {
-            if (child->IsInteractiveNode()) {
+            if (child->isInteractiveNode()) {
                 return static_cast<UIInteractiveNode*>(child);
             }
         }
@@ -114,7 +114,7 @@ namespace algui {
 
     UIInteractiveNode* UIInteractiveNode::getLastChild() const {
         for (UINode* child = UINode::getLastChild().get(); child; child = child->UINode::getPrevSibling().get()) {
-            if (child->IsInteractiveNode()) {
+            if (child->isInteractiveNode()) {
                 return static_cast<UIInteractiveNode*>(child);
             }
         }
@@ -126,7 +126,7 @@ namespace algui {
         UINode* node = const_cast<UIInteractiveNode*>(this);
         UIInteractiveNode* result = nullptr;
         do {
-            if (node->IsInteractiveNode()) {
+            if (node->isInteractiveNode()) {
                 result = static_cast<UIInteractiveNode*>(node);
             }
             node = node->getParentPtr();
