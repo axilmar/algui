@@ -120,13 +120,12 @@ namespace algui {
     class UIInteractiveNode : public UIVisualStateNode, public EventTarget {
     public:
         /**
-         * Takes care of resetting the global focused node pointer,
-         * if that is contained within the tree specified by this node.
+         * Removes all children.
          */
         ~UIInteractiveNode();
 
         /**
-         * Takes care of internally resetting state when a child is removed.
+         * Takes care of resetting state that depends on the removed child.
          * @param child child to remove.
          */
         void removeChild(const std::shared_ptr<UINode>& child) override;
@@ -154,8 +153,9 @@ namespace algui {
          * If the node loses the input focus, then the event `blur` is fired, followed
          * by a `focusout` event which bubbles up to root.
          * @param v the new focused state.
+         * @return true if the focus was given to this node, otherwise false.
          */
-        void setFocused(bool v) override;
+        virtual bool setFocused(bool v) override;
 
         /**
          * Returns the currently focused node.
@@ -226,35 +226,37 @@ namespace algui {
     protected:
         void onResetState() override;
 
-        virtual bool onMouseEnter(const ALLEGRO_EVENT& event);
-        virtual bool onMouseMove(const ALLEGRO_EVENT& event);
-        virtual bool onMouseLeave(const ALLEGRO_EVENT& event);
-        virtual bool onMouseButtonDown(const ALLEGRO_EVENT& event);
-        virtual bool onMouseButtonHeldDown(const ALLEGRO_EVENT& event);
-        virtual bool onMouseButtonUp(const ALLEGRO_EVENT& event);
-
-        virtual bool onMouseWheel(const ALLEGRO_EVENT& event);
-        virtual bool onClick(const ALLEGRO_EVENT& event);
-        virtual bool onDoubleClick(const ALLEGRO_EVENT& event);
-
-        virtual bool onDragEnter(const ALLEGRO_EVENT& event);
-        virtual bool onDrag(const ALLEGRO_EVENT& event);
-        virtual bool onDragLeave(const ALLEGRO_EVENT& event);
-        virtual bool onDrop(const ALLEGRO_EVENT& event);
-
-        virtual bool onKeyDown(const ALLEGRO_EVENT& event);
-        virtual bool onKeyUp(const ALLEGRO_EVENT& event);
-        virtual bool onKeyChar(const ALLEGRO_EVENT& event);
-        virtual bool onUnusedKeyDown(const ALLEGRO_EVENT& event);
-        virtual bool onUnusedKeyUp(const ALLEGRO_EVENT& event);
-        virtual bool onUnusedKeyChar(const ALLEGRO_EVENT& event);
-
-        virtual bool onTimer(const ALLEGRO_EVENT& event);
-
     private:
         static UIInteractiveNode* focusedNode;
         UIInteractiveNode* childWithMouse{ nullptr };
+
         bool dispatchEventUp(const std::string& eventName, const void* event = nullptr) const;
+
+        bool doMouseEnter(const ALLEGRO_EVENT& event);
+        bool doMouseMove(const ALLEGRO_EVENT& event);
+        bool doMouseLeave(const ALLEGRO_EVENT& event);
+        bool doMouseButtonDown(const ALLEGRO_EVENT& event);
+        bool doMouseButtonHeldDown(const ALLEGRO_EVENT& event);
+        bool doMouseButtonUp(const ALLEGRO_EVENT& event);
+
+        bool doMouseWheel(const ALLEGRO_EVENT& event);
+        bool doClick(const ALLEGRO_EVENT& event);
+        bool doDoubleClick(const ALLEGRO_EVENT& event);
+
+        bool doDragEnter(const ALLEGRO_EVENT& event);
+        bool doDrag(const ALLEGRO_EVENT& event);
+        bool doDragLeave(const ALLEGRO_EVENT& event);
+        bool doDrop(const ALLEGRO_EVENT& event);
+
+        bool doKeyDown(const ALLEGRO_EVENT& event);
+        bool doKeyUp(const ALLEGRO_EVENT& event);
+        bool doKeyChar(const ALLEGRO_EVENT& event);
+        bool doUnusedKeyDown(const ALLEGRO_EVENT& event);
+        bool doUnusedKeyUp(const ALLEGRO_EVENT& event);
+        bool doUnusedKeyChar(const ALLEGRO_EVENT& event);
+
+        bool doTimer(const ALLEGRO_EVENT& event);
+
     };
 
 

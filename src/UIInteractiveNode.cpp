@@ -42,9 +42,9 @@ namespace algui {
         //which has some side effects.
         removeAllChildren();
 
-        //if this still has the focus, then blur it
-        if (isFocused()) {
-            setFocused(false);
+        //if this still has the focus, then force reset of focusedNode ptr
+        if (focusedNode == this) {
+            focusedNode = nullptr;
         }
     }
 
@@ -72,35 +72,68 @@ namespace algui {
 
 
     void UIInteractiveNode::setEnabled(bool v) {
-        if (isEnabled() != v) {
-            UIVisualStateNode::setEnabled(v);
-            if (!v) {
+        //if no change, do nothing
+        if (isEnabled() == v) {
+            return;
+        }
+
+        //set enabled
+        if (v) {
+            UIVisualStateNode::setEnabled(true);
+        }
+
+        //else reset enabled (i.e. disable)
+        else {
+            //if it contains the focus, remove the focus
+            if (contains(focusedNode)) {
+                focusedNode->setFocused(false);
+
+                //if the node denied losing the focus, lose it anyway
                 if (contains(focusedNode)) {
-                    focusedNode->setFocused(false);
+                    focusedNode = nullptr;
                 }
             }
+
+            //disable
+            UIVisualStateNode::setEnabled(false);
         }
     }
 
 
-    void UIInteractiveNode::setFocused(bool v) {
-        if (isFocused() != v) {
-            if (v) {
-                if (focusedNode) {
-                    focusedNode->setFocused(false);
-                }
-                UIVisualStateNode::setFocused(true);
-                focusedNode = this;
-                dispatchEvent(EventType::focus);
-                dispatchEventUp(EventType::focusIn);
-            }
-            else {
-                UIVisualStateNode::setFocused(false);
-                focusedNode = nullptr;
-                dispatchEvent(EventType::blur);
-                dispatchEventUp(EventType::focusOut);
-            }
+    bool UIInteractiveNode::setFocused(bool v) {
+        //if no change, do nothing
+        if (isFocused() == v) {
+            return true;
         }
+
+        //set the focus
+        if (v) {
+            //can't give the focus to a disabled node or to a descentant of a disabled node
+            if (!isEnabled() || getTreeVisualState() == VisualState::Disabled) {
+                return false;
+            }
+
+            //remove the focus from node that has it
+            if (focusedNode && !focusedNode->setFocused(false)) {
+                return false;
+            }
+
+            //set the focus
+            UIVisualStateNode::setFocused(true);
+            focusedNode = this;
+            dispatchEvent(EventType::focus);
+            dispatchEventUp(EventType::focusIn);
+        }
+
+        //else remove the focus
+        else {
+            UIVisualStateNode::setFocused(false);
+            focusedNode = nullptr;
+            dispatchEvent(EventType::blur);
+            dispatchEventUp(EventType::focusOut);
+        }
+
+        return true;
     }
 
 

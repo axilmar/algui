@@ -153,8 +153,9 @@ namespace algui {
          * Sets the focused state.
          * If the node is disabled, this has no effect.
          * @param v the new state.
+         * #return true if the focus set successfully, false otherwise.
          */
-        virtual void setFocused(bool v);
+        virtual bool setFocused(bool v);
 
         /**
          * Returns the visual state of the tree, from root up to this.

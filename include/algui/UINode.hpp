@@ -19,7 +19,8 @@ namespace algui {
     class UINode : public TreeNode<UINode> {
     public:
         /**
-         * Invokes the `onResetState()` method for the child.
+         * Removes the given child.
+         * Invokes the `onResetState()` method for every node of the tree that starts with the removed child.
          * @param child child to remove.
          */
         void removeChild(const std::shared_ptr<UINode>& child) override;
@@ -205,8 +206,9 @@ namespace algui {
          *      - it invokes the method `onCalcChildState(parent)` to allow a UI node to compute its state based on its parent,
          *        or it invokes the medoth `onCalcRootState()` to allow a UI node to compute its state without a parent.
          *      - it invokes the `onLayout()` method to allow the node to position its children according to some layout algorithm.
-         *      - it invokes the `onPaint()` method to allow the node to paint itself and render its children recursively.
-         * Nodes are rendered from first to last child.
+         *      - it invokes the `onPaint()` method to allow the node to paint itself.
+         *      - it renders the children of this.
+         * Nodes are rendered from first to last child, and only if they are visible.
          */
         void renderTree();
 
@@ -259,9 +261,10 @@ namespace algui {
 
         /**
          * Invoked from `renderTree()` to allow a node to paint itself on the screen.
-         * The default implementation renders the children.
+         * The default implementation does nothing.
          */
-        virtual void onPaint() const;
+        virtual void onPaint() const {
+        }
 
     private:
         float m_x{ 0 };

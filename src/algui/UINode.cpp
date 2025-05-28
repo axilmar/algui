@@ -15,6 +15,9 @@ namespace algui {
             getParent() ? onCalcChildState(getParent()) : onCalcRootState();
             onLayout();
             onPaint();
+            for (UINode* child = getFirstChild(); child; child = child->getNextSibling()) {
+                child->renderTree();
+            }
         }
     }
 
@@ -36,13 +39,6 @@ namespace algui {
         m_screenY2 = m_screenY1 + m_height;
         m_screenScalingX = m_scalingX;
         m_screenScalingY = m_scalingY;
-    }
-
-
-    void UINode::onPaint() const {
-        for (UINode* child = getFirstChild(); child; child = child->getNextSibling()) {
-            child->renderTree();
-        }
     }
 
 

@@ -57,15 +57,29 @@ namespace algui {
     }
 
 
-    void UIVisualStateNode::setFocused(bool v) {
-        if (isEnabled()) {
-            if (v) {
-                m_visualState = (VisualState)((unsigned)m_visualState | (unsigned)VisualState::Focused);
-            }
-            else {
-                m_visualState = (VisualState)((unsigned)m_visualState & ~(unsigned)VisualState::Focused);
-            }
+    bool UIVisualStateNode::setFocused(bool v) {
+        //do nothing if no change
+        if (isFocused() == v) {
+            return true;
         }
+
+        //set the focus
+        if (v) {
+            //if disabled or part of disabled tree, it cannot get the focus
+            if (!isEnabled() || getTreeVisualState() == VisualState::Disabled) {
+                return false;
+            }
+
+            //set the visual state
+            m_visualState = (VisualState)((unsigned)m_visualState | (unsigned)VisualState::Focused);
+        }
+
+        //else reset the focus
+        else {
+            m_visualState = (VisualState)((unsigned)m_visualState & ~(unsigned)VisualState::Focused);
+        }
+
+        return true;
     }
 
 
