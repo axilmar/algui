@@ -26,7 +26,7 @@ namespace algui {
     }
 
 
-    void UIInteractiveNode::removeChild(const std::shared_ptr<UINode>& child) {
+    void UIInteractiveNode::removeChild(std::shared_ptr<UINode> child) {
         //check the child
         if (!child || child->getParent() != this) {
             throw std::invalid_argument("UIInteractiveNode: removeChild: invalid child.");

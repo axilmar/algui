@@ -19,12 +19,12 @@ namespace algui {
 
         /**
          * A node's geometry is not managed by its parent; its geometry is defined
-         * by its left, top, right and bottom coordinates.
+         * by its left, top, right, bottom, width and height coordinates.
          */
         Positioned,
 
         /**
-         * a node's geometry is managed neither by its parent nor by its left, top, right and bottom coordinates.
+         * a node's geometry is managed neither by its parent nor by its coordinates.
          * Its geometry can be set via setX, setY, setWidth and setHeight methods.
          */
         Free
@@ -77,6 +77,19 @@ namespace algui {
         Coord(float value = 0.0f, CoordType type = CoordType::Pixel, CoordAnchorType anchorType = CoordAnchorType::Start)
             : m_value(value >= 0.0f ? value : 0.0f)
             , m_type(type)
+            , m_anchorType(anchorType)
+        {
+        }
+
+        /**
+         * Constructor.
+         * @param value coordinate value.
+         * @param type coordinate type.
+         * @param anchorType anchor type.
+         */
+        Coord(float value, CoordAnchorType anchorType)
+            : m_value(value >= 0.0f ? value : 0.0f)
+            , m_type(CoordType::Pixel)
             , m_anchorType(anchorType)
         {
         }
@@ -174,7 +187,9 @@ namespace algui {
      * The default position type is managed, i.e. the parent manages geometry of the child.
      * 
      * If position type is 'positioned', then the positioned node does not participate in layout management,
-     * and its geometry is defined by its left, top, right and bottom coordinates.
+     * and its geometry is defined by its left, top, right, bottom, width and height coordinates.
+     * In case a left/top/right/bottom coordinate is not set, then the node's width/height coordinates
+     * are used for geometry calculations.
      * 
      * If position type is 'free', then the positioned node does not participate in layout management,
      * and its left, top, right and bottom coordinates are ignored. Its geometry can be set 
@@ -254,7 +269,16 @@ namespace algui {
          * The geometry of the node will be updated at the next `renderTree()` call.
          * @param type the new position type.
          */
-        void setLeft(const Coord& coord);
+        virtual void setLeft(const Coord& coord);
+
+        /**
+         * Unsets the left coordinate.
+         * If the left coordinate is not set, then the width of the node is used for calculation of the left coordinate.
+         */
+        virtual void unsetLeft() {
+            m_positionValid = false;
+            m_leftSet = false;
+        }
 
         /**
          * Returns the top coordinate.
@@ -269,7 +293,16 @@ namespace algui {
          * The geometry of the node will be updated at the next `renderTree()` call.
          * @param type the new position type.
          */
-        void setTop(const Coord& coord);
+        virtual void setTop(const Coord& coord);
+
+        /**
+         * Unsets the top coordinate.
+         * If the top coordinate is not set, then the height of the node is used for calculation of the top coordinate.
+         */
+        virtual void unsetTop() {
+            m_positionValid = false;
+            m_topSet = false;
+        }
 
         /**
          * Returns the right coordinate.
@@ -284,7 +317,16 @@ namespace algui {
          * The geometry of the node will be updated at the next `renderTree()` call.
          * @param type the new position type.
          */
-        void setRight(const Coord& coord);
+        virtual void setRight(const Coord& coord);
+
+        /**
+         * Unsets the right coordinate.
+         * If the right coordinate is not set, then the width of the node is used for calculation of the right coordinate.
+         */
+        virtual void unsetRight() {
+            m_positionValid = false;
+            m_rightSet = false;
+        }
 
         /**
          * Returns the bottom coordinate.
@@ -299,7 +341,110 @@ namespace algui {
          * The geometry of the node will be updated at the next `renderTree()` call.
          * @param type the new position type.
          */
-        void setBottom(const Coord& coord);
+        virtual void setBottom(const Coord& coord);
+
+        /**
+         * Unsets the bottom coordinate.
+         * If the bottom coordinate is not set, then the height of the node is used for calculation of the bottom coordinate.
+         */
+        virtual void unsetBottom() {
+            m_positionValid = false;
+            m_bottomSet = false;
+        }
+
+        /**
+         * Returns the width coordinate of the node.
+         * @return the width coordinate of the node.
+         */
+        const Coord& getWidth() const {
+            return m_width;
+        }
+
+        /**
+         * Sets the width coordinate of the node.
+         * @param width the new width.
+         */
+        virtual void setWidth(const Coord& width);
+
+        /**
+         * Unsets the width.
+         * If the width is unset, then the width of UINode is used for calculations.
+         */
+        virtual void unsetWidth() {
+            m_widthSet = false;
+            m_positionValid = false;
+        }
+
+        /**
+         * Returns the height coordinate of the node.
+         * @return the height coordinate of the node.
+         */
+        const Coord& getHeight() const {
+            return m_height;
+        }
+
+        /**
+         * Sets the height coordinate of the node.
+         * @param height the new height.
+         */
+        virtual void setHeight(const Coord& height);
+
+        /**
+         * Unsets the height.
+         * If the height is unset, then the height of UINode is used for calculations.
+         */
+        virtual void unsetHeight() {
+            m_heightSet = false;
+            m_positionValid = false;
+        }
+
+        /*
+         * Sets the position of the node by invoking the individual set functions for each coordinate.
+         * @param left left coordinate.
+         * @param top top coordinate.
+         */
+        virtual void setPosition(const Coord& left, const Coord& top);
+
+        /*
+         * Sets the position of the node by invoking the individual set functions for each coordinate.
+         * @param left left coordinate.
+         * @param top top coordinate.
+         * @param right right coordinate.
+         * @param bottom bottom coordinate.
+         */
+        virtual void setPosition(const Coord& left, const Coord& top, const Coord& right, const Coord& bottom);
+
+        /*
+         * Sets the position of the node by invoking the individual set functions for each coordinate.
+         * @param left left coordinate.
+         * @param top top coordinate.
+         */
+        virtual void setTopLeftPosition(const Coord& left, const Coord& top) {
+            setPosition(left, top);
+        }
+
+        /*
+         * Sets the position of the node by invoking the individual set functions for each coordinate.
+         * @param right right coordinate.
+         * @param bottom bottom coordinate.
+         */
+        virtual void setBottomRightPosition(const Coord& right, const Coord& bottom);
+
+        /**
+         * Sets the size of the node by invoking the individual set functions for each coordinate.
+         * @param width width.
+         * @param height height.
+         */
+        virtual void setSize(const Coord& width, const Coord& height);
+
+        /**
+         * Sets the geometry of the node by invoking the individual set functions for each coordinate.
+         * @param left left coordinate.
+         * @param top top coordinate.
+         * @param width width.
+         * @param height height.
+         */
+        virtual void setGeometry(const Coord& left, const Coord& top, const Coord& width, const Coord& height);
 
     protected:
         /**
@@ -322,11 +467,20 @@ namespace algui {
         Coord m_top;
         Coord m_right;
         Coord m_bottom;
+        Coord m_width;
+        Coord m_height;
         bool m_positionValid{ false };
+        bool m_leftSet{ false };
+        bool m_topSet{ false };
+        bool m_rightSet{ false };
+        bool m_bottomSet{ false };
+        bool m_widthSet{ false };
+        bool m_heightSet{ false };
 
         void updateChildPosition(UINode* parent);
         void updateRootPosition();
-        void updateGeometry(float x1, float y1, float x2, float y2);
+        void calcGeometry(float width, float scalingX, float height, float scalingY);
+        bool updateGeometry(float x1, float y1, float x2, float y2);
     };
 
 

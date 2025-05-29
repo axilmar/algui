@@ -34,39 +34,35 @@ namespace algui {
          * @param child child node to remove; the method `child->onRemoved()` is invoked.
          * @exception std::invalid_argument thrown if child is null or if not a child of this node.
          */
-        void removeChild(const std::shared_ptr<UINode>& child) override;
+        void removeChild(std::shared_ptr<UINode> child) override;
 
         /**
-         * Returns the x (left) coordinate of the node, relative to its parent, or to the screen.
-         * @return the x coordinate of the node.
+         * Returns the left coordinate of the node, relative to its parent, or to the screen.
+         * @return the left coordinate of the node.
          */
-        float getX() const {
-            return m_x;
+        float getLeft() const {
+            return m_left;
         }
 
         /**
-         * Sets the x (left) coordinate of the node, relative to its parent, or to the screen.
+         * Sets the left coordinate of the node, relative to its parent, or to the screen.
          * @param v the new value.
          */
-        virtual void setX(float v) {
-            m_x = v;
-        }
+        virtual void setLeft(float v);
 
         /**
-         * Returns the y (top) coordinate of the node, relative to its parent, or to the screen.
-         * @return the y coordinate of the node.
+         * Returns the top coordinate of the node, relative to its parent, or to the screen.
+         * @return the top coordinate of the node.
          */
-        float getY() const {
-            return m_y;
+        float getTop() const {
+            return m_top;
         }
 
         /**
-         * Sets the y (top) coordinate of the node, relative to its parent, or to the screen.
+         * Sets the top coordinate of the node, relative to its parent, or to the screen.
          * @param v the new value.
          */
-        virtual void setY(float v) {
-            m_y = v;
-        }
+        virtual void setTop(float v);
 
         /**
          * Returns the width of the ui node.
@@ -80,9 +76,7 @@ namespace algui {
          * Sets the width of the ui node.
          * @param v the new value.
          */
-        virtual void setWidth(float v) {
-            m_width = v >= 0 ? v : 0;
-        }
+        virtual void setWidth(float v);
 
         /**
          * Returns the height of the ui node.
@@ -96,9 +90,30 @@ namespace algui {
          * Sets the height of the ui node.
          * @param v the new value.
          */
-        virtual void setHeight(float v) {
-            m_height = v >= 0 ? v : 0;
-        }
+        virtual void setHeight(float v);
+
+        /**
+         * Sets the position of the node by invoking the individual set functions for each coordinate.
+         * @param left left coordinate.
+         * @param top top coordinate.
+         */
+        virtual void setPosition(float left, float top);
+
+        /**
+         * Sets the size of the node by invoking the individual set functions for each coordinate.
+         * @param width width.
+         * @param height height.
+         */
+        virtual void setSize(float width, float height);
+
+        /**
+         * Sets the geometry of the node by invoking the individual set functions for each coordinate.
+         * @param left left coordinate.
+         * @param top top coordinate.
+         * @param width width.
+         * @param height height.
+         */
+        virtual void setGeometry(float left, float top, float width, float height);
 
         /**
          * Returns the scaling factor for the X axis.
@@ -112,9 +127,7 @@ namespace algui {
          * Sets the scaling factor for the X axis.
          * @param v the new value.
          */
-        virtual void setScalingX(float v) {
-            m_scalingX = v;
-        }
+        virtual void setScalingX(float v);
 
         /**
          * Returns the scaling factor for the Y axis.
@@ -128,9 +141,14 @@ namespace algui {
          * Sets the scaling factor for the Y axis.
          * @param v the new value.
          */
-        virtual void setScalingY(float v) {
-            m_scalingY = v;
-        }
+        virtual void setScalingY(float v);
+
+        /**
+         * Sets the scaling parameters by calling the individual set function for each parameter.
+         * @param scalingX scaling along the X axis.
+         * @param scalingY scaling along the Y axis.
+         */
+        virtual void setScaling(float scalingX, float scalingY);
 
         /**
          * Returns true if the object is visible.
@@ -301,8 +319,8 @@ namespace algui {
         }
 
     private:
-        float m_x{ 0 };
-        float m_y{ 0 };
+        float m_left{ 0 };
+        float m_top{ 0 };
         float m_width{ 0 };
         float m_height{ 0 };
         float m_scalingX{ 1 };
@@ -315,6 +333,7 @@ namespace algui {
         float m_screenScalingX{ 1 };
         float m_screenScalingY{ 1 };
         bool m_rendered{ false };
+        bool m_geometryValid{ false };
         bool m_layoutValid{ false };
 
         void setRendered(bool rendered);

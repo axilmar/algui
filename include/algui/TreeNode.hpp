@@ -144,7 +144,7 @@ namespace algui {
          * @param child child node to remove; the method `child->onRemoved()` is invoked.
          * @exception std::invalid_argument thrown if child is null or if not a child of this node.
          */
-        virtual void removeChild(const std::shared_ptr<T>& child) {
+        virtual void removeChild(std::shared_ptr<T> child) {
             if (!child || child->m_parent != this) {
                 throw std::invalid_argument("TreeNode: removeChild: invalid child.");
             }

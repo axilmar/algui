@@ -7,34 +7,34 @@
 namespace algui {
 
 
-    static float calcCoordValueFromStart(Coord& coord, float containerSize) {
+    static float calcCoordValueFromStart(Coord& coord, float containerSize, float scaling) {
         switch (coord.getType()) {
             case CoordType::Pixel:
                 return coord.getValue();
             case CoordType::Percent:
-                return (coord.getValue()/100.0) * containerSize;
+                return (coord.getValue()/100.0) * containerSize / scaling;
         }
         throw std::invalid_argument("UIPositionedNode: calcCoordValue: invalid coord type");
     }
 
 
-    static float calcCoordValueFromEnd(Coord& coord, float containerSize) {
+    static float calcCoordValueFromEnd(Coord& coord, float containerSize, float scaling) {
         switch (coord.getType()) {
         case CoordType::Pixel:
             return containerSize - coord.getValue();
         case CoordType::Percent:
-            return containerSize - ((coord.getValue() / 100.0) * containerSize);
+            return containerSize / scaling - ((coord.getValue() / 100.0) * containerSize / scaling);
         }
         throw std::invalid_argument("UIPositionedNode: calcCoordValue: invalid coord type");
     }
 
 
-    static float calcCoordValue(Coord& coord, float containerSize) {
+    static float calcCoordValue(Coord& coord, float containerSize, float scaling) {
         switch (coord.getAnchorType()) {
             case CoordAnchorType::Start:
-                return calcCoordValueFromStart(coord, containerSize);
+                return calcCoordValueFromStart(coord, containerSize, scaling);
             case CoordAnchorType::End:
-                return calcCoordValueFromEnd(coord, containerSize);
+                return calcCoordValueFromEnd(coord, containerSize, scaling);
         }
         throw std::invalid_argument("UIPositionedNode: calcCoordValue: invalid coord anchor type");
     }
@@ -113,33 +113,91 @@ namespace algui {
 
     void UIPositionedNode::setLeft(const Coord& coord) {
         if (coord != m_left) {
+            m_positionType = PositionType::Positioned;
             m_left = coord;
             m_positionValid = false;
+            m_leftSet = true;
         }
     }
 
 
     void UIPositionedNode::setTop(const Coord& coord) {
         if (coord != m_top) {
+            m_positionType = PositionType::Positioned;
             m_top = coord;
             m_positionValid = false;
+            m_topSet = true;
         }
     }
 
 
     void UIPositionedNode::setRight(const Coord& coord) {
         if (coord != m_right) {
+            m_positionType = PositionType::Positioned;
             m_right = coord;
             m_positionValid = false;
+            m_rightSet = true;
         }
     }
 
 
     void UIPositionedNode::setBottom(const Coord& coord) {
         if (coord != m_bottom) {
+            m_positionType = PositionType::Positioned;
             m_bottom = coord;
             m_positionValid = false;
+            m_bottomSet = true;
         }
+    }
+
+
+    void UIPositionedNode::setWidth(const Coord& width) {
+        if (width != m_width) {
+            m_positionType = PositionType::Positioned;
+            m_width = width;
+            m_positionValid = false;
+            m_widthSet = true;
+        }
+    }
+
+
+    void UIPositionedNode::setHeight(const Coord& height) {
+        if (height != m_height) {
+            m_positionType = PositionType::Positioned;
+            m_height = height;
+            m_positionValid = false;
+            m_heightSet = true;
+        }
+    }
+
+
+    void UIPositionedNode::setPosition(const Coord& left, const Coord& top) {
+        setLeft(left);
+        setTop(top);
+    }
+
+
+    void UIPositionedNode::setPosition(const Coord& left, const Coord& top, const Coord& right, const Coord& bottom) {
+        setPosition(left, top);
+        setBottomRightPosition(right, bottom);
+    }
+
+
+    void UIPositionedNode::setBottomRightPosition(const Coord& right, const Coord& bottom) {
+        setRight(right);
+        setBottom(bottom);
+    }
+
+
+    void UIPositionedNode::setSize(const Coord& width, const Coord& height) {
+        setWidth(width);
+        setHeight(height);
+    }
+
+
+    void UIPositionedNode::setGeometry(const Coord& left, const Coord& top, const Coord& width, const Coord& height) {
+        setPosition(left, top);
+        setSize(width, height);
     }
 
 
@@ -159,11 +217,7 @@ namespace algui {
         if (!m_positionValid) {
             m_positionValid = true;
             if (m_positionType == PositionType::Positioned) {
-                float x1 = calcCoordValue(m_left, parent->getWidth());
-                float y1 = calcCoordValue(m_top, parent->getHeight());
-                float x2 = calcCoordValue(m_right, parent->getWidth());
-                float y2 = calcCoordValue(m_bottom, parent->getHeight());
-                updateGeometry(x1, y1, x2, y2);
+                calcGeometry(parent->getWidth(), parent->getScreenScalingX(), parent->getHeight(), parent->getScreenScalingY());
             }
         }
     }
@@ -174,19 +228,69 @@ namespace algui {
             m_positionValid = true;
             if (m_positionType == PositionType::Positioned) {
                 ALLEGRO_BITMAP* target = al_get_target_bitmap();
-                float width = al_get_bitmap_width(target);
-                float height = al_get_bitmap_height(target);
-                float x1 = calcCoordValue(m_left, width);
-                float y1 = calcCoordValue(m_top, height);
-                float x2 = calcCoordValue(m_right, width);
-                float y2 = calcCoordValue(m_bottom, height);
-                updateGeometry(x1, y1, x2, y2);
+                const float width = al_get_bitmap_width(target);
+                const float height = al_get_bitmap_height(target);
+                calcGeometry(width, 1.0f, height, 1.0f);
             }
         }
     }
 
 
-    void UIPositionedNode::updateGeometry(float x1, float y1, float x2, float y2) {
+    void UIPositionedNode::calcGeometry(float width, float scalingX, float height, float scalingY) {
+        float x1 = 0.0f, y1 = 0.0f, x2 = 0.0f, y2 = 0.0f;
+
+        if (m_leftSet && m_rightSet) {
+            x1 = calcCoordValue(m_left, width, scalingX);
+            x2 = calcCoordValue(m_right, width, scalingX);
+        }
+        else if (!m_leftSet && m_rightSet) {
+            x2 = calcCoordValue(m_right, width, scalingX);
+            const float w = m_widthSet ? calcCoordValueFromStart(m_width, width, scalingX) : UINode::getWidth();
+            x1 = x2 - w;
+        }
+        else if (m_leftSet && !m_rightSet) {
+            x1 = calcCoordValue(m_left, width, scalingX);
+            const float w = m_widthSet ? calcCoordValueFromStart(m_width, width, scalingX) : UINode::getWidth();
+            x2 = x1 + w;
+        }
+        else {
+            x1 = UINode::getLeft();
+            const float w = m_widthSet ? calcCoordValueFromStart(m_width, width, scalingX) : UINode::getWidth();
+            x2 = x1 + w;
+        }
+
+        if (m_topSet && m_bottomSet) {
+            y1 = calcCoordValue(m_top, height, scalingY);
+            y2 = calcCoordValue(m_bottom, height, scalingY);
+        }
+        else if (!m_topSet && m_bottomSet) {
+            y2 = calcCoordValue(m_bottom, height, scalingY);
+            const float h = m_heightSet ? calcCoordValueFromStart(m_height, height, scalingY) : UINode::getHeight();
+            y1 = y2 - h;
+        }
+        else if (m_topSet && !m_bottomSet) {
+            y1 = calcCoordValue(m_top, height, scalingY);
+            const float h = m_heightSet ? calcCoordValueFromStart(m_height, height, scalingY) : UINode::getHeight();
+            y2 = y1 + h;
+        }
+        else {
+            y1 = UINode::getTop();
+            const float h = m_heightSet ? calcCoordValueFromStart(m_height, height, scalingY) : UINode::getHeight();
+            y2 = y1 + h;
+        }
+
+        const bool sizeChanged = updateGeometry(x1, y1, x2, y2);
+
+        //required because a child's position might depend on the parent's size
+        if (sizeChanged) {
+            for (UIPositionedNode* child = getFirstChild(); child; child = child->getNextSibling()) {
+                child->m_positionValid = false;
+            }
+        }
+    }
+
+
+    bool UIPositionedNode::updateGeometry(float x1, float y1, float x2, float y2) {
         if (x1 > x2) {
             const float t = x1;
             x1 = x2;
@@ -197,10 +301,11 @@ namespace algui {
             y1 = y2;
             y2 = t;
         }
-        setX(x1);
-        setY(y1);
-        setWidth(x2 - x1);
-        setHeight(y2 - y1);
+        const float width = x2 - x1;
+        const float height = y2 - y1;
+        const bool sizeChanged = width != UINode::getWidth() || height != UINode::getHeight();
+        UINode::setGeometry(x1, y1, width, height);
+        return sizeChanged;
     }
 
 

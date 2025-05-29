@@ -55,7 +55,7 @@ namespace algui {
          * Resets the child's internal mouse state, if the child had the mouse.
          * @param child child to remove.
          */
-        void removeChild(const std::shared_ptr<UINode>& child) override;
+        void removeChild(std::shared_ptr<UINode> child) override;
 
             /**
          * Interface for checking if the underlying node is an interactive node.
