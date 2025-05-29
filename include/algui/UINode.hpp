@@ -334,6 +334,7 @@ namespace algui {
         float m_screenScalingY{ 1 };
         bool m_rendered{ false };
         bool m_geometryValid{ false };
+        bool m_childrenGeometryValid{ true };
         bool m_layoutValid{ false };
 
         void setRendered(bool rendered);

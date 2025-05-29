@@ -120,8 +120,10 @@ namespace algui {
             getParent() ? onCalcChildState(getParent()) : onCalcRootState();
             onPaint();
             for (UINode* child = getFirstChild(); child; child = child->getNextSibling()) {
+                child->m_geometryValid = child->m_geometryValid && m_childrenGeometryValid;
                 child->renderTree();
             }
+            m_childrenGeometryValid = true;
         }
         else if (!m_rendered) {
             setRendered(true);
@@ -138,6 +140,7 @@ namespace algui {
             m_screenY2 = m_screenY1 + m_height * parent->m_screenScalingY;
             m_screenScalingX = m_scalingX * parent->m_screenScalingX;
             m_screenScalingY = m_scalingY * parent->m_screenScalingY;
+            m_childrenGeometryValid = false;
         }
     }
 
@@ -151,6 +154,7 @@ namespace algui {
             m_screenY2 = m_screenY1 + m_height;
             m_screenScalingX = m_scalingX;
             m_screenScalingY = m_scalingY;
+            m_childrenGeometryValid = false;
         }
     }
 
