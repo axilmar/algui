@@ -8,7 +8,6 @@ namespace algui {
         TreeNode<UINode>::addChild(child, nextSibling);
         if (m_rendered) {
             child->setRendered(true);
-            setLayoutValid(false);
         }
     }
 
@@ -17,7 +16,6 @@ namespace algui {
         TreeNode<UINode>::removeChild(child);
         if (m_rendered) {
             child->setRendered(false);
-            setLayoutValid(false);
         }
     }
 
@@ -103,9 +101,6 @@ namespace algui {
     void UINode::setVisible(bool v) {
         if (v != m_visible) {
             m_visible = v;
-            if (getParent()) {
-                getParent()->setLayoutValid(false);
-            }
         }
     }
 
@@ -113,17 +108,12 @@ namespace algui {
     void UINode::renderTree() {
         if (m_visible) {
             m_rendered = true;
-            if (!m_layoutValid) {
-                m_layoutValid = true;
-                onLayout();
-            }
-            getParent() ? onCalcChildState(getParent()) : onCalcRootState();
+            getParent() ? onCalcState(getParent()) : onCalcState();
             onPaint();
             for (UINode* child = getFirstChild(); child; child = child->getNextSibling()) {
-                child->m_geometryValid = child->m_geometryValid && m_childrenGeometryValid;
                 child->renderTree();
             }
-            m_childrenGeometryValid = true;
+            setGeometryValid();
         }
         else if (!m_rendered) {
             setRendered(true);
@@ -131,30 +121,42 @@ namespace algui {
     }
 
 
-    void UINode::onCalcChildState(UINode* parent) {
+    void UINode::setChildGeometryInvalid(UINode* child) const {
         if (!m_geometryValid) {
-            m_geometryValid = true;
+            child->m_geometryValid = false;
+        }
+    }
+
+
+    void UINode::onCalcState(const UINode* parent) {
+        bool geometryValid = isGeometryValid();
+
+        if (geometryValid && !parent->isGeometryValid()) {
+            parent->setChildGeometryInvalid(this);
+            geometryValid = false;
+        }
+
+        if (!geometryValid) {
+            onCalcGeometry(parent);
             m_screenX1 = m_left * parent->m_screenScalingX + parent->m_screenX1;
             m_screenY1 = m_top * parent->m_screenScalingY + parent->m_screenY1;
             m_screenX2 = m_screenX1 + m_width * parent->m_screenScalingX;
             m_screenY2 = m_screenY1 + m_height * parent->m_screenScalingY;
             m_screenScalingX = m_scalingX * parent->m_screenScalingX;
             m_screenScalingY = m_scalingY * parent->m_screenScalingY;
-            m_childrenGeometryValid = false;
         }
     }
 
 
-    void UINode::onCalcRootState() {
-        if (!m_geometryValid) {
-            m_geometryValid = true;
+    void UINode::onCalcState() {
+        if (!isGeometryValid()) {
+            onCalcGeometry();
             m_screenX1 = m_left;
             m_screenY1 = m_top;
             m_screenX2 = m_screenX1 + m_width;
             m_screenY2 = m_screenY1 + m_height;
             m_screenScalingX = m_scalingX;
             m_screenScalingY = m_scalingY;
-            m_childrenGeometryValid = false;
         }
     }
 

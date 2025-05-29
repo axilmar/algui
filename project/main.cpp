@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
     form2->addChild(button1);
 
     std::shared_ptr<Test> button2 = std::make_shared<Test>();
-    button2->setPosition(10, 60, { 10, CoordAnchorType::End }, 100);
+    button2->setPosition(10, 60, { 10, PositionAnchorType::End }, 100);
     form2->addChild(button2);
 
     std::shared_ptr<Test> button3 = std::make_shared<Test>();

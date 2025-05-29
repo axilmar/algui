@@ -230,7 +230,6 @@ namespace algui {
          * Renders this node and its children, recursively.
          * If the node is not visible, it does nothing.
          * It performs the following tasks:
-         *      - if its layout needs to be updated, it invokes the `onLayout()` method to allow the node to position its children according to some layout algorithm,
          *      - it invokes the method `onCalcChildState(parent)` to allow a UI node to compute its state based on its parent,
          *        or it invokes the method `onCalcRootState()` to allow a UI node to compute its state without a parent.
          *      - it invokes the `onPaint()` method to allow the node to paint itself.
@@ -244,6 +243,14 @@ namespace algui {
          * @return true if this node is a positioned node, false otherwise.
          */
         virtual bool isPositionedNode() const {
+            return false;
+        }
+
+        /**
+         * Interface for checking if the underlying node is a layout node.
+         * @return true if this node is a layout node, false otherwise.
+         */
+        virtual bool isLayoutNode() const {
             return false;
         }
 
@@ -279,37 +286,69 @@ namespace algui {
             return m_rendered && (!getParent() || getParent()->isRenderedTree());
         }
 
-        bool isLayoutValid() const {
-            return m_layoutValid;
+        /**
+         * Checks if the geometry of the object is valid or not.
+         * @return the geometry valid flag.
+         */
+        virtual bool isGeometryValid() const {
+            return m_geometryValid;
         }
 
-        void setLayoutValid(bool valid) {
-            m_layoutValid = valid;
+        /**
+         * Sets the geometry valid flag to false, causing a recomputation of the on screen geometry
+         * on the next `renderTree()` call.
+         */
+        virtual void invalidateGeometry() {
+            m_geometryValid = false;
         }
 
     protected:
+        /**
+         * Invoked when the node must compute its geometry based on its parent.
+         * The default implementation does nothing.
+         */
+        virtual void onCalcGeometry(const UINode* parent) {
+        }
+
+        /**
+         * Invoked when the node must compute its geometry when being root.
+         * The default implementation does nothing.
+         */
+        virtual void onCalcGeometry() {
+        }
+
+        /**
+         * Interface for copying the invalid geometry state of the parent to the child,
+         * in order to set the child to an invalid state and let the child do the appropriate
+         * geometry computations.
+         * The default implementation sets the geometry validity of the UI node to false,
+         * if the geometry validity of this is false.
+         */
+        virtual void setChildGeometryInvalid(UINode* child) const;
+
+        /**
+         * Sets the geometry to be in valid state.
+         * Invoked after a parent with its children are rendered,
+         * from within `renderTree()`.
+         */
+        virtual void setGeometryValid() {
+            m_geometryValid = true;
+        }
+
         /**
          * Invoked from `renderTree()` to allow a UI node to compute its state, based on the state of parent.
          * The default implementation computes the screen coordinates and screen scaling of the node, 
          * based on the parent's screen coordinates and screen scaling.
          * @param parent parent node.
          */
-        virtual void onCalcChildState(UINode* parent);
+        virtual void onCalcState(const UINode* parent);
 
         /**
          * Invoked from `renderTree()` to allow a UI node to compute its state when it has no parent.
          * The default implementation computes the screen coordinates and screen scaling of the node.
          * @param parent parent node.
          */
-        virtual void onCalcRootState();
-
-        /**
-         * Invoked from `renderTree()` to allow a node to layout its children,
-         * according to some layout algorihm.
-         * The default implementation does nothing.
-         */
-        virtual void onLayout() const {
-        }
+        virtual void onCalcState();
 
         /**
          * Invoked from `renderTree()` to allow a node to paint itself on the screen.
@@ -334,8 +373,6 @@ namespace algui {
         float m_screenScalingY{ 1 };
         bool m_rendered{ false };
         bool m_geometryValid{ false };
-        bool m_childrenGeometryValid{ true };
-        bool m_layoutValid{ false };
 
         void setRendered(bool rendered);
     };

@@ -2,7 +2,7 @@
 #define ALGUI_UIVISUALSTATENODE_HPP
 
 
-#include "UIPositionedNode.hpp"
+#include "UILayoutNode.hpp"
 
 
 namespace algui {
@@ -18,7 +18,7 @@ namespace algui {
      * 
      * This design allows individual UI nodes to be part of trees which act as a single unit visually.
      */
-    class UIVisualStateNode : public UIPositionedNode {
+    class UIVisualStateNode : public UILayoutNode {
     public:
         /**
          * Visual state enumeration.
@@ -215,13 +215,13 @@ namespace algui {
          * It also invokes the base class method, in order to compute the position and scaling parameters.
          * @param parent the parent node; if it is not a visual state node, then the closest visual state node is used.
          */
-        void onCalcChildState(UINode* parent) override;
+        void onCalcState(const UINode* parent) override;
 
         /**
          * Overriden so as that the tree visual state for root nodes is computed.
          * It also invokes the base class method, in order to compute the position and scaling parameters.
          */
-        void onCalcRootState() override;
+        void onCalcState() override;
 
     private:
         VisualState m_visualState:8;

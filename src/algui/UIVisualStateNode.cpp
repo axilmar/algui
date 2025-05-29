@@ -146,15 +146,15 @@ namespace algui {
     }
 
 
-    void UIVisualStateNode::onCalcChildState(UINode* parent) {
-        UIPositionedNode::onCalcChildState(parent);
+    void UIVisualStateNode::onCalcState(const UINode* parent) {
+        UIPositionedNode::onCalcState(parent);
 
         do {
             if (parent->isVisualStateNode()) {
                 const unsigned s = (unsigned)m_visualState;
                 const unsigned e = s & (unsigned)VisualState::Enabled;
 
-                UIVisualStateNode* p = static_cast<UIVisualStateNode*>(parent);
+                const UIVisualStateNode* p = static_cast<const UIVisualStateNode*>(parent);
                 const unsigned ps = (unsigned)p->m_treeVisualState;
                 const unsigned pe = ps & (unsigned)VisualState::Enabled;
 
@@ -168,8 +168,8 @@ namespace algui {
     }
 
 
-    void UIVisualStateNode::onCalcRootState() {
-        UIPositionedNode::onCalcRootState();
+    void UIVisualStateNode::onCalcState() {
+        UIPositionedNode::onCalcState();
         m_treeVisualState = m_visualState;
     }
 
