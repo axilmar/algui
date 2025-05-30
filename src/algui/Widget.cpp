@@ -5,7 +5,7 @@
 namespace algui {
 
 
-    Widget::Widget() 
+    Widget::Widget() noexcept
         : m_left(0)
         , m_top(0)
         , m_width(0)
@@ -31,12 +31,12 @@ namespace algui {
     }
 
 
-    float Widget::getLeft() const {
+    float Widget::getLeft() const noexcept {
         return m_left;
     }
 
 
-    void Widget::setLeft(float v) {
+    void Widget::setLeft(float v) noexcept {
         if (v != m_left) {
             m_left = v;
             if (getParent()) {
@@ -47,12 +47,12 @@ namespace algui {
     }
 
 
-    float Widget::getTop() const {
+    float Widget::getTop() const noexcept {
         return m_top;
     }
 
 
-    void Widget::setTop(float v) {
+    void Widget::setTop(float v) noexcept {
         if (v != m_top) {
             m_top = v;
             if (getParent()) {
@@ -63,32 +63,32 @@ namespace algui {
     }
 
 
-    float Widget::getRight() const {
+    float Widget::getRight() const noexcept {
         return m_left + m_width;
     }
 
 
-    void Widget::setRight(float v) {
+    void Widget::setRight(float v) noexcept {
         setWidth(v - m_left);
     }
 
 
-    float Widget::getBottom() const {
+    float Widget::getBottom() const noexcept {
         return m_top + m_height;
     }
 
 
-    void Widget::setBottom(float v) {
+    void Widget::setBottom(float v) noexcept {
         setHeight(v - m_top);
     }
 
 
-    float Widget::getWidth() const {
+    float Widget::getWidth() const noexcept {
         return m_width;
     }
 
 
-    void Widget::setWidth(float v) {
+    void Widget::setWidth(float v) noexcept {
         //width can't be less than min width
         if (v < m_minWidth) {
             v = m_minWidth;
@@ -118,12 +118,12 @@ namespace algui {
     }
 
 
-    float Widget::getHeight() const {
+    float Widget::getHeight() const noexcept {
         return m_height;
     }
 
 
-    void Widget::setHeight(float v) {
+    void Widget::setHeight(float v) noexcept {
         //height cannot be less than min height
         if (v < m_minHeight) {
             v = m_minHeight;
@@ -153,12 +153,12 @@ namespace algui {
     }
 
 
-    float Widget::getMinWidth() const {
+    float Widget::getMinWidth() const noexcept {
         return m_minWidth;
     }
 
 
-    void Widget::setMinWidth(float v) {
+    void Widget::setMinWidth(float v) noexcept {
         //min width cannot be negative
         if (v < 0) {
             v = 0;
@@ -187,12 +187,12 @@ namespace algui {
     }
 
 
-    float Widget::getMinHeight() const {
+    float Widget::getMinHeight() const noexcept {
         return m_minHeight;
     }
 
 
-    void Widget::setMinHeight(float v) {
+    void Widget::setMinHeight(float v) noexcept {
         //min height cannot be negative
         if (v < 0) {
             v = 0;
@@ -221,12 +221,12 @@ namespace algui {
     }
 
 
-    float Widget::getMaxWidth() const {
+    float Widget::getMaxWidth() const noexcept {
         return m_maxWidth;
     }
 
 
-    void Widget::setMaxWidth(float v) {
+    void Widget::setMaxWidth(float v) noexcept {
         //max width cannot be less than min width
         if (v < m_minWidth) {
             v = m_minWidth;
@@ -250,12 +250,12 @@ namespace algui {
     }
 
 
-    float Widget::getMaxHeight() const {
+    float Widget::getMaxHeight() const noexcept {
         return m_maxHeight;
     }
 
 
-    void Widget::setMaxHeight(float v) {
+    void Widget::setMaxHeight(float v) noexcept {
         //max height cannot be less than min height
         if (v < m_minHeight) {
             v = m_minHeight;
@@ -279,12 +279,12 @@ namespace algui {
     }
 
 
-    float Widget::getScalingX() const {
+    float Widget::getScalingX() const noexcept {
         return m_scalingX;
     }
 
 
-    void Widget::setScalingX(float v) {
+    void Widget::setScalingX(float v) noexcept {
         if (v < 0) {
             v = 0;
         }
@@ -295,12 +295,12 @@ namespace algui {
     }
 
 
-    float Widget::getScalingY() const {
+    float Widget::getScalingY() const noexcept {
         return m_scalingY;
     }
 
 
-    void Widget::setScalingY(float v) {
+    void Widget::setScalingY(float v) noexcept {
         if (v < 0) {
             v = 0;
         }
@@ -311,12 +311,32 @@ namespace algui {
     }
 
 
-    bool Widget::isVisible() const {
+    float Widget::getX1() const noexcept {
+        return m_x1;
+    }
+
+
+    float Widget::getY1() const noexcept {
+        return m_y1;
+    }
+
+
+    float Widget::getX2() const noexcept {
+        return m_x2;
+    }
+
+
+    float Widget::getY2() const noexcept {
+        return m_y2;
+    }
+
+
+    bool Widget::isVisible() const noexcept {
         return m_visible;
     }
 
 
-    void Widget::setVisible(bool v) {
+    void Widget::setVisible(bool v) noexcept {
         if (v != m_visible) {
             m_visible = v;
             if (getParent()) {
@@ -326,7 +346,7 @@ namespace algui {
     }
 
 
-    void Widget::invalidateGeometry() {
+    void Widget::invalidateGeometry() noexcept {
         if (m_geometryDirty) {
             return;
         }
@@ -342,7 +362,7 @@ namespace algui {
     }
 
 
-    void Widget::invalidateLayout() {
+    void Widget::invalidateLayout() noexcept {
         if (m_layoutDirty) {
             return;
         }
@@ -358,7 +378,7 @@ namespace algui {
     }
 
 
-    void Widget::render() {
+    void Widget::render() noexcept {
         updateGeometry();
         updateLayout();
         updateScreenGeometry(false);
@@ -366,7 +386,7 @@ namespace algui {
     }
 
 
-    void Widget::updateGeometry() {
+    void Widget::updateGeometry() noexcept {
         if (m_geometryTreeDirty) {
             for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
                 child->updateGeometry();
@@ -380,7 +400,7 @@ namespace algui {
     }
 
 
-    void Widget::updateLayout() {
+    void Widget::updateLayout() noexcept {
         if (m_layoutDirty) {
             onLayout();
             m_layoutDirty = false;
@@ -394,7 +414,7 @@ namespace algui {
     }
 
 
-    void Widget::invalidateScreenGeometry() {
+    void Widget::invalidateScreenGeometry() noexcept {
         if (m_screenGeometryDirty) {
             return;
         }
@@ -410,7 +430,7 @@ namespace algui {
     }
     
     
-    void Widget::updateScreenGeometry(bool force) {
+    void Widget::updateScreenGeometry(bool force) noexcept {
         //update screen geometry of widget
         if (m_screenGeometryDirty || force) {
             //calc screen geometry
@@ -455,7 +475,7 @@ namespace algui {
     }
 
 
-    void Widget::paint() const {
+    void Widget::paint() const noexcept {
         if (m_visible) {
             onPaint();
             for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {

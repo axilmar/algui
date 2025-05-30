@@ -10,72 +10,80 @@ namespace algui {
 
     class Widget : public Tree<Widget> {
     public:
-        Widget();
+        Widget() noexcept;
 
-        float getLeft() const;
+        float getLeft() const noexcept;
 
-        void setLeft(float v);
+        void setLeft(float v) noexcept;
 
-        float getTop() const;
+        float getTop() const noexcept;
 
-        void setTop(float v);
+        void setTop(float v) noexcept;
 
-        float getRight() const;
+        float getRight() const noexcept;
 
-        void setRight(float v);
+        void setRight(float v) noexcept;
 
-        float getBottom() const;
+        float getBottom() const noexcept;
 
-        void setBottom(float v);
+        void setBottom(float v) noexcept;
 
-        float getWidth() const;
+        float getWidth() const noexcept;
 
-        void setWidth(float v);
+        void setWidth(float v) noexcept;
 
-        float getHeight() const;
+        float getHeight() const noexcept;
 
-        void setHeight(float v);
+        void setHeight(float v) noexcept;
 
-        float getMinWidth() const;
+        float getMinWidth() const noexcept;
 
-        void setMinWidth(float v);
+        void setMinWidth(float v) noexcept;
 
-        float getMinHeight() const;
+        float getMinHeight() const noexcept;
 
-        void setMinHeight(float v);
+        void setMinHeight(float v) noexcept;
 
-        float getMaxWidth() const;
+        float getMaxWidth() const noexcept;
 
-        void setMaxWidth(float v);
+        void setMaxWidth(float v) noexcept;
 
-        float getMaxHeight() const;
+        float getMaxHeight() const noexcept;
 
-        void setMaxHeight(float v);
+        void setMaxHeight(float v) noexcept;
 
-        float getScalingX() const;
+        float getScalingX() const noexcept;
 
-        void setScalingX(float v);
+        void setScalingX(float v) noexcept;
 
-        float getScalingY() const;
+        float getScalingY() const noexcept;
 
-        void setScalingY(float v);
+        void setScalingY(float v) noexcept;
 
-        bool isVisible() const;
+        float getX1() const noexcept;
 
-        void setVisible(bool v);
+        float getY1() const noexcept;
 
-        void invalidateGeometry();
+        float getX2() const noexcept;
 
-        void invalidateLayout();
+        float getY2() const noexcept;
 
-        void render();
+        bool isVisible() const noexcept;
+
+        void setVisible(bool v) noexcept;
+
+        void invalidateGeometry() noexcept;
+
+        void invalidateLayout() noexcept;
+
+        void render() noexcept;
 
     protected:
-        virtual void onGeometry() {}
+        virtual void onGeometry() noexcept {}
 
-        virtual void onLayout() const {}
+        virtual void onLayout() const noexcept {}
 
-        virtual void onPaint() const {}
+        virtual void onPaint() const noexcept {}
 
     private:
         float m_left;
@@ -102,11 +110,11 @@ namespace algui {
         bool m_screenGeometryDirty:1;
         bool m_screenGeometryTreeDirty:1;
 
-        void updateGeometry();
-        void updateLayout();
-        void invalidateScreenGeometry();
-        void updateScreenGeometry(bool force);
-        void paint() const;
+        void updateGeometry() noexcept;
+        void updateLayout() noexcept;
+        void invalidateScreenGeometry() noexcept;
+        void updateScreenGeometry(bool force) noexcept;
+        void paint() const noexcept;
     };
 
 

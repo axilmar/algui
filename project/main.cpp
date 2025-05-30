@@ -11,6 +11,19 @@
 #include "allegro5/allegro_ttf.h"
 #include "allegro5/allegro_audio.h"
 
+#include "algui/Widget.hpp"
+using namespace algui;
+
+class Test : public Widget {
+public:
+
+protected:
+    void onPaint() const noexcept override {
+        al_draw_filled_rectangle(getX1(), getY1(), getX2(), getY2(), al_map_rgb(255, 255, 255));
+        al_draw_rectangle(getX1(), getY1(), getX2(), getY2(), al_map_rgb(0, 0, 0), 1);
+    }
+};
+
 int main(int argc, char** argv) {
     al_init();
     al_init_image_addon();
@@ -34,6 +47,52 @@ int main(int argc, char** argv) {
 
     al_start_timer(timer);
 
+    std::shared_ptr<Test> root = std::make_shared<Test>();
+    root->setWidth(al_get_display_width(display));
+    root->setHeight(al_get_display_height(display));
+
+    Test* form1 = new Test();
+    form1->setLeft(100);
+    form1->setTop(50);
+    form1->setWidth(200);
+    form1->setHeight(150);
+    root->add(form1);
+
+    Test* form2 = new Test();
+    form2->setLeft(200);
+    form2->setTop(150);
+    form2->setWidth(200);
+    form2->setHeight(150);
+    root->add(form2);
+
+    Test* form3 = new Test();
+    form3->setLeft(300);
+    form3->setTop(250);
+    form3->setWidth(200);
+    form3->setHeight(150);
+    root->add(form3);
+
+    Test* button1 = new Test();
+    button1->setLeft(50);
+    button1->setTop(40);
+    button1->setWidth(50);
+    button1->setHeight(40);
+    form2->add(button1);
+
+    Test* button2 = new Test();
+    button2->setLeft(70);
+    button2->setTop(60);
+    button2->setWidth(50);
+    button2->setHeight(40);
+    form2->add(button2);
+
+    Test* button3 = new Test();
+    button3->setLeft(90);
+    button3->setTop(80);
+    button3->setWidth(50);
+    button3->setHeight(40);
+    form2->add(button3);
+
     for (;;) {
         ALLEGRO_EVENT event;
         al_wait_for_event(eventQueue, &event);
@@ -46,6 +105,7 @@ int main(int argc, char** argv) {
                 break;
 
             case ALLEGRO_EVENT_TIMER:
+                root->render();
                 al_flip_display();
                 break;
 
