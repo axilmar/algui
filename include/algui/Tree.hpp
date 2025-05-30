@@ -143,10 +143,12 @@ namespace algui {
          * @return true if the child was removed, false if it is not a child of this.
          */
         virtual bool remove(T* child) noexcept {
+            //must be a child of this
             if (child->m_parent != this) {
                 return false;
             }
 
+            //unlink previous
             if (child->m_prevSibling) {
                 child->m_prevSibling->m_nextSibling = child->m_nextSibling;
             }
@@ -154,6 +156,7 @@ namespace algui {
                 m_firstChild = child->m_nextSibling;
             }
 
+            //unlink next
             if (child->m_nextSibling) {
                 child->m_nextSibling->m_prevSibling = child->m_prevSibling;
             }
@@ -161,6 +164,7 @@ namespace algui {
                 m_lastChild = child->m_prevSibling;
             }
 
+            //nullify child pointers
             child->m_parent = child->m_prevSibling = child->m_nextSibling = nullptr;
 
             return true;
@@ -192,6 +196,22 @@ namespace algui {
                 remove(child);
                 delete child;
             }
+        }
+
+        /**
+         * Checks if the node has a parent.
+         * @return true if the node does not have a parent, false otherwise.
+         */
+        bool isRoot() const noexcept {
+            return m_parent == nullptr;
+        }
+
+        /**
+         * Checks if the node has a parent.
+         * @return true if the node has a parent, false otherwise.
+         */
+        bool isChild() const noexcept {
+            return m_parent != nullptr;
         }
 
     private:
