@@ -102,6 +102,8 @@ int main(int argc, char** argv) {
                 goto END;
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
+                //form2->setLeft(form2->getLeft() + 8);
+                //form2->setWidth(form2->getWidth() + 8);
                 break;
 
             case ALLEGRO_EVENT_TIMER:

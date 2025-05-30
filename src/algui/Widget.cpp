@@ -5,6 +5,9 @@
 namespace algui {
 
 
+    static Widget* focusedWidget = nullptr;
+
+
     Widget::Widget() noexcept
         : m_left(0)
         , m_top(0)
@@ -22,12 +25,33 @@ namespace algui {
         , m_scalingY(1)
         , m_screenScalingX(1)
         , m_screenScalingY(1)
-        , m_visible(true)
         , m_geometryDirty(true)
         , m_geometryTreeDirty(true)
         , m_layoutDirty(true)
         , m_layoutTreeDirty(true)
+        , m_visible(true)
+        , m_enabled(true)
+        , m_highlighted(false)
+        , m_pressed(false)
+        , m_selected(false)
+        , m_focused(false)
+        , m_focusable(false)
+        , m_valid(true)
+        , m_visibleTree(true)
+        , m_enabledTree(true)
+        , m_highlightedTree(false)
+        , m_pressedTree(false)
+        , m_selectedTree(false)
+        , m_focusedTree(false)
+        , m_validTree(true)
     {
+    }
+
+
+    Widget::~Widget() noexcept {
+        if (this == focusedWidget) {
+            focusedWidget = nullptr;
+        }
     }
 
 
@@ -336,12 +360,185 @@ namespace algui {
     }
 
 
+    bool Widget::isVisibleTree() const noexcept {
+        return m_visibleTree;
+    }
+
+
     void Widget::setVisible(bool v) noexcept {
         if (v != m_visible) {
             m_visible = v;
+            updateVisibleTree();
             if (getParent()) {
                 getParent()->invalidateLayout();
             }
+        }
+    }
+
+
+    bool Widget::isEnabled() const noexcept {
+        return m_enabled;
+    }
+
+
+    bool Widget::isEnabledTree() const noexcept {
+        return m_enabledTree;
+    }
+
+
+    void Widget::setEnabled(bool v) noexcept {
+        if (v == m_enabled) {
+            return;
+        }
+
+        if (v) {
+            m_enabled = true;
+        }
+
+        //if it is disabled and contains the focus,
+        //then the focus is lost
+        else {
+            if (contains(focusedWidget)) {
+                focusedWidget->setFocused(false);
+            }
+            m_enabled = false;
+        }
+
+        updateEnabledTree();
+    }
+
+
+    bool Widget::isHighlighted() const noexcept {
+        return m_highlighted;
+    }
+
+
+    bool Widget::isHighlightedTree() const noexcept {
+        return m_highlightedTree;
+    }
+
+
+    void Widget::setHighlighted(bool v) noexcept {
+        if (v != m_highlighted) {
+            m_highlighted = v;
+            updateHighlightedTree();
+        }
+    }
+
+
+    bool Widget::isPressed() const noexcept {
+        return m_pressed;
+    }
+
+
+    bool Widget::isPressedTree() const noexcept {
+        return m_pressedTree;
+    }
+
+
+    void Widget::setPressed(bool v) noexcept {
+        if (v != m_pressed) {
+            m_pressed = v;
+            updatePressedTree();
+        }
+    }
+
+
+    bool Widget::isSelected() const noexcept {
+        return m_selected;
+    }
+
+
+    bool Widget::isSelectedTree() const noexcept {
+        return m_selectedTree;
+    }
+
+
+    void Widget::setSelected(bool v) noexcept {
+        if (v != m_selected) {
+            m_selected = v;
+            updateSelectedTree();
+        }
+    }
+
+
+    bool Widget::isFocused() const noexcept {
+        return m_focused;
+    }
+
+
+    bool Widget::isFocusedTree() const noexcept {
+        return m_focusedTree;
+    }
+
+
+    bool Widget::setFocused(bool v) noexcept {
+        if (v == m_focused) {
+            return true;
+        }
+
+        //set the focus
+        if (v) {
+            //must be focusable and enabled
+            if (!m_focusable || !m_enabledTree) {
+                return false;
+            }
+
+            //remove the focus from previous widget
+            if (focusedWidget) {
+                focusedWidget->setFocused(false);
+            }
+
+            //set the focus to this widget
+            m_focused = v;
+            updateFocusedTree();
+            focusedWidget = this;
+
+            //TODO got focus events
+        }
+
+        //remove the focus
+        else {
+            m_focused = false;
+            updateFocusedTree();
+            focusedWidget = nullptr;
+
+            //TODO lost focus events
+        }
+
+        return true;
+    }
+
+
+    Widget* Widget::getFocused() noexcept {
+        return focusedWidget;
+    }
+
+
+    bool Widget::isFocusable() const noexcept {
+        return m_focusable;
+    }
+
+
+    void Widget::setFocusable(bool v) noexcept {
+        m_focusable = v;
+    }
+
+
+    bool Widget::isValid() const noexcept {
+        return m_valid;
+    }
+
+
+    bool Widget::isValidTree() const noexcept {
+        return m_validTree;
+    }
+
+
+    void Widget::setValid(bool v) noexcept {
+        if (v != m_valid) {
+            m_valid = v;
+            updateValidTree();
         }
     }
 
@@ -481,6 +678,62 @@ namespace algui {
             for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
                 child->paint();
             }
+        }
+    }
+
+
+    void Widget::updateVisibleTree() noexcept {
+        m_visibleTree = m_visible && (!getParent() || getParent()->m_visibleTree);
+        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+            child->updateVisibleTree();
+        }
+    }
+
+
+    void Widget::updateEnabledTree() noexcept {
+        m_enabledTree = m_enabled && (!getParent() || getParent()->m_enabledTree);
+        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+            child->updateEnabledTree();
+        }
+    }
+
+
+    void Widget::updateHighlightedTree() noexcept {
+        m_highlightedTree = m_highlighted || (getParent() && getParent()->m_highlightedTree);
+        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+            child->updateHighlightedTree();
+        }
+    }
+
+
+    void Widget::updatePressedTree() noexcept {
+        m_pressedTree = m_pressed || (getParent() && getParent()->m_pressedTree);
+        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+            child->updatePressedTree();
+        }
+    }
+
+
+    void Widget::updateSelectedTree() noexcept {
+        m_selectedTree = m_selected || (getParent() && getParent()->m_selectedTree);
+        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+            child->updateSelectedTree();
+        }
+    }
+
+
+    void Widget::updateFocusedTree() noexcept {
+        m_focusedTree = m_focused || (getParent() && getParent()->m_focusedTree);
+        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+            child->updateFocusedTree();
+        }
+    }
+
+
+    void Widget::updateValidTree() noexcept {
+        m_validTree = m_valid && (!getParent() || getParent()->m_validTree);
+        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+            child->updateValidTree();
         }
     }
 

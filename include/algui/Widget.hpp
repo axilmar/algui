@@ -12,6 +12,8 @@ namespace algui {
     public:
         Widget() noexcept;
 
+        virtual ~Widget() noexcept;
+
         float getLeft() const noexcept;
 
         void setLeft(float v) noexcept;
@@ -70,7 +72,51 @@ namespace algui {
 
         bool isVisible() const noexcept;
 
+        bool isVisibleTree() const noexcept;
+
         void setVisible(bool v) noexcept;
+
+        bool isEnabled() const noexcept;
+
+        bool isEnabledTree() const noexcept;
+
+        void setEnabled(bool v) noexcept;
+
+        bool isHighlighted() const noexcept;
+
+        bool isHighlightedTree() const noexcept;
+
+        void setHighlighted(bool v) noexcept;
+
+        bool isPressed() const noexcept;
+
+        bool isPressedTree() const noexcept;
+
+        void setPressed(bool v) noexcept;
+
+        bool isSelected() const noexcept;
+
+        bool isSelectedTree() const noexcept;
+
+        void setSelected(bool v) noexcept;
+
+        bool isFocused() const noexcept;
+
+        bool isFocusedTree() const noexcept;
+
+        bool setFocused(bool v) noexcept;
+
+        static Widget* getFocused() noexcept;
+
+        bool isFocusable() const noexcept;
+
+        void setFocusable(bool v) noexcept;
+
+        bool isValid() const noexcept;
+
+        bool isValidTree() const noexcept;
+
+        void setValid(bool v) noexcept;
 
         void invalidateGeometry() noexcept;
 
@@ -102,19 +148,40 @@ namespace algui {
         float m_scalingY;
         float m_screenScalingX;
         float m_screenScalingY;
-        bool m_visible:1;
         bool m_geometryDirty:1;
         bool m_geometryTreeDirty:1;
         bool m_layoutDirty:1;
         bool m_layoutTreeDirty:1;
         bool m_screenGeometryDirty:1;
         bool m_screenGeometryTreeDirty:1;
+        bool m_visible:1;
+        bool m_enabled:1;
+        bool m_highlighted:1;
+        bool m_pressed:1;
+        bool m_selected:1;
+        bool m_focused:1;
+        bool m_focusable:1;
+        bool m_valid:1;
+        bool m_visibleTree:1;
+        bool m_enabledTree:1;
+        bool m_highlightedTree:1;
+        bool m_pressedTree:1;
+        bool m_selectedTree:1;
+        bool m_focusedTree:1;
+        bool m_validTree:1;
 
         void updateGeometry() noexcept;
         void updateLayout() noexcept;
         void invalidateScreenGeometry() noexcept;
         void updateScreenGeometry(bool force) noexcept;
         void paint() const noexcept;
+        void updateVisibleTree() noexcept;
+        void updateEnabledTree() noexcept;
+        void updateHighlightedTree() noexcept;
+        void updatePressedTree() noexcept;
+        void updateSelectedTree() noexcept;
+        void updateFocusedTree() noexcept;
+        void updateValidTree() noexcept;
     };
 
 
