@@ -18,9 +18,9 @@ class Test : public Widget {
 public:
 
 protected:
-    void onPaint() const noexcept override {
-        al_draw_filled_rectangle(getX1(), getY1(), getX2(), getY2(), al_map_rgb(255, 255, 255));
-        al_draw_rectangle(getX1(), getY1(), getX2(), getY2(), al_map_rgb(0, 0, 0), 1);
+    void onPaint() const override {
+        al_draw_filled_rectangle(getScreenLeft(), getScreenTop(), getScreenRight(), getScreenBottom(), al_map_rgb(255, 255, 255));
+        al_draw_rectangle(getScreenLeft(), getScreenTop(), getScreenRight(), getScreenBottom(), al_map_rgb(0, 0, 0), 1);
     }
 };
 
@@ -102,8 +102,8 @@ int main(int argc, char** argv) {
                 goto END;
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
-                //form2->setLeft(form2->getLeft() + 8);
-                //form2->setWidth(form2->getWidth() + 8);
+                form2->setLeft(form2->getLeft() + 8);
+                form2->setWidth(form2->getWidth() + 8);
                 break;
 
             case ALLEGRO_EVENT_TIMER:

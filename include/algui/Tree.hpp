@@ -1,91 +1,49 @@
 #ifndef ALGUI_TREE_HPP
 #define ALGUI_TREE_HPP
 
-
 namespace algui {
 
-
-    /**
-     * Base class for trees.
-     * @param T type of derived class.
-     */
     template <class T> class Tree {
     public:
-        /**
-         * The default constructor.
-         */
-        Tree() noexcept {}
+        Tree() {}
 
         Tree(const Tree&) = delete;
         Tree(Tree&&) = delete;
-
-        /**
-         * The destructor.
-         * All children nodes are deleted.
-         */
+        
         virtual ~Tree() {
             deleteAll();
         }
-
+        
         Tree& operator =(const Tree&) = delete;
         Tree& operator =(Tree&&) = delete;
-
-        /**
-         * Returns the parent node.
-         * @return the parent node.
-         */
-        T* getParent() const noexcept {
+        
+        T* getParent() const {
             return m_parent;
         }
 
-        /**
-         * Returns the previous sibling node.
-         * @return the previous sibling node.
-         */
-        T* getPrevSibling() const noexcept {
+        T* getPrevSibling() const {
             return m_prevSibling;
         }
 
-        /**
-         * Returns the next sibling node.
-         * @return the next sibling node.
-         */
-        T* getNextSibling() const noexcept {
+        T* getNextSibling() const {
             return m_nextSibling;
         }
 
-        /**
-         * Returns the first child node.
-         * @return the first child node.
-         */
-        T* getFirstChild() const noexcept {
+        T* getFirstChild() const {
             return m_firstChild;
         }
 
-        /**
-         * Returns the last child node.
-         * @return the last child node.
-         */
-        T* getLastChild() const noexcept {
+        T* getLastChild() const {
             return m_lastChild;
         }
 
-        /**
-         * Returns the root node.
-         * @return the root node.
-         */
-        T* getRoot() const noexcept {
+        T* getRoot() const {
             T* obj = const_cast<T*>(this);
             for(; obj->m_parent; obj = obj->m_parent) {}
             return obj;
         }
 
-        /**
-         * Checks if the given object is part of this tree.
-         * @param obj object to check if part of this tree.
-         * @return true if the given object is part of this tree, false otherwise.
-         */
-        bool contains(const T* obj) const noexcept {
+        bool contains(const T* obj) const {
             for (; obj; obj = obj->m_parent) {
                 if (obj == this) {
                     return true;
@@ -94,22 +52,33 @@ namespace algui {
             return false;
         }
 
-        /**
-         * Adds a child.
-         * @param child child to add.
-         * @param nextSibling if given, then the child is added before the next sibling, otherwise the child is added as the last child.
-         * @return true if the child was added, false if the child belongs to another parent or is ancestor of this or the next sibling is not a child of this.
-         */
-        virtual bool add(T* child, T* nextSibling = nullptr) noexcept {
-            //check params
+        bool isRoot() const {
+            return m_parent == nullptr;
+        }
+
+        bool isChild() const {
+            return m_parent != nullptr;
+        }
+
+        template <class F> void forEach(const F& func) const {
+            for (T* child = m_firstChild; child; child = child->m_nextSibling) {
+                func(child);
+            }
+        }
+
+        template <class F> void forEachRev(const F& func) const {
+            for (T* child = m_lastChild; child; child = child->m_prevSibling) {
+                func(child);
+            }
+        }
+
+        virtual bool add(T* child, T* nextSibling = nullptr) {
             if (child->m_parent || child->contains(static_cast<T*>(this)) || (nextSibling && nextSibling->m_parent != this)) {
                 return false;
             }
 
-            //set the parent
             child->m_parent = static_cast<T*>(this);
 
-            //link with next sibling
             if (nextSibling) {
                 child->m_nextSibling = nextSibling;
                 if (nextSibling->m_prevSibling) {
@@ -122,7 +91,6 @@ namespace algui {
                 nextSibling->m_prevSibling = child;
             }
 
-            //else link as last child
             else {
                 if (m_lastChild) {
                     child->m_prevSibling = m_lastChild;
@@ -137,18 +105,11 @@ namespace algui {
             return true;
         }
 
-        /**
-         * Removes a child.
-         * @param child child to remove.
-         * @return true if the child was removed, false if it is not a child of this.
-         */
-        virtual bool remove(T* child) noexcept {
-            //must be a child of this
+        virtual bool remove(T* child) {
             if (child->m_parent != this) {
                 return false;
             }
 
-            //unlink previous
             if (child->m_prevSibling) {
                 child->m_prevSibling->m_nextSibling = child->m_nextSibling;
             }
@@ -156,7 +117,6 @@ namespace algui {
                 m_firstChild = child->m_nextSibling;
             }
 
-            //unlink next
             if (child->m_nextSibling) {
                 child->m_nextSibling->m_prevSibling = child->m_prevSibling;
             }
@@ -164,54 +124,28 @@ namespace algui {
                 m_lastChild = child->m_prevSibling;
             }
 
-            //nullify child pointers
             child->m_parent = child->m_prevSibling = child->m_nextSibling = nullptr;
 
             return true;
         }
 
-        /**
-         * Removes this node from its parent, if it is a child node.
-         */
-        void detach() noexcept {
+        void detach() {
             if (m_parent) {
                 m_parent->remove(this);
             }
         }
 
-        /**
-         * Removes all children.
-         */
-        void removeAll() noexcept {
+        void removeAll() {
             while (m_lastChild) {
                 remove(m_lastChild);
             }
         }
 
-        /**
-         * Deletes all children.
-         */
-        void deleteAll() noexcept {
+        void deleteAll() {
             while (T* child = m_lastChild) {
                 remove(child);
                 delete child;
             }
-        }
-
-        /**
-         * Checks if the node has a parent.
-         * @return true if the node does not have a parent, false otherwise.
-         */
-        bool isRoot() const noexcept {
-            return m_parent == nullptr;
-        }
-
-        /**
-         * Checks if the node has a parent.
-         * @return true if the node has a parent, false otherwise.
-         */
-        bool isChild() const noexcept {
-            return m_parent != nullptr;
         }
 
     private:
@@ -222,8 +156,6 @@ namespace algui {
         T* m_lastChild{ nullptr };
     };
 
-
 } //namespace algui
-
 
 #endif //ALGUI_TREE_HPP
