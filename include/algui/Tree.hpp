@@ -3,13 +3,25 @@
 
 namespace algui {
 
+    /**
+     * Base class for trees.
+     * @param T type of derived class.
+     */
     template <class T> class Tree {
     public:
+        /**
+         * The default constructor.
+         * Pointers to other members of the tree are initialized to null.
+         */
         Tree() {}
 
         Tree(const Tree&) = delete;
         Tree(Tree&&) = delete;
         
+        /**
+         * The destructor.
+         * It deletes all children nodes.
+         */
         virtual ~Tree() {
             deleteAll();
         }
@@ -17,61 +29,115 @@ namespace algui {
         Tree& operator =(const Tree&) = delete;
         Tree& operator =(Tree&&) = delete;
         
+        /**
+         * Returns the parent.
+         * @return the parent.
+         */
         T* getParent() const {
             return m_parent;
         }
 
+        /**
+         * Returns the previous sibling.
+         * @return the previous sibling.
+         */
         T* getPrevSibling() const {
             return m_prevSibling;
         }
 
+        /**
+         * Returns the next sibling.
+         * @return the next sibling.
+         */
         T* getNextSibling() const {
             return m_nextSibling;
         }
 
+        /**
+         * Returns the first child.
+         * @return the first child.
+         */
         T* getFirstChild() const {
             return m_firstChild;
         }
 
+        /**
+         * Returns the last child.
+         * @return the last child.
+         */
         T* getLastChild() const {
             return m_lastChild;
         }
 
+        /**
+         * Returns the root.
+         * @return the root.
+         */
         T* getRoot() const {
-            T* obj = const_cast<T*>(this);
-            for(; obj->m_parent; obj = obj->m_parent) {}
-            return obj;
+            T* node = const_cast<T*>(this);
+            for(; node->m_parent; node = node->m_parent) {}
+            return node;
         }
 
-        bool contains(const T* obj) const {
-            for (; obj; obj = obj->m_parent) {
-                if (obj == this) {
+        /**
+         * Checks if a node is in this tree.
+         * @param node node to check if it belongs to this tree.
+         * @return true if the given node belongs in this tree, false otherwise.
+         */
+        bool contains(const T* node) const {
+            for (; node; node = node->m_parent) {
+                if (node == this) {
                     return true;
                 }
             }
             return false;
         }
 
+        /**
+         * Checks if this node is root.
+         * @return true if this node is root, i.e. it does not have a parent, false otherwise.
+         */
         bool isRoot() const {
             return m_parent == nullptr;
         }
 
+        /**
+         * Checks if this node is a child node.
+         * @return true if this node is a child node, i.e. it has a parent, false otherwise.
+         */
         bool isChild() const {
             return m_parent != nullptr;
         }
 
+        /**
+         * Executes a function for each child.
+         * The children are traversed from first to last.
+         * @param func function to execute for each child.
+         */
         template <class F> void forEach(const F& func) const {
             for (T* child = m_firstChild; child; child = child->m_nextSibling) {
                 func(child);
             }
         }
 
+        /**
+         * Executes a function for each child.
+         * The children are traversed from last to first.
+         * @param func function to execute for each child.
+         */
         template <class F> void forEachRev(const F& func) const {
             for (T* child = m_lastChild; child; child = child->m_prevSibling) {
                 func(child);
             }
         }
 
+        /**
+         * Adds a child.
+         * @param child to add.
+         * @param nextSibling the next sibling of the child; if null, the child is added as the last child.
+         * @return true on success, false if the child is already a child of another node, or an ancesctor of this,
+         *  or the next sibling is not a child of this.
+         */
         virtual bool add(T* child, T* nextSibling = nullptr) {
             if (child->m_parent || child->contains(static_cast<T*>(this)) || (nextSibling && nextSibling->m_parent != this)) {
                 return false;
@@ -105,6 +171,11 @@ namespace algui {
             return true;
         }
 
+        /**
+         * Removes a child node.
+         * @param child the child to remove.
+         * @return true on success, false if the child is not a child of this node.
+         */
         virtual bool remove(T* child) {
             if (child->m_parent != this) {
                 return false;
@@ -129,18 +200,27 @@ namespace algui {
             return true;
         }
 
+        /**
+         * Removes this node from its parent, if there is one. 
+         */
         void detach() {
             if (m_parent) {
                 m_parent->remove(this);
             }
         }
 
+        /**
+         * Removes all children nodes. 
+         */
         void removeAll() {
             while (m_lastChild) {
                 remove(m_lastChild);
             }
         }
 
+        /**
+         * Removes and deletes all children nodes. 
+         */
         void deleteAll() {
             while (T* child = m_lastChild) {
                 remove(child);
