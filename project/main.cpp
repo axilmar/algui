@@ -85,10 +85,6 @@ int main(int argc, char** argv) {
     button2->setTop(60);
     button2->setWidth(50);
     button2->setHeight(40);
-    button2->setPaintCallback([](const Widget* wgt) {
-        al_draw_filled_rectangle(wgt->getScreenLeft(), wgt->getScreenTop(), wgt->getScreenRight(), wgt->getScreenBottom(), wgt->isEnabledTree() ? al_map_rgb(255, 128, 128) : al_map_rgb(192, 192, 192));
-        al_draw_rectangle(wgt->getScreenLeft() + 0.5f, wgt->getScreenTop() + 0.5f, wgt->getScreenRight(), wgt->getScreenBottom(), al_map_rgb(0, 0, 0), wgt->isFocused() ? 2 : 0);
-    });
     form2->add(button2);
 
     Test* button3 = new Test();
