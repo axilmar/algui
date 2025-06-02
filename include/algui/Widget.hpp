@@ -2,6 +2,9 @@
 #define ALGUI_WIDGET_HPP
 
 
+#include <functional>
+#include <memory>
+#include <utility>
 #include "Tree.hpp"
 #include "Coord.hpp"
 
@@ -501,31 +504,139 @@ namespace algui {
          */
         void render();
 
+        /**
+         * Returns the calculate geometry constraints callback.
+         * @return the callback or a default-constructed function object if no callback has been specified.
+         */
+        std::function<void(Widget*)> getCalculateGeometryConstraintsCallback() const {
+            return _getCallback(&_Callbacks::m_calculateGeometryConstraintsCallback);
+        }
+
+        /**
+         * Sets the calculate geometry constraints callback.
+         * If set, it will be invoked in place of the relevant virtual method.
+         * @param the relevant callback.
+         */
+        void setCalculateGeometryConstraintsCallback(const std::function<void(Widget*)>& callback) {
+            _setCallback(&_Callbacks::m_calculateGeometryConstraintsCallback, callback);
+        }
+
+        /**
+         * Returns the layout callback.
+         * @return the callback or a default-constructed function object if no callback has been specified.
+         */
+        std::function<void(const Widget*)> getLayoutCallback() const {
+            return _getCallback(&_Callbacks::m_layoutCallback);
+        }
+
+        /**
+         * Sets the layout callback.
+         * If set, it will be invoked in place of the relevant virtual method.
+         * @param the relevant callback.
+         */
+        void setLayoutCallback(const std::function<void(const Widget*)>& callback) {
+            _setCallback(&_Callbacks::m_layoutCallback, callback);
+        }
+
+        /**
+         * Returns the paint callback.
+         * @return the callback or a default-constructed function object if no callback has been specified.
+         */
+        std::function<void(const Widget*)> getPaintCallback() const {
+            return _getCallback(&_Callbacks::m_paintCallback);
+        }
+
+        /**
+         * Sets the paint callback.
+         * If set, it will be invoked in place of the relevant virtual method.
+         * @param the relevant callback.
+         */
+        void setPaintCallback(const std::function<void(const Widget*)>& callback) {
+            _setCallback(&_Callbacks::m_paintCallback, callback);
+        }
+
+        /**
+         * Returns the paint overlay callback.
+         * @return the callback or a default-constructed function object if no callback has been specified.
+         */
+        std::function<void(const Widget*)> getPaintOverlayCallback() const {
+            return _getCallback(&_Callbacks::m_paintOverlayCallback);
+        }
+
+        /**
+         * Sets the paint overlay callback.
+         * If set, it will be invoked in place of the relevant virtual method.
+         * @param the relevant callback.
+         */
+        void setPaintOverlayCallback(const std::function<void(const Widget*)>& callback) {
+            _setCallback(&_Callbacks::m_paintOverlayCallback, callback);
+        }
+
+        /**
+         * Returns the got focus callback.
+         * @return the callback or a default-constructed function object if no callback has been specified.
+         */
+        std::function<void(Widget*)> getGotFocusCallback() const {
+            return _getCallback(&_Callbacks::m_gotFocusCallback);
+        }
+
+        /**
+         * Sets the got focus callback.
+         * If set, it will be invoked in place of the relevant virtual method.
+         * @param the relevant callback.
+         */
+        void setGotFocusCallback(const std::function<void(Widget*)>& callback) {
+            _setCallback(&_Callbacks::m_gotFocusCallback, callback);
+        }
+
+        /**
+         * Returns the lost focus callback.
+         * @return the callback or a default-constructed function object if no callback has been specified.
+         */
+        std::function<void(Widget*)> getLostFocusCallback() const {
+            return _getCallback(&_Callbacks::m_lostFocusCallback);
+        }
+
+        /**
+         * Sets the lost focus callback.
+         * If set, it will be invoked in place of the relevant virtual method.
+         * @param the relevant callback.
+         */
+        void setLostFocusCallback(const std::function<void(Widget*)>& callback) {
+            _setCallback(&_Callbacks::m_lostFocusCallback, callback);
+        }
+
     protected:
         /**
          * Invoked to allow a widget to compute its geometry constraints
          * according to the geometry constraints of its children.
          * By default, it does nothing.
+         * If the corresponding callback is set, then this is not invoked and the callback is invoked instead of this.
          */
-        virtual void onUpdateGeometryConstraints() {
+        virtual void onCalculateGeometryConstraints() {
         }
 
         /**
          * Invoked to allow a widget to position its children
          * according to its geometry constraints and the preferred layout algorithm.
          * The default implementation does nothing.
+         * If the corresponding callback is set, then this is not invoked and the callback is invoked instead of this.
          */
         virtual void onLayout() const {
         }
 
         /**
          * Invoked to paint the widget.
+         * The default implementation does nothing.
+         * If the corresponding callback is set, then this is not invoked and the callback is invoked instead of this.
          */
-        virtual void onPaint() const = 0;
+        virtual void onPaint() const {
+        }
 
         /**
          * Invoked to paint the widget overlay over its children.
          * The default implementation does nothing.
+         * If the corresponding callback is set, then this is not invoked and the callback is invoked instead of this.
          */
         virtual void onPaintOverlay() const {
         }
@@ -533,6 +644,7 @@ namespace algui {
         /**
          * Invoked when the widget got the focus.
          * The default implementation does nothing.
+         * If the corresponding callback is set, then this is not invoked and the callback is invoked instead of this.
          */
         virtual void onGotFocus() {
         }
@@ -540,6 +652,7 @@ namespace algui {
         /**
          * Invoked when the widget lost the focus.
          * The default implementation does nothing.
+         * If the corresponding callback is set, then this is not invoked and the callback is invoked instead of this.
          */
         virtual void onLostFocus() {
         }
@@ -568,6 +681,17 @@ namespace algui {
         float m_screenBottom;
         float m_screenScalingX;
         float m_screenScalingY;
+
+        //callbacks
+        struct _Callbacks {
+            std::function<void(Widget*)> m_calculateGeometryConstraintsCallback;
+            std::function<void(const Widget*)> m_layoutCallback;
+            std::function<void(const Widget*)> m_paintCallback;
+            std::function<void(const Widget*)> m_paintOverlayCallback;
+            std::function<void(Widget*)> m_gotFocusCallback;
+            std::function<void(Widget*)> m_lostFocusCallback;
+        };
+        std::unique_ptr<_Callbacks> m_callbacks;
 
         //state
         ClippingMode m_clippingMode;
@@ -603,6 +727,39 @@ namespace algui {
         void _calcTreeVisualState();
         void _paint(bool calcScreenGeometry, bool calcVisualState);
         bool _canGetFocus() const;
+
+        template <class T>
+        auto _getCallback(T _Callbacks::* callback) const {
+            return m_callbacks ? m_callbacks.get()->*callback : T();
+        }
+
+        template <class T>
+        void _setCallback(T _Callbacks::* callback, const T& instance) {
+            if (!m_callbacks) {
+                m_callbacks = std::make_unique<_Callbacks>();
+            }
+            m_callbacks.get()->*callback = instance;
+        }
+
+        template <class T, class... A>
+        bool _invokeCallbackConst(T _Callbacks::* callback, void (Widget::*method)(A&&... args) const, A&&... args) const {
+            if (m_callbacks && m_callbacks.get()->*callback) {
+                (m_callbacks.get()->*callback)(this, std::forward<A>(args)...);
+                return true;
+            }
+            (this->*method)(std::forward<A>(args)...);
+            return false;
+        }
+
+        template <class T, class... A>
+        bool _invokeCallback(T _Callbacks::* callback, void (Widget::*method)(A&&... args), A&&... args) {
+            if (m_callbacks && m_callbacks.get()->*callback) {
+                (m_callbacks.get()->*callback)(this, std::forward<A>(args)...);
+                return true;
+            }
+            (this->*method)(std::forward<A>(args)...);
+            return false;
+        }
     };
 
 

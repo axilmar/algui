@@ -315,7 +315,7 @@ namespace algui {
             m_focused = true;
             _invalidateTreeVisualState();
             _focusedWidget = this;
-            onGotFocus();
+            _invokeCallback(&_Callbacks::m_gotFocusCallback, &Widget::onGotFocus);
         }
 
         //else lose focus
@@ -323,7 +323,7 @@ namespace algui {
             m_focused = false;
             _invalidateTreeVisualState();
             _focusedWidget = nullptr;
-            onLostFocus();
+            _invokeCallback(&_Callbacks::m_lostFocusCallback, &Widget::onLostFocus);
         }
     }
 
@@ -404,7 +404,7 @@ namespace algui {
             m_descentantGeometryConstraintsDirty = false;
         }
         if (m_geometryConstraintsDirty) {
-            onUpdateGeometryConstraints();
+            _invokeCallback(&_Callbacks::m_calculateGeometryConstraintsCallback, &Widget::onCalculateGeometryConstraints);
             m_geometryConstraintsDirty = false;
         }
     }
@@ -487,7 +487,7 @@ namespace algui {
         if (m_visible) {
             //recalculate layout, if needed
             if (m_layoutDirty) {
-                onLayout();
+                _invokeCallbackConst(&_Callbacks::m_layoutCallback, &Widget::onLayout);
                 m_layoutDirty = false;
             }
 
@@ -521,13 +521,13 @@ namespace algui {
                     const float clipY2 = std::min((float)y2, m_screenBottom);
                     const bool overlapsClipRect = clipX1 <= clipX2 && clipY1 <= clipY2;
                     if (overlapsClipRect) {
-                        onPaint();
+                        _invokeCallbackConst(&_Callbacks::m_paintCallback, &Widget::onPaint);
                     }
                     forEach([&](Widget* child) {
                         child->_paint(calcScreenGeometry, calcVisualState);
                     });
                     if (overlapsClipRect) {
-                        onPaintOverlay();
+                        _invokeCallbackConst(&_Callbacks::m_paintOverlayCallback, &Widget::onPaintOverlay);
                     }
                     break;
                 }
@@ -547,7 +547,7 @@ namespace algui {
                     const bool overlapsClipRect = clipX1 <= clipX2 && clipY1 <= clipY2;
                     if (overlapsClipRect) {
                         al_set_clipping_rectangle((int)std::floor(clipX1), (int)std::floor(clipY1), (int)std::ceil(clipX2 - clipX1), (int)std::ceil(clipY2 - clipY1));
-                        onPaint();
+                        _invokeCallbackConst(&_Callbacks::m_paintCallback, &Widget::onPaint);
                         al_set_clipping_rectangle(x1, y1, w, h);
                     }
                     forEach([&](Widget* child) {
@@ -555,7 +555,7 @@ namespace algui {
                         });
                     if (overlapsClipRect) {
                         al_set_clipping_rectangle((int)std::floor(clipX1), (int)std::floor(clipY1), (int)std::ceil(clipX2 - clipX1), (int)std::ceil(clipY2 - clipY1));
-                        onPaintOverlay();
+                        _invokeCallbackConst(&_Callbacks::m_paintOverlayCallback, &Widget::onPaintOverlay);
                         al_set_clipping_rectangle(x1, y1, w, h);
                     }
                     break;
@@ -574,11 +574,11 @@ namespace algui {
                     const float clipY2 = std::min((float)y2, m_screenBottom);
                     if (clipX1 <= clipX2 && clipY1 <= clipY2) {
                         al_set_clipping_rectangle((int)std::floor(clipX1), (int)std::floor(clipY1), (int)std::ceil(clipX2 - clipX1), (int)std::ceil(clipY2 - clipY1));
-                        onPaint();
+                        _invokeCallbackConst(&_Callbacks::m_paintCallback, &Widget::onPaint);
                         forEach([&](Widget* child) {
                             child->_paint(calcScreenGeometry, calcVisualState);
                             });
-                        onPaintOverlay();
+                        _invokeCallbackConst(&_Callbacks::m_paintOverlayCallback, &Widget::onPaintOverlay);
                         al_set_clipping_rectangle(x1, y1, w, h);
                     }
                     break;
