@@ -1,7 +1,9 @@
 #ifndef ALGUI_TREE_HPP
 #define ALGUI_TREE_HPP
 
+
 namespace algui {
+
 
     /**
      * Base class for trees.
@@ -236,6 +238,8 @@ namespace algui {
         T* m_lastChild{ nullptr };
     };
 
+
 } //namespace algui
+
 
 #endif //ALGUI_TREE_HPP

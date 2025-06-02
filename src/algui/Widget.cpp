@@ -1,86 +1,18 @@
-#include <limits>
+#pragma warning (disable: 4309)
+#include "allegro5/allegro.h"
 #include "algui/Widget.hpp"
+
 
 namespace algui {
 
-    struct WidgetInternals {
-        static void calcRootScreenCoords(Widget* wgt) {
-            wgt->m_screenLeft = wgt->m_left;
-            wgt->m_screenTop = wgt->m_top;
-            wgt->m_screenRight = wgt->m_right;
-            wgt->m_screenBottom = wgt->m_bottom;
-            wgt->m_screenScalingX = wgt->m_scalingX;
-            wgt->m_screenScalingY = wgt->m_scalingY;
-            wgt->m_screenCoordsOk = true;
-        }
 
-        static void calcChildScreenCoords(Widget* wgt, Widget* parent) {
-            wgt->m_screenLeft = parent->m_screenLeft + wgt->m_left * parent->m_screenScalingX;
-            wgt->m_screenTop = parent->m_screenTop + wgt->m_top * parent->m_screenScalingY;
-            wgt->m_screenRight = parent->m_screenLeft + wgt->m_right * parent->m_screenScalingX;
-            wgt->m_screenBottom = parent->m_screenTop + wgt->m_bottom * parent->m_screenScalingY;
-            wgt->m_screenScalingX = wgt->m_scalingX * parent->m_screenScalingX;
-            wgt->m_screenScalingY = wgt->m_scalingY * parent->m_screenScalingY;
-            wgt->m_screenCoordsOk = true;
-        }
+    /**************************************************************************
+        PUBLIC
+     **************************************************************************/ 
 
-        static void paint(const Widget* wgt) {
-            wgt->onPaint();
-        }
-
-        static void paintRoot(Widget* wgt) {
-            if (wgt->m_visible) {
-                if (wgt->m_screenCoordsOk) {
-                    paint(wgt);
-                    wgt->forEach([&](Widget* child) {
-                        paintChild(child);
-                    });
-                }
-                else {
-                    calcRootScreenCoords(wgt);
-                    paint(wgt);
-                    wgt->forEach([&](Widget* child) {
-                        calcScreenCoordsAndPaintChild(child, wgt);
-                    });
-                }
-            }
-        }
-
-        static void paintChild(Widget* wgt) {
-            if (wgt->m_visible) {
-                if (wgt->m_screenCoordsOk) {
-                    paint(wgt);
-                    wgt->forEach([&](Widget* child) {
-                        paintChild(child);
-                    });
-                }
-                else {
-                    calcChildScreenCoords(wgt, wgt->getParent());
-                    paint(wgt);
-                    wgt->forEach([&](Widget* child) {
-                        calcScreenCoordsAndPaintChild(child, wgt);
-                    });
-                }
-            }
-        }
-
-        static void calcScreenCoordsAndPaintChild(Widget* wgt, Widget* parent) {
-            if (wgt->m_visible) {
-                calcChildScreenCoords(wgt, parent);
-                paint(wgt);
-                wgt->forEach([&](Widget* child) {
-                    calcScreenCoordsAndPaintChild(child, wgt);
-                });
-            }
-        }
-    };
 
     Widget::Widget()
-        : m_left(0)
-        , m_top(0)
-        , m_right(0)
-        , m_bottom(0)
-        , m_scalingX(1)
+        : m_scalingX(1)
         , m_scalingY(1)
         , m_screenLeft(0)
         , m_screenTop(0)
@@ -89,198 +21,138 @@ namespace algui {
         , m_screenScalingX(1)
         , m_screenScalingY(1)
         , m_visible(true)
-        , m_screenCoordsOk(true)
+        , m_screenGeometryDirty(false)
     {
     }
 
-    float Widget::getLeft() const {
-        return m_left;
-    }
 
-    float Widget::getTop() const {
-        return m_top;
-    }
-
-    float Widget::getRight() const {
-        return m_right;
-    }
-
-    float Widget::getBottom() const {
-        return m_bottom;
-    }
-
-    float Widget::getWidth() const {
-        return m_right - m_left;
-    }
-
-    float Widget::getHeight() const {
-        return m_bottom - m_top;
-    }
-
-    float Widget::getScalingX() const {
-        return m_scalingX;
-    }
-
-    float Widget::getScalingY() const {
-        return m_scalingY;
-    }
-
-    float Widget::getScreenLeft() const {
-        return m_screenLeft;
-    }
-
-    float Widget::getScreenTop() const {
-        return m_screenTop;
-    }
-
-    float Widget::getScreenRight() const {
-        return m_screenRight;
-    }
-
-    float Widget::getScreenBottom() const {
-        return m_screenBottom;
-    }
-
-    bool Widget::isVisible() const {
-        return m_visible;
-    }
-
-    void Widget::setLeft(float v) {
-        if (v != m_left) {
-            const float w = getWidth();
-            m_left = v;
-            m_right = v + w;
-            m_screenCoordsOk = false;
-        }
-    }
-
-    void Widget::setTop(float v) {
-        if (v != m_top) {
-            const float h = getHeight();
-            m_top = v;
-            m_bottom = v + h;
-            m_screenCoordsOk = false;
-        }
-    }
-
-    void Widget::setRight(float v) {
-        if (v != m_right) {
-            const float w = getWidth();
-            m_right = v;
-            m_left = v - w;
-            m_screenCoordsOk = false;
-        }
-    }
-
-    void Widget::setBottom(float v) {
-        if (v != m_bottom) {
-            const float h = getHeight();
-            m_bottom = v;
-            m_top = v - h;
-            m_screenCoordsOk = false;
-        }
-    }
-
-    void Widget::setWidth(float v) {
-        const float newRight = m_left + (v >= 0 ? v : 0);
-        if (newRight != m_right) {
-            m_right = newRight;
-            m_screenCoordsOk = false;
-        }
-    }
-
-    void Widget::setHeight(float v) {
-        const float newBottom = m_top + (v >= 0 ? v : 0);
-        if (newBottom != m_bottom) {
-            m_bottom = newBottom;
-            m_screenCoordsOk = false;
-        }
-    }
-
-    void Widget::setleftTop(float left, float top) {
-        if (left != m_left || top != m_top) {
-            float w = getWidth();
-            float h = getHeight();
+    //Sets the left coordinate.
+    void Widget::setLeft(const Coord& left) {
+        if (left != m_left) {
             m_left = left;
+            _invalidateScreenGeometry();
+        }
+    }
+
+
+    //Sets the top coordinate.
+    void Widget::setTop(const Coord& top) {
+        if (top != m_top) {
             m_top = top;
-            m_right = left + w;
-            m_bottom = top + h;
-            m_screenCoordsOk = false;
+            _invalidateScreenGeometry();
         }
     }
 
-    void Widget::setRightBottom(float right, float bottom) {
-        if (right != m_right || bottom != m_bottom) {
-            float w = getWidth();
-            float h = getHeight();
-            m_right = right;
-            m_bottom = bottom;
-            m_left = right - w;
-            m_top = bottom - h;
-            m_screenCoordsOk = false;
+
+    //Sets the width.
+    void Widget::setWidth(const Coord& width) {
+        if (width != m_width) {
+            m_width = width;
+            _invalidateScreenGeometry();
         }
     }
 
-    void Widget::setSize(float width, float height) {
-        const float newRight = m_left + (width >= 0 ? width : 0);
-        const float newBottom = m_top + (height >= 0 ? height : 0);
-        if (newRight != m_right || newBottom != m_bottom) {
-            m_right = newRight;
-            m_bottom = newBottom;
-            m_screenCoordsOk = false;
+
+    //Sets the height.
+    void Widget::setHeight(const Coord& height) {
+        if (height != m_height) {
+            m_height = height;
+            _invalidateScreenGeometry();
         }
     }
 
-    void Widget::setRect(float left, float top, float right, float bottom) {
-        if (right < left) {
-            right = left;
-        }
-        if (bottom < top) {
-            bottom = top;
-        }
-        if (left != m_left || top != m_top || right != m_right || bottom != m_bottom) {
-            m_left = left;
-            m_top = top;
-            m_right = right;
-            m_bottom = bottom;
-            m_screenCoordsOk = false;
+
+    //Sets the interior scaling factor of the component along the X axis.
+    void Widget::setScalingX(const float scalingX) {
+        if (scalingX != m_scalingX) {
+            m_scalingX = scalingX;
+            _invalidateScreenGeometry();
         }
     }
 
-    void Widget::setGeom(float left, float top, float width, float height) {
-        const float newRight = m_left + (width >= 0 ? width : 0);
-        const float newBottom = m_top + (height >= 0 ? height : 0);
-        if (left != m_left || top != m_top || newRight != m_right || newBottom != m_bottom) {
-            m_left = left;
-            m_top = top;
-            m_right = newRight;
-            m_bottom = newBottom;
-            m_screenCoordsOk = false;
+
+    //Sets the interior scaling factor of the component along the Y axis.
+    void Widget::setScalingY(const float scalingY) {
+        if (scalingY != m_scalingY) {
+            m_scalingY = scalingY;
+            _invalidateScreenGeometry();
         }
     }
 
-    void Widget::setScalingX(float v) {
-        if (v != m_scalingX) {
-            m_scalingX = v;
-            m_screenCoordsOk = false;
+
+    //Sets the visible state of the widget.
+    void Widget::setVisible(bool visible) {
+        if (visible != m_visible) {
+            m_visible = visible;
         }
     }
 
-    void Widget::setScalingY(float v) {
-        if (v != m_scalingY) {
-            m_scalingY = v;
-            m_screenCoordsOk = false;
-        }
-    }
 
-    void Widget::setVisible(bool v) {
-        if (v != m_visible) {
-            m_visible = v;
-        }
-    }
-
+    //Renders the tree into the target bitmap.
     void Widget::render() {
-        WidgetInternals::paintRoot(this);
+        _paint(false);
     }
+
+
+    /**************************************************************************
+        PRIVATE
+    **************************************************************************/
+
+
+    //make the screen geometry invalid
+    void Widget::_invalidateScreenGeometry() {
+        m_screenGeometryDirty = true;
+    }
+
+
+    //calculate screen geometry
+    void Widget::_calcScreenGeometry() {
+        Widget* parent = getParent();
+
+        if (parent) {
+            const float width = parent->m_screenRight - parent->m_screenLeft;
+            const float height = parent->m_screenBottom - parent->m_screenTop;
+            m_screenLeft = parent->m_screenLeft + m_left.calcPixelValue(width, parent->m_screenScalingX);
+            m_screenTop = parent->m_screenTop + m_top.calcPixelValue(height, parent->m_screenScalingY);
+            m_screenRight = m_screenLeft + m_width.calcPixelValue(width, parent->m_screenScalingX);
+            m_screenBottom = m_screenTop + m_height.calcPixelValue(height, parent->m_screenScalingY);
+            m_screenScalingX = parent->m_screenScalingX * m_scalingX;
+            m_screenScalingY = parent->m_screenScalingY * m_scalingY;
+        }
+
+        else {
+            ALLEGRO_BITMAP* const target = al_get_target_bitmap();
+            const float width = al_get_bitmap_width(target);
+            const float height = al_get_bitmap_height(target);
+            m_screenLeft = m_left.calcPixelValue(width);
+            m_screenTop = m_top.calcPixelValue(height);
+            m_screenRight = m_screenLeft + m_width.calcPixelValue(width);
+            m_screenBottom = m_screenTop + m_height.calcPixelValue(height);
+            m_screenScalingX = m_scalingX;
+            m_screenScalingY = m_scalingY;
+        }
+    }
+
+
+    //calc screen geometry, paint widgets recursively
+    void Widget::_paint(bool calcScreenGeometry) {
+        if (m_visible) {
+            if (m_screenGeometryDirty || calcScreenGeometry) {
+                _calcScreenGeometry();
+                m_screenGeometryDirty = false;
+                onPaint();
+                forEach([&](Widget* child) {
+                    child->_paint(true);
+                });
+            }
+            else {
+                onPaint();
+                forEach([&](Widget* child) {
+                    child->_paint(false);
+                });
+            }
+        }
+    }
+
 
 } //namespace algui
