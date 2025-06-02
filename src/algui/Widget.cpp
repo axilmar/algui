@@ -1,7 +1,17 @@
 #pragma warning (disable: 4309)
 #include <limits>
+#include <algorithm>
+#include <cmath>
 #include "allegro5/allegro.h"
 #include "algui/Widget.hpp"
+
+
+#ifdef min
+#undef min
+#endif
+#ifdef max
+#undef max
+#endif
 
 
 namespace algui {
@@ -23,6 +33,7 @@ namespace algui {
         , m_screenBottom(0)
         , m_screenScalingX(1)
         , m_screenScalingY(1)
+        , m_clippingMode(ClippingMode::None)
         , m_visible(true)
         , m_screenGeometryDirty(false)
         , m_geometryConstraintsDirty(false)
@@ -326,15 +337,86 @@ namespace algui {
                 calcScreenGeometry = true;
             }
 
-            //paint widget
-            onPaint();
+            //paint according to clipping
+            switch (m_clippingMode) {
+                //paint widget only if it overlaps clip rectangle;
+                //children are tested separately
+                case ClippingMode::None:
+                {
+                    int x1, y1, w, h, x2, y2;
+                    al_get_clipping_rectangle(&x1, &y1, &w, &h);
+                    x2 = x1 + w;
+                    y2 = y1 + h;
+                    const float clipX1 = std::max((float)x1, m_screenLeft);
+                    const float clipY1 = std::max((float)y1, m_screenTop);
+                    const float clipX2 = std::min((float)x2, m_screenRight);
+                    const float clipY2 = std::min((float)y2, m_screenBottom);
+                    const bool overlapsClipRect = clipX1 <= clipX2 && clipY1 <= clipY2;
+                    if (overlapsClipRect) {
+                        onPaint();
+                    }
+                    forEach([&](Widget* child) {
+                        child->_paint(calcScreenGeometry);
+                    });
+                    if (overlapsClipRect) {
+                        onPaintOverlay();
+                    }
+                    break;
+                }
 
-            //paint children
-            forEach([&](Widget* child) {
-                child->_paint(calcScreenGeometry);
-            });
+                //paint widget only if it overlaps the clip rectangle; widget is clipped;
+                //children are tested separately
+                case ClippingMode::Widget:
+                {
+                    int x1, y1, w, h, x2, y2;
+                    al_get_clipping_rectangle(&x1, &y1, &w, &h);
+                    x2 = x1 + w;
+                    y2 = y1 + h;
+                    const float clipX1 = std::max((float)x1, m_screenLeft);
+                    const float clipY1 = std::max((float)y1, m_screenTop);
+                    const float clipX2 = std::min((float)x2, m_screenRight);
+                    const float clipY2 = std::min((float)y2, m_screenBottom);
+                    const bool overlapsClipRect = clipX1 <= clipX2 && clipY1 <= clipY2;
+                    if (overlapsClipRect) {
+                        al_set_clipping_rectangle((int)std::floor(clipX1), (int)std::floor(clipY1), (int)std::ceil(clipX2 - clipX1), (int)std::ceil(clipY2 - clipY1));
+                        onPaint();
+                        al_set_clipping_rectangle(x1, y1, w, h);
+                    }
+                    forEach([&](Widget* child) {
+                        child->_paint(calcScreenGeometry);
+                        });
+                    if (overlapsClipRect) {
+                        al_set_clipping_rectangle((int)std::floor(clipX1), (int)std::floor(clipY1), (int)std::ceil(clipX2 - clipX1), (int)std::ceil(clipY2 - clipY1));
+                        onPaintOverlay();
+                        al_set_clipping_rectangle(x1, y1, w, h);
+                    }
+                    break;
+                }
+
+                //paint widget tree clipped
+                case ClippingMode::Tree:
+                {
+                    int x1, y1, w, h, x2, y2;
+                    al_get_clipping_rectangle(&x1, &y1, &w, &h);
+                    x2 = x1 + w;
+                    y2 = y1 + h;
+                    const float clipX1 = std::max((float)x1, m_screenLeft);
+                    const float clipY1 = std::max((float)y1, m_screenTop);
+                    const float clipX2 = std::min((float)x2, m_screenRight);
+                    const float clipY2 = std::min((float)y2, m_screenBottom);
+                    if (clipX1 <= clipX2 && clipY1 <= clipY2) {
+                        al_set_clipping_rectangle((int)std::floor(clipX1), (int)std::floor(clipY1), (int)std::ceil(clipX2 - clipX1), (int)std::ceil(clipY2 - clipY1));
+                        onPaint();
+                        forEach([&](Widget* child) {
+                            child->_paint(calcScreenGeometry);
+                            });
+                        onPaintOverlay();
+                        al_set_clipping_rectangle(x1, y1, w, h);
+                    }
+                    break;
+                }
+            }
         }
     }
-
 
 } //namespace algui

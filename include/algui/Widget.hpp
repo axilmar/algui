@@ -10,6 +10,28 @@ namespace algui {
 
 
     /**
+     * Clipping mode.
+     */
+    enum class ClippingMode {
+        /**
+         * The output is not clipped.
+         * This is the default.
+         */
+        None,
+
+        /**
+         * Clip widget only.
+         */
+        Widget,
+
+        /**
+         * Clip widget and descentants.
+         */
+        Tree
+    };
+
+
+    /**
      * Base class for UI elements. 
      */
     class Widget : public Tree<Widget> {
@@ -197,6 +219,14 @@ namespace algui {
         }
 
         /**
+         * Returns the clipping mode.
+         * @return the clipping mode.
+         */
+        ClippingMode getClippingMode() const {
+            return m_clippingMode;
+        }
+
+        /**
          * Sets the left coordinate.
          * It causes recomputation of screen geometry from the `render()` method.
          * It also causes recomputation of the parent's layout, if there is a parent.
@@ -294,7 +324,17 @@ namespace algui {
         void setMaximumHeight(const Coord& maximumHeight);
 
         /**
+         * Sets the clipping mode.
+         * @@param the clipping mode.
+         */
+        void setClippingMode(ClippingMode mode) {
+            m_clippingMode = mode;
+        }
+
+        /**
          * Renders the tree into the target bitmap.
+         * The current clipping is respected: if a widget falls outside of the current clipping rectangle,
+         * it is not repainted.
          */
         void render();
 
@@ -310,7 +350,7 @@ namespace algui {
         /**
          * Invoked to allow a widget to position its children
          * according to its geometry constraints and the preferred layout algorithm.
-         * By default, it does nothing.
+         * The default implementation does nothing.
          */
         virtual void onLayout() const {
         }
@@ -319,6 +359,13 @@ namespace algui {
          * Invoked to paint the widget.
          */
         virtual void onPaint() const = 0;
+
+        /**
+         * Invoked to paint the widget overlay over its children.
+         * The default implementation does nothing.
+         */
+        virtual void onPaintOverlay() const {
+        }
 
     private:
         //geometry
@@ -346,6 +393,7 @@ namespace algui {
         float m_screenScalingY;
 
         //state
+        ClippingMode m_clippingMode;
         bool m_visible : 1;
         bool m_screenGeometryDirty : 1;
         bool m_geometryConstraintsDirty : 1;

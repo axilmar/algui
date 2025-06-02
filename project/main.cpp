@@ -20,7 +20,7 @@ public:
 protected:
     void onPaint() const override {
         al_draw_filled_rectangle(getScreenLeft(), getScreenTop(), getScreenRight(), getScreenBottom(), al_map_rgb(255, 255, 255));
-        al_draw_rectangle(getScreenLeft(), getScreenTop(), getScreenRight(), getScreenBottom(), al_map_rgb(0, 0, 0), 1);
+        al_draw_rectangle(getScreenLeft() + 0.5f, getScreenTop() + 0.5f, getScreenRight(), getScreenBottom(), al_map_rgb(0, 0, 0), 0);
     }
 };
 
