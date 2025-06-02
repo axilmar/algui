@@ -54,6 +54,14 @@ namespace algui {
         }
 
         /**
+         * Returns the value.
+         * @return the value.
+         */
+        operator float() const {
+            return m_value;
+        }
+
+        /**
          * Calculates the pixel value of this coordinate,
          * based on size and scaling of container.
          * @param size size of container.
