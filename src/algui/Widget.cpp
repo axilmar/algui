@@ -96,6 +96,10 @@ namespace algui {
             _invalidateGeometryConstraints();
             _invalidateLayout();
 
+            //invalidate tree visual state of child,
+            //so as that it is later recomputed
+            child->_invalidateTreeVisualState();
+
             //successful addition
             return true;
         }
@@ -114,6 +118,11 @@ namespace algui {
             //since a child was removed
             _invalidateGeometryConstraints();
             _invalidateLayout();
+
+            //if the removed child contains the focus, lose the focus
+            if (child->contains(_focusedWidget)) {
+                _focusedWidget->setFocused(false);
+            }
 
             //success
             return true;
@@ -482,7 +491,7 @@ namespace algui {
         }
     }
 
-    //calc screen geometry, paint widgets recursively
+    //calc layout, screen geometry, screen visual state, paint widgets recursively
     void Widget::_paint(bool calcScreenGeometry, bool calcVisualState) {
         if (m_visible) {
             //recalculate layout, if needed

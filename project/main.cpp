@@ -94,8 +94,6 @@ int main(int argc, char** argv) {
     button3->setHeight(40);
     form2->add(button3);
 
-    //form2->setCalculateGeometryConstraintsCallback([](Widget* wgt) {});
-
     for (;;) {
         ALLEGRO_EVENT event;
         al_wait_for_event(eventQueue, &event);
