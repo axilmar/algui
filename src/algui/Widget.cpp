@@ -18,10 +18,19 @@ namespace algui {
 
 
     /**************************************************************************
+        INTERNALS
+     **************************************************************************/
+
+
+    static Widget* _focusedWidget = nullptr;
+
+
+    /**************************************************************************
         PUBLIC
      **************************************************************************/ 
 
 
+    //constructor
     Widget::Widget()
         : m_scalingX(1)
         , m_scalingY(1)
@@ -39,7 +48,30 @@ namespace algui {
         , m_geometryConstraintsDirty(false)
         , m_descentantGeometryConstraintsDirty(false)
         , m_layoutDirty(false)
+        , m_enabled(true)
+        , m_highlighted(false)
+        , m_pressed(false)
+        , m_selected(false)
+        , m_focused(false)
+        , m_validContent(true)
+        , m_enabledTree(true)
+        , m_highlightedTree(false)
+        , m_pressedTree(false)
+        , m_selectedTree(false)
+        , m_focusedTree(false)
+        , m_validContentTree(false)
+        , m_treeVisualStateDirty(false)
+        , m_focusable(true)
     {
+    }
+
+
+    //the destructor
+    Widget::~Widget() {
+        deleteAll();
+        if (this == _focusedWidget) {
+            _focusedWidget = nullptr;
+        }
     }
 
 
@@ -222,10 +254,110 @@ namespace algui {
     }
 
 
+    //Sets the enabled state of the widget.
+    void Widget::setEnabled(bool enabled) {
+        if (enabled != m_enabled) {
+            if (!enabled && contains(_focusedWidget)) {
+                _focusedWidget->setFocused(false);
+            }
+            m_enabled = enabled;
+            _invalidateTreeVisualState();
+        }
+    }
+
+
+    //Sets the highlighted state of the widget.
+    void Widget::setHighlighted(bool highlighted) {
+        if (highlighted != m_highlighted) {
+            m_highlighted = highlighted;
+            _invalidateTreeVisualState();
+        }
+    }
+
+
+    //Sets the pressed state of the widget.
+    void Widget::setPressed(bool pressed) {
+        if (pressed != m_pressed) {
+            m_pressed = pressed;
+            _invalidateTreeVisualState();
+        }
+    }
+
+
+    //Sets the selected state of the widget.
+    void Widget::setSelected(bool selected) {
+        if (selected != m_selected) {
+            m_selected = selected;
+            _invalidateTreeVisualState();
+        }
+    }
+
+
+    //Sets the focused state of the widget.
+    void Widget::setFocused(bool focused) {
+        if (focused == m_focused) {
+            return;
+        }
+
+        //get focus
+        if (focused) {
+            //check if it can get the focus
+            if (!_canGetFocus()) {
+                return;
+            }
+
+            //remove the focus from current owner
+            if (_focusedWidget) {
+                _focusedWidget->setFocused(false);
+            }
+
+            //set this as focused
+            m_focused = true;
+            _invalidateTreeVisualState();
+            _focusedWidget = this;
+            onGotFocus();
+        }
+
+        //else lose focus
+        else {
+            m_focused = false;
+            _invalidateTreeVisualState();
+            _focusedWidget = nullptr;
+            onLostFocus();
+        }
+    }
+
+
+    //Sets the valid content state of the widget.
+    void Widget::setValidContent(bool validContent) {
+        if (validContent != m_validContent) {
+            m_validContent = validContent;
+            _invalidateTreeVisualState();
+        }
+    }
+
+
+    //Returns the widget with the focus.
+    Widget* Widget::getFocusedWidget() {
+        return _focusedWidget;
+    }
+
+
+    //Sets the focusable state.
+    void Widget::setFocusable(bool focusable) {
+        if (focusable != m_focusable) {
+            if (!m_focusable && contains(_focusedWidget)) {
+                _focusedWidget->setFocused(false);
+            }
+            m_focusable = focusable;
+        }
+    }
+
+
     //Renders the tree into the target bitmap.
     void Widget::render() {
         _updateGeometryConstraints();
-        _paint(false);
+        _paint(false, false);
     }
 
 
@@ -321,8 +453,37 @@ namespace algui {
     }
 
 
+    //invalidates the tree visual state
+    void Widget::_invalidateTreeVisualState() {
+        m_treeVisualStateDirty = true;
+    }
+
+
+    //calculate visual state of tree, depending on if the widget is a child or root
+    void Widget::_calcTreeVisualState() {
+        Widget* parent = getParent();
+
+        if (parent) {
+            m_enabledTree = m_enabled && parent->m_enabledTree;
+            m_highlightedTree = m_highlighted || parent->m_highlightedTree;
+            m_pressedTree = m_pressed || parent->m_pressedTree;
+            m_selectedTree = m_selected || parent->m_selectedTree;
+            m_focusedTree = m_focused || parent->m_focusedTree;
+            m_validContentTree = m_validContent && parent->m_validContentTree;
+        }
+
+        else {
+            m_enabledTree = m_enabled;
+            m_highlightedTree = m_highlighted;
+            m_pressedTree = m_pressed;
+            m_selectedTree = m_selected;
+            m_focusedTree = m_focused;
+            m_validContentTree = m_validContent;
+        }
+    }
+
     //calc screen geometry, paint widgets recursively
-    void Widget::_paint(bool calcScreenGeometry) {
+    void Widget::_paint(bool calcScreenGeometry, bool calcVisualState) {
         if (m_visible) {
             //recalculate layout, if needed
             if (m_layoutDirty) {
@@ -335,6 +496,13 @@ namespace algui {
                 _calcScreenGeometry();
                 m_screenGeometryDirty = false;
                 calcScreenGeometry = true;
+            }
+
+            //calc visual state of tree
+            if (m_treeVisualStateDirty || calcVisualState) {
+                _calcTreeVisualState();
+                m_treeVisualStateDirty = false;
+                calcVisualState = true;
             }
 
             //paint according to clipping
@@ -356,7 +524,7 @@ namespace algui {
                         onPaint();
                     }
                     forEach([&](Widget* child) {
-                        child->_paint(calcScreenGeometry);
+                        child->_paint(calcScreenGeometry, calcVisualState);
                     });
                     if (overlapsClipRect) {
                         onPaintOverlay();
@@ -383,7 +551,7 @@ namespace algui {
                         al_set_clipping_rectangle(x1, y1, w, h);
                     }
                     forEach([&](Widget* child) {
-                        child->_paint(calcScreenGeometry);
+                        child->_paint(calcScreenGeometry, calcVisualState);
                         });
                     if (overlapsClipRect) {
                         al_set_clipping_rectangle((int)std::floor(clipX1), (int)std::floor(clipY1), (int)std::ceil(clipX2 - clipX1), (int)std::ceil(clipY2 - clipY1));
@@ -408,7 +576,7 @@ namespace algui {
                         al_set_clipping_rectangle((int)std::floor(clipX1), (int)std::floor(clipY1), (int)std::ceil(clipX2 - clipX1), (int)std::ceil(clipY2 - clipY1));
                         onPaint();
                         forEach([&](Widget* child) {
-                            child->_paint(calcScreenGeometry);
+                            child->_paint(calcScreenGeometry, calcVisualState);
                             });
                         onPaintOverlay();
                         al_set_clipping_rectangle(x1, y1, w, h);
@@ -418,5 +586,16 @@ namespace algui {
             }
         }
     }
+
+
+    bool Widget::_canGetFocus() const {
+        for (const Widget* wgt = this; wgt; wgt = wgt->getParent()) {
+            if (!wgt->m_enabled || !wgt->m_focusable) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 
 } //namespace algui

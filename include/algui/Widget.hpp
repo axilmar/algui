@@ -42,6 +42,13 @@ namespace algui {
         Widget();
 
         /**
+         * The destructor.
+         * Deletes all children.
+         * Resets the focus widget pointer to null if it is this widget.
+         */
+        ~Widget();
+
+        /**
          * Inserts a child widget.
          * It causes recomputation of the parent's geometry constraints and layout.
          * @param child child widget to add.
@@ -227,6 +234,110 @@ namespace algui {
         }
 
         /**
+         * Returns the enabled state of the widget.
+         * @return the enabled state of the widget.
+         */
+        bool isEnabled() const {
+            return m_enabled;
+        }
+
+        /**
+         * Returns the enabled state of the widget tree the widget belongs to.
+         * @return the enabled state of the widget tree the widget belongs to.
+         */
+        bool isEnabledTree() const {
+            return m_enabledTree;
+        }
+
+        /**
+         * Returns the highlighted state of the widget.
+         * @return the highlighted state of the widget.
+         */
+        bool isHighlighted() const {
+            return m_highlighted;
+        }
+
+        /**
+         * Returns the highlighted state of the widget tree the widget belongs to.
+         * @return the highlighted state of the widget tree the widget belongs to.
+         */
+        bool isHighlightedTree() const {
+            return m_highlightedTree;
+        }
+
+        /**
+         * Returns the pressed state of the widget.
+         * @return the pressed state of the widget.
+         */
+        bool isPressed() const {
+            return m_pressed;
+        }
+
+        /**
+         * Returns the pressed state of the widget tree the widget belongs to.
+         * @return the pressed state of the widget tree the widget belongs to.
+         */
+        bool isPressedTree() const {
+            return m_pressedTree;
+        }
+
+        /**
+         * Returns the selected state of the widget.
+         * @return the selected state of the widget.
+         */
+        bool isSelected() const {
+            return m_selected;
+        }
+
+        /**
+         * Returns the selected state of the widget tree the widget belongs to.
+         * @return the selected state of the widget tree the widget belongs to.
+         */
+        bool isSelectedTree() const {
+            return m_selectedTree;
+        }
+
+        /**
+         * Returns the focused state of the widget.
+         * @return the focused state of the widget.
+         */
+        bool isFocused() const {
+            return m_focused;
+        }
+
+        /**
+         * Returns the focused state of the widget tree the widget belongs to.
+         * @return the focused state of the widget tree the widget belongs to.
+         */
+        bool isFocusedTree() const {
+            return m_focusedTree;
+        }
+
+        /**
+         * Returns the valid content state of the widget.
+         * @return the valid content state of the widget.
+         */
+        bool hasValidContent() const {
+            return m_validContent;
+        }
+
+        /**
+         * Returns the valid content state of the widget tree the widget belongs to.
+         * @return the valid content state of the widget tree the widget belongs to.
+         */
+        bool treeHasValidContent() const {
+            return m_validContentTree;
+        }
+
+        /**
+         * Returns the focusable state of the widget.
+         * @return the focusable state of the widget.
+         */
+        bool isFocusable() const {
+            return m_focusable;
+        }
+
+        /**
          * Sets the left coordinate.
          * It causes recomputation of screen geometry from the `render()` method.
          * It also causes recomputation of the parent's layout, if there is a parent.
@@ -332,6 +443,58 @@ namespace algui {
         }
 
         /**
+         * Sets the enabled state of the widget.
+         * If disabled and contains the focus, then the focus is lost.
+         * @param enabled the enabled state of the widget.
+         */
+        void setEnabled(bool enabled);
+
+        /**
+         * Sets the highlighted state of the widget.
+         * @param highlighted the highlighted state of the widget.
+         */
+        void setHighlighted(bool highlighted);
+
+        /**
+         * Sets the pressed state of the widget.
+         * @param pressed the pressed state of the widget.
+         */
+        void setPressed(bool pressed);
+
+        /**
+         * Sets the selected state of the widget.
+         * @param selected the selected state of the widget.
+         */
+        void setSelected(bool selected);
+
+        /**
+         * Sets the focused state of the widget.
+         * It cannot get the focus if it is disabled or within a disabled tree or not focusable.
+         * The previous focused widget loses the focus.
+         * @param focused the focused state of the widget.
+         */
+        void setFocused(bool focused);
+
+        /**
+         * Returns the widget with the focus.
+         * @return the widget with the focus.
+         */
+        static Widget* getFocusedWidget();
+
+        /**
+         * Sets the focusable state.
+         * If not focusable, it and its descentants cannot get the focus.
+         * @param focusable the new focusable state.
+         */
+        void setFocusable(bool focusable);
+
+        /**
+         * Sets the valid content state of the widget.
+         * @param valid content the valid content state of the widget.
+         */
+        void setValidContent(bool validcontent);
+
+        /**
          * Renders the tree into the target bitmap.
          * The current clipping is respected: if a widget falls outside of the current clipping rectangle,
          * it is not repainted.
@@ -367,6 +530,20 @@ namespace algui {
         virtual void onPaintOverlay() const {
         }
 
+        /**
+         * Invoked when the widget got the focus.
+         * The default implementation does nothing.
+         */
+        virtual void onGotFocus() {
+        }
+
+        /**
+         * Invoked when the widget lost the focus.
+         * The default implementation does nothing.
+         */
+        virtual void onLostFocus() {
+        }
+
     private:
         //geometry
         Coord m_left;
@@ -399,6 +576,20 @@ namespace algui {
         bool m_geometryConstraintsDirty : 1;
         bool m_descentantGeometryConstraintsDirty : 1;
         bool m_layoutDirty:1;
+        bool m_enabled : 1;
+        bool m_highlighted : 1;
+        bool m_pressed : 1;
+        bool m_selected : 1;
+        bool m_focused : 1;
+        bool m_validContent : 1;
+        bool m_enabledTree : 1;
+        bool m_highlightedTree : 1;
+        bool m_pressedTree : 1;
+        bool m_selectedTree : 1;
+        bool m_focusedTree : 1;
+        bool m_validContentTree : 1;
+        bool m_treeVisualStateDirty : 1;
+        bool m_focusable : 1;
 
         //internal functions
         void _invalidateScreenGeometry();
@@ -408,7 +599,10 @@ namespace algui {
         void _invalidateLayout();
         void _invalidateParentLayout();
         void _calcScreenGeometry();
-        void _paint(bool calcScreenGeometry);
+        void _invalidateTreeVisualState();
+        void _calcTreeVisualState();
+        void _paint(bool calcScreenGeometry, bool calcVisualState);
+        bool _canGetFocus() const;
     };
 
 

@@ -19,8 +19,8 @@ public:
 
 protected:
     void onPaint() const override {
-        al_draw_filled_rectangle(getScreenLeft(), getScreenTop(), getScreenRight(), getScreenBottom(), al_map_rgb(255, 255, 255));
-        al_draw_rectangle(getScreenLeft() + 0.5f, getScreenTop() + 0.5f, getScreenRight(), getScreenBottom(), al_map_rgb(0, 0, 0), 0);
+        al_draw_filled_rectangle(getScreenLeft(), getScreenTop(), getScreenRight(), getScreenBottom(), isEnabledTree() ? al_map_rgb(255, 255, 255) : al_map_rgb(192, 192, 192));
+        al_draw_rectangle(getScreenLeft() + 0.5f, getScreenTop() + 0.5f, getScreenRight(), getScreenBottom(), al_map_rgb(0, 0, 0), isFocused() ? 2 : 0);
     }
 };
 
@@ -63,6 +63,7 @@ int main(int argc, char** argv) {
     form2->setTop(150);
     form2->setWidth(200);
     form2->setHeight(150);
+    //form2->setEnabled(false);
     root->add(form2);
 
     Test* form3 = new Test();
@@ -102,8 +103,20 @@ int main(int argc, char** argv) {
                 goto END;
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
-                form2->setLeft(form2->getLeft() + 8);
-                form2->setWidth(form2->getWidth() + 8);
+                //form2->setLeft(form2->getLeft() + 8);
+                //form2->setWidth(form2->getWidth() + 8);
+                if (!Widget::getFocusedWidget()) {
+                    button1->setFocused(true);
+                }
+                else if (Widget::getFocusedWidget() == button1) {
+                    button2->setFocused(true);
+                }
+                else if (Widget::getFocusedWidget() == button2) {
+                    button3->setFocused(true);
+                }
+                else if (Widget::getFocusedWidget() == button3) {
+                    button3->setFocused(false);
+                }
                 break;
 
             case ALLEGRO_EVENT_TIMER:
