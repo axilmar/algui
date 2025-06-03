@@ -110,6 +110,10 @@ int main(int argc, char** argv) {
     button3->setWidth(50);
     button3->setHeight(40);
     form2->add(button3);
+    button3->addEventHandler(Event_GotFocus, [&](EventType eventType, const Event& event, EventPhaseType phaseType) {
+        std::cout << "Button 3 got the focus\n";
+        return false;
+    }, EventPhase_Bubble);
 
     for (;;) {
         ALLEGRO_EVENT event;
@@ -120,8 +124,8 @@ int main(int argc, char** argv) {
                 goto END;
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
-                form2->setLeft(form2->getLeft() + 8);
-                form2->setWidth(form2->getWidth() + 8);
+                //form2->setLeft(form2->getLeft() + 8);
+                //form2->setWidth(form2->getWidth() + 8);
                 if (!Widget::getFocusedWidget()) {
                     button1->setFocused(true);
                 }

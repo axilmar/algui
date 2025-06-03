@@ -7,6 +7,7 @@
 #include <utility>
 #include "Tree.hpp"
 #include "Coord.hpp"
+#include "EventTarget.hpp"
 
 
 namespace algui {
@@ -35,9 +36,81 @@ namespace algui {
 
 
     /**
+     * Event types.
+     */
+    enum EventType {
+        /** Widget got the focus. */
+        Event_GotFocus,
+
+        /** Widget lost the focus. */
+        Event_LostFocus,
+
+        /** Descentant widget got the focus. */
+        Event_DescentantGotFocus,
+
+        /** Descentant widget lost the focus. */
+        Event_DescentantLostFocus,
+
+        /** First value available for user events. */
+        Event_User = 256
+    };
+
+
+    /**
+     * Event phase types.
+     */
+    enum EventPhaseType {
+        /**
+         * Capture phase: events are propagated from parent to child.
+         */
+        EventPhase_Capture,
+
+        /**
+         * Bubble phase: events are propagated from child to parent.
+         */
+        EventPhase_Bubble,
+
+        /** First value available for user event phases. */
+        EventPhase_User = 256
+    };
+
+
+    class Widget;
+
+
+    /**
+     * Base class for widget events.
+     */
+    class WidgetEvent : public Event {
+    public:
+        /**
+         * The constructor.
+         * @param target the target widget.
+         */
+        WidgetEvent(Widget* target) : m_target(target) {
+        }
+
+        /**
+         * Returns the target widget.
+         * @return the target widget.
+         */
+        Widget* getTarget() const {
+            return m_target;
+        }
+
+    private:
+        Widget* m_target;
+    };
+
+
+    /**
      * Base class for UI elements. 
      */
-    class Widget : public Tree<Widget> {
+    class Widget 
+        : public Tree<Widget>
+        , public EventTarget<EventType, EventPhaseType>
+        , public EventHandlerOwner<EventType, EventPhaseType>
+    {
     public:
         /**
          * The default constructor.
@@ -492,6 +565,9 @@ namespace algui {
          * Sets the focused state of the widget.
          * It cannot get the focus if it is disabled or within a disabled tree or not focusable.
          * The previous focused widget loses the focus.
+         * If the widget gets the focus, then it gets the got focus event, and ancestors get the descentant got focus event.
+         * If the widget loses the focus, then it gets the lost focus event, and ancestors get the descentant lost focus event.
+         * Focus events are dispatched in the bubble phase, since they bubble up.
          * @param focused the focused state of the widget.
          */
         void setFocused(bool focused);
@@ -551,20 +627,6 @@ namespace algui {
          * The default implementation does nothing.
          */
         virtual void onPaintOverlay() const {
-        }
-
-        /**
-         * Invoked when the widget got the focus.
-         * The default implementation does nothing.
-         */
-        virtual void onGotFocus() {
-        }
-
-        /**
-         * Invoked when the widget lost the focus.
-         * The default implementation does nothing.
-         */
-        virtual void onLostFocus() {
         }
 
     private:

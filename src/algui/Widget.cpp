@@ -324,7 +324,11 @@ namespace algui {
             m_focused = true;
             _invalidateTreeVisualState();
             _focusedWidget = this;
-            onGotFocus();
+            WidgetEvent focusEvent(this);
+            dispatchEvent(EventType::Event_GotFocus, focusEvent, EventPhaseType::EventPhase_Bubble);
+            for (Widget* ancestor = getParent(); ancestor; ancestor = ancestor->getParent()) {
+                ancestor->dispatchEvent(EventType::Event_DescentantGotFocus, focusEvent, EventPhaseType::EventPhase_Bubble);
+            }
         }
 
         //else lose focus
@@ -332,7 +336,11 @@ namespace algui {
             m_focused = false;
             _invalidateTreeVisualState();
             _focusedWidget = nullptr;
-            onLostFocus();
+            WidgetEvent focusEvent(this);
+            dispatchEvent(EventType::Event_LostFocus, focusEvent, EventPhaseType::EventPhase_Bubble);
+            for (Widget* ancestor = getParent(); ancestor; ancestor = ancestor->getParent()) {
+                ancestor->dispatchEvent(EventType::Event_DescentantLostFocus, focusEvent, EventPhaseType::EventPhase_Bubble);
+            }
         }
     }
 
