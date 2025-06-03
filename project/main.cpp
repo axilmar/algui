@@ -16,12 +16,29 @@ using namespace algui;
 
 class Test : public Widget {
 public:
+    Test(bool l = false) : m_layout(l) {
+    }
 
 protected:
+    void onLayout() const override {
+        if (m_layout) {
+            float x = 0;
+            forEach([&](Widget* child) {
+                child->setLeft(x);
+                child->setTop(0);
+                child->setHeight(50_pct);
+                x += child->getWidth();
+            });
+        }
+    }
+
     void onPaint() const override {
         al_draw_filled_rectangle(getScreenLeft(), getScreenTop(), getScreenRight(), getScreenBottom(), isEnabledTree() ? al_map_rgb(255, 255, 255) : al_map_rgb(192, 192, 192));
         al_draw_rectangle(getScreenLeft() + 0.5f, getScreenTop() + 0.5f, getScreenRight(), getScreenBottom(), al_map_rgb(0, 0, 0), isFocused() ? 2 : 0);
     }
+
+private:
+    bool m_layout;
 };
 
 int main(int argc, char** argv) {
@@ -58,7 +75,7 @@ int main(int argc, char** argv) {
     form1->setHeight(150);
     root->add(form1);
 
-    Test* form2 = new Test();
+    Test* form2 = new Test(false);
     form2->setLeft(200);
     form2->setTop(150);
     form2->setWidth(200);
