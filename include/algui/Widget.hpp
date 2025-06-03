@@ -5,6 +5,7 @@
 #include <functional>
 #include <memory>
 #include <utility>
+#include <string>
 #include "Tree.hpp"
 #include "Coord.hpp"
 #include "EventTarget.hpp"
@@ -50,6 +51,15 @@ namespace algui {
 
         /** Descentant widget lost the focus. */
         Event_DescentantLostFocus,
+
+        /** Mouse enter event. */
+        Event_MouseEnter,
+
+        /** Mouse move event. */
+        Event_MouseMove,
+
+        /** Mouse leave event. */
+        Event_MouseLeave,
 
         /** First value available for user events. */
         Event_User = 256
@@ -100,6 +110,35 @@ namespace algui {
 
     private:
         Widget* m_target;
+    };
+
+
+    /**
+     * An allegro event.
+     */
+    class AllegroEvent : public WidgetEvent {
+    public:
+        /**
+         * Constructor.
+         * @param target target widget.
+         * @param event allegro event.
+         */
+        AllegroEvent(Widget* target, const ALLEGRO_EVENT& event) 
+            : WidgetEvent(target)
+            , m_event(event)
+        {
+        }
+
+        /**
+         * Returns the allegro event.
+         * @return the allegro event.
+         */
+        const ALLEGRO_EVENT& getEvent() const {
+            return m_event;
+        }
+
+    private:
+        ALLEGRO_EVENT m_event;
     };
 
 
@@ -432,6 +471,14 @@ namespace algui {
         }
 
         /**
+         * Returns the id of the widget.
+         * @return the id of the widget.
+         */
+        const std::string& getId() const {
+            return m_id;
+        }
+
+        /**
          * Sets the left coordinate.
          * It causes recomputation of screen geometry from the `render()` method.
          * It also causes recomputation of the parent's layout, if there is a parent.
@@ -592,11 +639,48 @@ namespace algui {
         void setValidContent(bool validcontent);
 
         /**
+         * Sets the id of the widget.
+         * @param id id of the widget.
+         */
+        void setId(const std::string& id) {
+            m_id = id;
+        }
+
+        /**
          * Renders the tree into the target bitmap.
          * The current clipping is respected: if a widget falls outside of the current clipping rectangle,
          * it is not repainted.
          */
         void render();
+
+        /**
+         * Checks if the given screen point lies within the widget.
+         * The widget must have been rendered at least once in order for the result to be valid.
+         * The clipping mode affects the outcome:
+         *  - if 'none' or 'widget', if the coordinate is outside of the widget area, then children are also tested.
+         *  - if 'tree', only the test for inside the widget area is done.
+         * @param screenX screen coordinate along the X axis.
+         * @param screenY screen coordinate along the Y axis.
+         * @return true if the given point is within the widget, false otherwise.
+         */
+        virtual bool intersects(float screenX, float screenY) const;
+
+        /**
+         * Returns visible child under the given coordinates.
+         * The clipping mode also affects the outcome: 
+         * If clipping mode is 'tree', then children only visible through the parent are considered.
+         * @param screenX screen coordinate along the X axis.
+         * @param screenY screen coordinate along the Y axis.
+         * @return the child under the given coordinates.
+         */
+        Widget* getChild(float screenX, float screenY) const;
+
+        /**
+         * creates and dispatches events out of an allegro event.
+         * @param event allegro event to dispatch.
+         * @return true if the event was processed, false otherwise.
+         */
+        bool processAllegroEvent(const ALLEGRO_EVENT& event);
 
     protected:
         /**
@@ -655,7 +739,9 @@ namespace algui {
         float m_screenScalingY;
 
         //state
-        ClippingMode m_clippingMode;
+        std::string m_id;
+        Widget* m_childWithMouse;
+        ClippingMode m_clippingMode : 4;
         bool m_visible : 1;
         bool m_screenGeometryDirty : 1;
         bool m_geometryConstraintsDirty : 1;
@@ -675,6 +761,7 @@ namespace algui {
         bool m_validContentTree : 1;
         bool m_treeVisualStateDirty : 1;
         bool m_focusable : 1;
+        bool m_hasMouse : 1;
 
         //internal functions
         void _invalidateScreenGeometry();
@@ -688,6 +775,15 @@ namespace algui {
         void _calcTreeVisualState();
         void _paint(bool calcScreenGeometry, bool calcVisualState);
         bool _canGetFocus() const;
+        bool _enabledTree() const;
+        void _resetMouseState();
+        void _resetChildWithMouseState();
+        Widget* _getChildFromCoords(float screenX, float screenY) const;
+        Widget* _getEnabledChild(float screenX, float screenY) const;
+        bool _mouseMove(const ALLEGRO_EVENT& event, EventType eventType);
+        bool _mouseEnter(const ALLEGRO_EVENT& event);
+        bool _mouseMove(const ALLEGRO_EVENT& event);
+        bool _mouseLeave(const ALLEGRO_EVENT& event);
     };
 
 

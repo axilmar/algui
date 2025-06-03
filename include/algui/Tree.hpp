@@ -112,6 +112,17 @@ namespace algui {
         }
 
         /**
+         * Returns the node's depth.
+         * The root node is at depth 0.
+         * @return the node's depth.
+         */
+        size_t getDepth() const {
+            size_t result = 0;
+            for (T* node = m_parent; node; node = node->m_parent, ++result) {}
+            return result;
+        }
+
+        /**
          * Executes a function for each child.
          * The children are traversed from first to last.
          * @param func function to execute for each child.

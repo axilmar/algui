@@ -2,6 +2,7 @@
 #include <limits>
 #include <algorithm>
 #include <cmath>
+#include <stdexcept>
 #include "allegro5/allegro.h"
 #include "algui/Widget.hpp"
 
@@ -25,6 +26,20 @@ namespace algui {
     static Widget* _focusedWidget = nullptr;
 
 
+    //calc rect intersection
+    static bool _intersect(
+        float x1, float y1, float x2, float y2,
+        float l, float t, float r, float b,
+        float& resultX1, float& resultY1, float& resultX2, float& resultY2)
+    {
+        resultX1 = std::max(x1, l);
+        resultY1 = std::max(y1, t);
+        resultX2 = std::min(x2, r);
+        resultY2 = std::min(y2, b);
+        return resultX1 <= resultX2 && resultY1 <= resultY2;
+    }
+
+
     /**************************************************************************
         PUBLIC
      **************************************************************************/ 
@@ -42,6 +57,7 @@ namespace algui {
         , m_screenBottom(0)
         , m_screenScalingX(1)
         , m_screenScalingY(1)
+        , m_childWithMouse(nullptr)
         , m_clippingMode(ClippingMode::None)
         , m_visible(true)
         , m_screenGeometryDirty(false)
@@ -62,6 +78,7 @@ namespace algui {
         , m_validContentTree(false)
         , m_treeVisualStateDirty(false)
         , m_focusable(true)
+        , m_hasMouse(false)
     {
     }
 
@@ -122,6 +139,14 @@ namespace algui {
             //if the removed child contains the focus, lose the focus
             if (child->contains(_focusedWidget)) {
                 _focusedWidget->setFocused(false);
+            }
+
+            //reset child mouse state
+            if (child == m_childWithMouse) {
+                _resetChildWithMouseState();
+            }
+            else {
+                child->_resetMouseState();
             }
 
             //success
@@ -266,9 +291,24 @@ namespace algui {
     //Sets the enabled state of the widget.
     void Widget::setEnabled(bool enabled) {
         if (enabled != m_enabled) {
-            if (!enabled && contains(_focusedWidget)) {
-                _focusedWidget->setFocused(false);
+
+            //if disabled
+            if (!enabled) {
+                //remove the focus from the disabled widget
+                if (contains(_focusedWidget)) {
+                    _focusedWidget->setFocused(false);
+                }
+
+                //reset the mouse state
+                if (getParent() && getParent()->m_childWithMouse == this) {
+                    getParent()->_resetChildWithMouseState();
+                }
+                else {
+                    _resetMouseState();
+                }
             }
+
+            //set flags
             m_enabled = enabled;
             _invalidateTreeVisualState();
         }
@@ -375,6 +415,78 @@ namespace algui {
     void Widget::render() {
         _updateGeometryConstraints();
         _paint(false, false);
+    }
+
+
+    //intersection with point
+    bool Widget::intersects(float screenX, float screenY) const {
+        switch (m_clippingMode) {
+            case ClippingMode::None:
+            case ClippingMode::Widget:
+                if (screenX >= m_screenLeft && screenX < m_screenRight && screenY >= m_screenTop && screenY < m_screenBottom) {
+                    return true;
+                }
+                for (Widget* child = getLastChild(); child; child = child->getPrevSibling()) {
+                    if (child->m_visible && child->intersects(screenX, screenY)) {
+                        return true;
+                    }
+                }
+                return false;
+
+            case ClippingMode::Tree:
+                return screenX >= m_screenLeft && screenX < m_screenRight && screenY >= m_screenTop && screenY < m_screenBottom;
+        }
+
+        throw std::logic_error("Widget::intersects: invalid clipping mode");
+    }
+
+    //get child from coordinates
+    Widget* Widget::getChild(float screenX, float screenY) const {
+        switch (m_clippingMode) {
+            case ClippingMode::None:
+            case ClippingMode::Widget:
+                return _getChildFromCoords(screenX, screenY);
+
+            case ClippingMode::Tree:
+                if (intersects(screenX, screenY)) {
+                    return _getChildFromCoords(screenX, screenY);
+                }
+                return nullptr;
+        }
+
+        throw std::logic_error("Widget::getChild: invalid clipping mode");
+    }
+
+
+    bool Widget::processAllegroEvent(const ALLEGRO_EVENT& event) {
+        //if disabled, it cannot process events
+        if (!_enabledTree()) {
+            return false;
+        }
+
+        //handle events
+        switch (event.type) {
+            case ALLEGRO_EVENT_MOUSE_AXES:
+            {
+                if (event.mouse.dx || event.mouse.dy) {
+                    const bool oldMouse = m_hasMouse;
+                    const bool newMouse = intersects(event.mouse.x, event.mouse.y);
+                    if (newMouse && oldMouse) {
+                        return _mouseMove(event);
+                    }
+                    else if (newMouse) {
+                        return _mouseEnter(event);
+                    }
+                    else {
+                        return _mouseLeave(event);
+                    }
+                }
+                break;
+            }
+        }
+
+        //event not processed
+        return false;
     }
 
 
@@ -557,11 +669,8 @@ namespace algui {
                     al_get_clipping_rectangle(&x1, &y1, &w, &h);
                     x2 = x1 + w;
                     y2 = y1 + h;
-                    const float clipX1 = std::max((float)x1, m_screenLeft);
-                    const float clipY1 = std::max((float)y1, m_screenTop);
-                    const float clipX2 = std::min((float)x2, m_screenRight);
-                    const float clipY2 = std::min((float)y2, m_screenBottom);
-                    const bool overlapsClipRect = clipX1 <= clipX2 && clipY1 <= clipY2;
+                    float clipX1, clipY1, clipX2, clipY2;
+                    const bool overlapsClipRect = _intersect(x1, y1, x2, y2, m_screenLeft, m_screenTop, m_screenRight, m_screenBottom, clipX1, clipY1, clipX2, clipY2);
                     if (overlapsClipRect) {
                         al_set_clipping_rectangle((int)std::floor(clipX1), (int)std::floor(clipY1), (int)std::ceil(clipX2 - clipX1), (int)std::ceil(clipY2 - clipY1));
                         onPaint();
@@ -585,11 +694,9 @@ namespace algui {
                     al_get_clipping_rectangle(&x1, &y1, &w, &h);
                     x2 = x1 + w;
                     y2 = y1 + h;
-                    const float clipX1 = std::max((float)x1, m_screenLeft);
-                    const float clipY1 = std::max((float)y1, m_screenTop);
-                    const float clipX2 = std::min((float)x2, m_screenRight);
-                    const float clipY2 = std::min((float)y2, m_screenBottom);
-                    if (clipX1 <= clipX2 && clipY1 <= clipY2) {
+                    float clipX1, clipY1, clipX2, clipY2;
+                    const bool overlapsClipRect = _intersect(x1, y1, x2, y2, m_screenLeft, m_screenTop, m_screenRight, m_screenBottom, clipX1, clipY1, clipX2, clipY2);
+                    if (overlapsClipRect) {
                         al_set_clipping_rectangle((int)std::floor(clipX1), (int)std::floor(clipY1), (int)std::ceil(clipX2 - clipX1), (int)std::ceil(clipY2 - clipY1));
                         onPaint();
                         forEach([&](Widget* child) {
@@ -612,6 +719,125 @@ namespace algui {
             }
         }
         return true;
+    }
+
+
+    bool Widget::_enabledTree() const {
+        for (const Widget* wgt = this; wgt; wgt = wgt->getParent()) {
+            if (!wgt->m_enabled) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    void Widget::_resetMouseState() {
+        if (m_hasMouse) {
+            m_childWithMouse = nullptr;
+            m_hasMouse = false;
+            forEach([](Widget* child) {
+                child->_resetMouseState();
+            });
+        }
+    }
+
+
+    void Widget::_resetChildWithMouseState() {
+        if (m_childWithMouse) {
+            m_childWithMouse->_resetMouseState();
+            m_childWithMouse = nullptr;
+        }
+    }
+
+
+    //get child from coordinates
+    Widget* Widget::_getChildFromCoords(float screenX, float screenY) const {
+        for (Widget* wgt = getLastChild(); wgt; wgt = wgt->getPrevSibling()) {
+            if (wgt->m_visible && wgt->intersects(screenX, screenY)) {
+                return wgt;
+            }
+        }
+        return nullptr;
+    }
+
+
+    //get child that is enabled
+    Widget* Widget::_getEnabledChild(float screenX, float screenY) const {
+        Widget* child = getChild(screenX, screenY);
+        return child && child->m_enabled ? child : nullptr;
+    }
+
+
+    bool Widget::_mouseMove(const ALLEGRO_EVENT& event, EventType eventType) {
+        //dispatch event in capture state
+        if (dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
+            return true;
+        }
+
+        Widget* oldMouseChild = m_childWithMouse;
+        m_childWithMouse = _getEnabledChild(event.mouse.x, event.mouse.y);
+
+        //if moved over the same child
+        if (oldMouseChild == m_childWithMouse) {
+            if (m_childWithMouse && m_childWithMouse->_mouseMove(event)) {
+                return true;
+            }
+        }
+
+        //else mouse moved over a different child
+        else {
+            bool result = false;
+
+            //child mouse leave
+            if (oldMouseChild) {
+                result = oldMouseChild->_mouseLeave(event) || result;
+            }
+
+            //child mouse enter
+            if (m_childWithMouse) {
+                result = m_childWithMouse->_mouseEnter(event) || result;
+            }
+
+            if (result) {
+                return result;
+            }
+        }
+
+        return dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
+    }
+
+
+    bool Widget::_mouseEnter(const ALLEGRO_EVENT& event) {
+        m_hasMouse = true;
+        return _mouseMove(event, Event_MouseEnter);
+    }
+    
+    
+    bool Widget::_mouseMove(const ALLEGRO_EVENT& event) {
+        return _mouseMove(event, Event_MouseMove);
+    }
+    
+    
+    bool Widget::_mouseLeave(const ALLEGRO_EVENT& event) {
+        m_hasMouse = false;
+
+        //dispatch event in capture state
+        if (dispatchEvent(Event_MouseLeave, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
+            _resetChildWithMouseState();
+            return true;
+        }
+
+        //pass event to child with mouse
+        if (m_childWithMouse && m_childWithMouse->_mouseLeave(event)) {
+            _resetChildWithMouseState();
+            return true;
+        }
+
+        _resetChildWithMouseState();
+
+        //dispatch event in bubble phase
+        return dispatchEvent(Event_MouseLeave, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
     }
 
 
