@@ -494,12 +494,6 @@ namespace algui {
     //calc layout, screen geometry, screen visual state, paint widgets recursively
     void Widget::_paint(bool calcScreenGeometry, bool calcVisualState) {
         if (m_visible) {
-            //recalculate layout, if needed
-            if (m_layoutDirty) {
-                onLayout();
-                m_layoutDirty = false;
-            }
-
             //recalculate screen geometry, if needed
             if (m_screenGeometryDirty || calcScreenGeometry) {
                 _calcScreenGeometry();
@@ -512,6 +506,12 @@ namespace algui {
                 _calcTreeVisualState();
                 m_treeVisualStateDirty = false;
                 calcVisualState = true;
+            }
+
+            //recalculate layout, if needed
+            if (m_layoutDirty) {
+                onLayout();
+                m_layoutDirty = false;
             }
 
             //paint according to clipping

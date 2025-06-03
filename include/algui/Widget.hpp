@@ -209,6 +209,24 @@ namespace algui {
         }
 
         /**
+         * Returns the width of the widget on the screen.
+         * It might be different than the one set due to scaling.
+         * @return the width of the widget on the screen.
+         */
+        float getScreenWidth() const {
+            return m_screenRight - m_screenLeft;
+        }
+
+        /**
+         * Returns the height of the widget on the screen.
+         * It might be different than the one set due to scaling.
+         * @return the height of the widget on the screen.
+         */
+        float getScreenHeight() const {
+            return m_screenBottom - m_screenTop;
+        }
+
+        /**
          * Returns the scaling factor for the X axis 
          * that is the product of all scaling factors from root to this.
          * Screen geometry is valid only after the widget tree is rendered.
