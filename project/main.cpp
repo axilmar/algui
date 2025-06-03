@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
     Test* button2 = new Test();
     button2->setLeft(70);
     button2->setTop(60);
-    button2->setWidth(50);
+    button2->setWidth(50_pct);
     button2->setHeight(40);
     form2->add(button2);
 
@@ -103,8 +103,8 @@ int main(int argc, char** argv) {
                 goto END;
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
-                //form2->setLeft(form2->getLeft() + 8);
-                //form2->setWidth(form2->getWidth() + 8);
+                form2->setLeft(form2->getLeft() + 8);
+                form2->setWidth(form2->getWidth() + 8);
                 if (!Widget::getFocusedWidget()) {
                     button1->setFocused(true);
                 }
