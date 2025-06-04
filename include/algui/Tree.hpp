@@ -113,6 +113,39 @@ namespace algui {
         }
 
         /**
+         * Returns the previous of the given node within this tree.
+         * @return the previous of the given node within this tree.
+         */
+        T* getPrev(const T* node) const {
+            if (containsDescentant(node)) {
+                return node->getPrev();
+            }
+            return nullptr;
+        }
+
+        /**
+         * Returns the next of the given node within this tree.
+         * @return the net of the given node within this tree.
+         */
+        T* getNext(const T* node) const {
+            if (contains(node)) {
+                if (node->m_firstChild) {
+                    return node->m_firstChild;
+                }
+                for (;;) {
+                    if (node->m_nextSibling) {
+                        return node->m_nextSibling;
+                    }
+                    node = node->m_parent;
+                    if (node == this) {
+                        break;
+                    }
+                }
+            }
+            return nullptr;
+        }
+
+        /**
          * Returns the root.
          * @return the root.
          */
@@ -132,6 +165,18 @@ namespace algui {
                 if (node == this) {
                     return true;
                 }
+            }
+            return false;
+        }
+
+        /**
+         * Checks if a node is in of the child trees.
+         * @param node node to check if it belongs to this tree.
+         * @return true if the given node belongs in this tree, false otherwise.
+         */
+        bool containsDescentant(const T* node) const {
+            if (node != this) {
+                return contains(node);
             }
             return false;
         }
