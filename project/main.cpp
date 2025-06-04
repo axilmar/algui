@@ -28,6 +28,8 @@ public:
         addEventHandler(Event_MouseMove, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": mouse move (bubble)\n"; return false; }, EventPhase_Bubble);
         addEventHandler(Event_MouseLeave, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": mouse leave (capture)\n"; return false; }, EventPhase_Capture);
         addEventHandler(Event_MouseLeave, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": mouse leave (bubble)\n"; return false; }, EventPhase_Bubble);
+        addEventHandler(Event_MouseWheel, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": mouse wheel (capture)\n"; return false; }, EventPhase_Capture);
+        addEventHandler(Event_MouseWheel, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": mouse wheel (bubble)\n"; return false; }, EventPhase_Bubble);
     }
 
 protected:

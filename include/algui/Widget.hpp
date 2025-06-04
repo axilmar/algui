@@ -52,6 +52,10 @@ namespace algui {
         /** Descentant widget lost the focus. */
         Event_DescentantLostFocus,
 
+        Event_MouseButtonDown,
+
+        Event_MouseButtonUp,
+
         /** Mouse enter event. */
         Event_MouseEnter,
 
@@ -60,6 +64,8 @@ namespace algui {
 
         /** Mouse leave event. */
         Event_MouseLeave,
+
+        Event_MouseWheel,
 
         /** First value available for user events. */
         Event_User = 256
@@ -784,6 +790,7 @@ namespace algui {
         bool _mouseEnter(const ALLEGRO_EVENT& event);
         bool _mouseMove(const ALLEGRO_EVENT& event);
         bool _mouseLeave(const ALLEGRO_EVENT& event);
+        bool _mouseWheel(const ALLEGRO_EVENT& event);
     };
 
 

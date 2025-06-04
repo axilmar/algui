@@ -420,10 +420,12 @@ namespace algui {
 
     //intersection with point
     bool Widget::intersects(float screenX, float screenY) const {
+        const bool pointInWidget = screenX >= m_screenLeft && screenX < m_screenRight && screenY >= m_screenTop && screenY < m_screenBottom;
+
         switch (m_clippingMode) {
             case ClippingMode::None:
             case ClippingMode::Widget:
-                if (screenX >= m_screenLeft && screenX < m_screenRight && screenY >= m_screenTop && screenY < m_screenBottom) {
+                if (pointInWidget) {
                     return true;
                 }
                 for (Widget* child = getLastChild(); child; child = child->getPrevSibling()) {
@@ -434,7 +436,7 @@ namespace algui {
                 return false;
 
             case ClippingMode::Tree:
-                return screenX >= m_screenLeft && screenX < m_screenRight && screenY >= m_screenTop && screenY < m_screenBottom;
+                return pointInWidget;
         }
 
         throw std::logic_error("Widget::intersects: invalid clipping mode");
@@ -468,20 +470,29 @@ namespace algui {
         switch (event.type) {
             case ALLEGRO_EVENT_MOUSE_AXES:
             {
+                bool result = false;
+
+                //mouse move
                 if (event.mouse.dx || event.mouse.dy) {
                     const bool oldMouse = m_hasMouse;
                     const bool newMouse = intersects(event.mouse.x, event.mouse.y);
                     if (newMouse && oldMouse) {
-                        return _mouseMove(event);
+                        result = _mouseMove(event);
                     }
                     else if (newMouse) {
-                        return _mouseEnter(event);
+                        result = _mouseEnter(event);
                     }
                     else {
-                        return _mouseLeave(event);
+                        result = _mouseLeave(event);
                     }
                 }
-                break;
+
+                //mouse wheel
+                if (event.mouse.dz || event.mouse.dw) {
+                    result = _mouseWheel(event) || result;
+                }
+
+                return result;
             }
         }
 
@@ -770,7 +781,7 @@ namespace algui {
 
 
     bool Widget::_mouseMove(const ALLEGRO_EVENT& event, EventType eventType) {
-        //dispatch event in capture state
+        //dispatch event in capture phase
         if (dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
             return true;
         }
@@ -822,7 +833,7 @@ namespace algui {
     bool Widget::_mouseLeave(const ALLEGRO_EVENT& event) {
         m_hasMouse = false;
 
-        //dispatch event in capture state
+        //dispatch event in capture phase
         if (dispatchEvent(Event_MouseLeave, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
             _resetChildWithMouseState();
             return true;
@@ -838,6 +849,23 @@ namespace algui {
 
         //dispatch event in bubble phase
         return dispatchEvent(Event_MouseLeave, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
+    }
+
+
+    //mouse wheel
+    bool Widget::_mouseWheel(const ALLEGRO_EVENT& event) {
+        //dispatch event in capture phase
+        if (dispatchEvent(Event_MouseWheel, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
+            return true;
+        }
+
+        //dispatch event in child with mouse
+        if (m_childWithMouse && m_childWithMouse->_mouseWheel(event)) {
+            return true;
+        }
+
+        //dispatch event in bubble phase
+        return dispatchEvent(Event_MouseWheel, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
     }
 
 
