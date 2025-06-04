@@ -1002,8 +1002,9 @@ namespace algui {
         bool _moveFocusByKey(const ALLEGRO_EVENT& event);
         bool _keyEvent(const ALLEGRO_EVENT& event, EventType eventType);
 
-        //timer event
+        //other events
         bool _timerEvent(const ALLEGRO_EVENT& event);
+        bool _exposeEvent(const ALLEGRO_EVENT& event);
     };
 
 

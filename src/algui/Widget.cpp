@@ -551,6 +551,9 @@ namespace algui {
 
             case ALLEGRO_EVENT_TIMER:
                 return _timerEvent(event);
+
+            case ALLEGRO_EVENT_DISPLAY_EXPOSE:
+                return _exposeEvent(event);
         }
 
         //event not processed
@@ -1622,6 +1625,16 @@ namespace algui {
             result = wgt->dispatchEvent(Event_Timer, AllegroEvent(wgt, event)) || result;
         }
         return result;
+    }
+
+
+    bool Widget::_exposeEvent(const ALLEGRO_EVENT& event) {
+        int x, y, w, h;
+        al_get_clipping_rectangle(&x, &y, &w, &h);
+        al_set_clipping_rectangle(event.display.x, event.display.y, event.display.width, event.display.height);
+        render();
+        al_set_clipping_rectangle(x, y, w, h);
+        return true;
     }
 
 
