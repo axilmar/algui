@@ -494,6 +494,12 @@ namespace algui {
 
                 return result;
             }
+
+            case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
+                return _mouseButtonDown(event);
+
+            case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
+                return _mouseButtonUp(event);
         }
 
         //event not processed
@@ -780,6 +786,40 @@ namespace algui {
     }
 
 
+    //mouse button down
+    bool Widget::_mouseButtonDown(const ALLEGRO_EVENT& event) {
+        //dispatch event in capture phase
+        if (dispatchEvent(Event_MouseButtonDown, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
+            return true;
+        }
+
+        //dispatch event in child with mouse
+        if (m_childWithMouse && m_childWithMouse->_mouseButtonDown(event)) {
+            return true;
+        }
+
+        //dispatch event in bubble phase
+        return dispatchEvent(Event_MouseButtonDown, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
+    }
+
+
+    //mouse button up
+    bool Widget::_mouseButtonUp(const ALLEGRO_EVENT& event) {
+        //dispatch event in capture phase
+        if (dispatchEvent(Event_MouseButtonUp, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
+            return true;
+        }
+
+        //dispatch event in child with mouse
+        if (m_childWithMouse && m_childWithMouse->_mouseButtonUp(event)) {
+            return true;
+        }
+
+        //dispatch event in bubble phase
+        return dispatchEvent(Event_MouseButtonUp, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
+    }
+
+
     bool Widget::_mouseMove(const ALLEGRO_EVENT& event, EventType eventType) {
         //dispatch event in capture phase
         if (dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
@@ -819,17 +859,20 @@ namespace algui {
     }
 
 
+    //mouse enter
     bool Widget::_mouseEnter(const ALLEGRO_EVENT& event) {
         m_hasMouse = true;
         return _mouseMove(event, Event_MouseEnter);
     }
     
-    
+
+    //mouse move
     bool Widget::_mouseMove(const ALLEGRO_EVENT& event) {
         return _mouseMove(event, Event_MouseMove);
     }
     
     
+    //mouse leave
     bool Widget::_mouseLeave(const ALLEGRO_EVENT& event) {
         m_hasMouse = false;
 

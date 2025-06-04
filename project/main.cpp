@@ -30,6 +30,10 @@ public:
         addEventHandler(Event_MouseLeave, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": mouse leave (bubble)\n"; return false; }, EventPhase_Bubble);
         addEventHandler(Event_MouseWheel, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": mouse wheel (capture)\n"; return false; }, EventPhase_Capture);
         addEventHandler(Event_MouseWheel, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": mouse wheel (bubble)\n"; return false; }, EventPhase_Bubble);
+        addEventHandler(Event_MouseButtonDown, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": mouse button down (capture)\n"; return false; }, EventPhase_Capture);
+        addEventHandler(Event_MouseButtonDown, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": mouse button down (bubble)\n"; return false; }, EventPhase_Bubble);
+        addEventHandler(Event_MouseButtonUp, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": mouse button up (capture)\n"; return false; }, EventPhase_Capture);
+        addEventHandler(Event_MouseButtonUp, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": mouse button up (bubble)\n"; return false; }, EventPhase_Bubble);
     }
 
 protected:
@@ -135,23 +139,6 @@ int main(int argc, char** argv) {
         switch (event.type) {
             case ALLEGRO_EVENT_DISPLAY_CLOSE:
                 goto END;
-
-            case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
-                //form2->setLeft(form2->getLeft() + 8);
-                //form2->setWidth(form2->getWidth() + 8);
-                if (!Widget::getFocusedWidget()) {
-                    button1->setFocused(true);
-                }
-                else if (Widget::getFocusedWidget() == button1) {
-                    button2->setFocused(true);
-                }
-                else if (Widget::getFocusedWidget() == button2) {
-                    button3->setFocused(true);
-                }
-                else if (Widget::getFocusedWidget() == button3) {
-                    button3->setFocused(false);
-                }
-                break;
 
             case ALLEGRO_EVENT_TIMER:
                 root->render();

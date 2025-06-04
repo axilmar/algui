@@ -52,8 +52,10 @@ namespace algui {
         /** Descentant widget lost the focus. */
         Event_DescentantLostFocus,
 
+        /** Mouse button down event. */
         Event_MouseButtonDown,
 
+        /** Mouse button up event. */
         Event_MouseButtonUp,
 
         /** Mouse enter event. */
@@ -65,6 +67,7 @@ namespace algui {
         /** Mouse leave event. */
         Event_MouseLeave,
 
+        /** Mouse wheel event. */
         Event_MouseWheel,
 
         /** First value available for user events. */
@@ -786,6 +789,8 @@ namespace algui {
         void _resetChildWithMouseState();
         Widget* _getChildFromCoords(float screenX, float screenY) const;
         Widget* _getEnabledChild(float screenX, float screenY) const;
+        bool _mouseButtonDown(const ALLEGRO_EVENT& event);
+        bool _mouseButtonUp(const ALLEGRO_EVENT& event);
         bool _mouseMove(const ALLEGRO_EVENT& event, EventType eventType);
         bool _mouseEnter(const ALLEGRO_EVENT& event);
         bool _mouseMove(const ALLEGRO_EVENT& event);
