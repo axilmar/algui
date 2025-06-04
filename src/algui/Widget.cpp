@@ -507,7 +507,7 @@ namespace algui {
                     const bool oldMouse = m_hasMouse;
                     const bool newMouse = intersects(event.mouse.x, event.mouse.y);
                     if (newMouse && oldMouse) {
-                        result = _mouseMove(event);
+                        result = _mouseMove(event, Event_MouseMove);
                     }
                     else if (newMouse) {
                         result = _mouseEnter(event);
@@ -526,10 +526,10 @@ namespace algui {
             }
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
-                return _mouseButtonDown(event);
+                return _mouseButtonEvent(event, Event_MouseButtonDown);
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
-                return _mouseButtonUp(event);
+                return _mouseButtonEvent(event, Event_MouseButtonUp);
 
             case ALLEGRO_EVENT_KEY_DOWN:
                 return _keyEvent(event, Event_KeyDown);
@@ -1310,7 +1310,7 @@ namespace algui {
                 return true;
             }
         }
-        return _unusedJoystickButtonEvent(event, (EventType)(eventType + 2));
+        return _unusedJoystickButtonEvent(event, eventType);
     }
 
 
@@ -1336,34 +1336,19 @@ namespace algui {
 
 
     bool Widget::_unusedJoystickMoveEvent(const ALLEGRO_EVENT& event) {
-        if (dispatchEvent(Event_UnusedJoystickMove, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
+        if (dispatchEvent(Event_JoystickMove, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
             return true;
         }
-        if (m_childWithMouse && m_childWithMouse->_unusedJoystickMoveEvent(event)) {
-            return true;
+        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+            if (child->m_enabled && child->_unusedJoystickMoveEvent(event)) {
+                return true;
+            }
         }
-        return dispatchEvent(Event_UnusedJoystickMove, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
+        return dispatchEvent(Event_JoystickMove, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
     }
 
 
-    bool Widget::_joystickMoveEvent(const ALLEGRO_EVENT& event) {
-        //send joystick move event to the focus tree
-        if (_focusedWidget) {
-            if (_focusedWidget->_joystickMoveEventCapture(event)) {
-                return true;
-            }
-            if (_focusedWidget->_joystickMoveEventBubble(event)) {
-                return true;
-            }
-        }
-
-        //sent unused joystick move event to the mouse tree
-        if (_unusedJoystickMoveEvent(event)) {
-            return true;
-        }
-
-        //move focus by joystick
-
+    bool Widget::_moveFocusByJoystick(const ALLEGRO_EVENT& event) {
         //0 axis is the horizontal axis.
         if (event.joystick.axis == 0) {
             if (event.joystick.pos < 0) {
@@ -1384,7 +1369,28 @@ namespace algui {
             }
         }
 
-        return 0;
+        return false;
+    }
+
+
+    bool Widget::_joystickMoveEvent(const ALLEGRO_EVENT& event) {
+        //send joystick move event to the focus tree
+        if (_focusedWidget) {
+            if (_focusedWidget->_joystickMoveEventCapture(event)) {
+                return true;
+            }
+            if (_focusedWidget->_joystickMoveEventBubble(event)) {
+                return true;
+            }
+        }
+
+        //sent unused joystick move event to the tree
+        if (_unusedJoystickMoveEvent(event)) {
+            return true;
+        }
+
+        //move focus by joystick
+        return _moveFocusByJoystick(event);
     }
 
 
@@ -1405,18 +1411,6 @@ namespace algui {
     }
 
 
-    //mouse button down
-    bool Widget::_mouseButtonDown(const ALLEGRO_EVENT& event) {
-        return _mouseButtonEvent(event, Event_MouseButtonDown);
-    }
-
-
-    //mouse button up
-    bool Widget::_mouseButtonUp(const ALLEGRO_EVENT& event) {
-        return _mouseButtonEvent(event, Event_MouseButtonUp);
-    }
-
-
     bool Widget::_mouseMove(const ALLEGRO_EVENT& event, EventType eventType) {
         //dispatch event in capture phase
         if (dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
@@ -1428,7 +1422,7 @@ namespace algui {
 
         //if moved over the same child
         if (oldMouseChild == m_childWithMouse) {
-            if (m_childWithMouse && m_childWithMouse->_mouseMove(event)) {
+            if (m_childWithMouse && m_childWithMouse->_mouseMove(event, Event_MouseMove)) {
                 return true;
             }
         }
@@ -1463,12 +1457,6 @@ namespace algui {
     }
     
 
-    //mouse move
-    bool Widget::_mouseMove(const ALLEGRO_EVENT& event) {
-        return _mouseMove(event, Event_MouseMove);
-    }
-    
-    
     //mouse leave
     bool Widget::_mouseLeave(const ALLEGRO_EVENT& event) {
         m_hasMouse = false;
@@ -1534,19 +1522,14 @@ namespace algui {
 
     //unused key event
     bool Widget::_unusedKeyEvent(const ALLEGRO_EVENT& event, EventType eventType) {
-        //dispatch event in capture phase
         if (dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
             return true;
         }
-
-        //send event to children
         for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
             if (child->m_enabled && child->_unusedKeyEvent(event, eventType)) {
                 return true;
             }
         }
-
-        //dispatch event in bubble phase
         return dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
     }
 
@@ -1605,7 +1588,7 @@ namespace algui {
         }
 
         //do unused key event
-        if (_unusedKeyEvent(event, (EventType)(eventType + 3))) {
+        if (_unusedKeyEvent(event, eventType)) {
             return true;
         }
 

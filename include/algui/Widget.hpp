@@ -54,46 +54,30 @@ namespace algui {
 
         /**
          * Joystick move event.
-         * Dispatched at the widget tree that contains the input focus.
+         * Dispatched at the widget tree that contains the input focus,
+         * then if unused to the whole UI tree.
          */
         Event_JoystickMove,
 
         /**
-         * Unused joystick move event.
-         * Dispatched at the widget tree that contains the mouse.
-         * Its default implementation moves the input focus according to the joystick direction.
-         */
-        Event_UnusedJoystickMove,
-
-        /**
          * Joystick button down event.
-         * Dispatched at the widget tree that contains the input focus.
+         * Dispatched at the widget tree that contains the input focus,
+         * then if unused to the UI tree under the mouse.
          */
         Event_JoystickButtonDown,
 
         /**
          * Joystick button up event.
-         * Dispatched at the widget tree that contains the input focus.
+         * Dispatched at the widget tree that contains the input focus,
+         * then if unused to the UI tree under the mouse.
          */
         Event_JoystickButtonUp,
-
-        /**
-         * Unused joystick button down event.
-         * Dispatched at the widget tree that contains the mouse.
-         */
-        Event_UnusedJoystickButtonDown,
-
-        /**
-         * Unused joystick button up event.
-         * Dispatched at the widget tree that contains the mouse.
-         */
-        Event_UnusedJoystickButtonUp,
 
         /**
          * Key down event.
          * Delivered to the widget with the focus.
          * If there is no focus widget to get the input focus,
-         * then an used key down event is sent to all widgets in the tree.
+         * then it is sent to the whole UI tree.
          */
         Event_KeyDown,
 
@@ -101,7 +85,7 @@ namespace algui {
          * Key up event.
          * Delivered to the widget with the focus.
          * If there is no focus widget to get the input focus,
-         * then an used key down event is sent to all widgets in the tree.
+         * then it is sent to the whole UI tree.
          */
         Event_KeyUp,
 
@@ -109,27 +93,9 @@ namespace algui {
          * Character event.
          * Delivered to the widget with the focus.
          * If there is no focus widget to get the input focus,
-         * then an used key down event is sent to all widgets in the tree.
+         * then it is sent to the whole UI tree.
          */
         Event_KeyChar,
-
-        /**
-         * Sent to the root widget when a key down goes unused.
-         * The default implementation sends the event to all of a widget's children.
-         */
-        Event_UnusedKeyDown,
-
-        /**
-         * Sent to the root widget when a key up goes unused.
-         * The default implementation sends the event to all of a widget's children.
-         */
-        Event_UnusedKeyUp,
-
-        /**
-         * Sent to the root widget when a key character goes unused.
-         * The default implementation sends the event to all of a widget's children.
-         */
-        Event_UnusedKeyChar,
 
         /** Mouse button down event. */
         Event_MouseButtonDown,
@@ -983,15 +949,13 @@ namespace algui {
         bool _joystickMoveEventCapture(const ALLEGRO_EVENT& event);
         bool _joystickMoveEventBubble(const ALLEGRO_EVENT& event);
         bool _unusedJoystickMoveEvent(const ALLEGRO_EVENT& event);
+        bool _moveFocusByJoystick(const ALLEGRO_EVENT& event);
         bool _joystickMoveEvent(const ALLEGRO_EVENT& event);
 
         //mouse events
         bool _mouseButtonEvent(const ALLEGRO_EVENT& event, EventType eventType);
-        bool _mouseButtonDown(const ALLEGRO_EVENT& event);
-        bool _mouseButtonUp(const ALLEGRO_EVENT& event);
         bool _mouseMove(const ALLEGRO_EVENT& event, EventType eventType);
         bool _mouseEnter(const ALLEGRO_EVENT& event);
-        bool _mouseMove(const ALLEGRO_EVENT& event);
         bool _mouseLeave(const ALLEGRO_EVENT& event);
         bool _mouseWheel(const ALLEGRO_EVENT& event);
 
