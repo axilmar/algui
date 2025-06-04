@@ -469,6 +469,9 @@ namespace algui {
         //handle events
         switch (event.type) {
             case ALLEGRO_EVENT_MOUSE_AXES:
+            case ALLEGRO_EVENT_MOUSE_WARPED:
+            case ALLEGRO_EVENT_MOUSE_ENTER_DISPLAY:
+            case ALLEGRO_EVENT_MOUSE_LEAVE_DISPLAY:
             {
                 bool result = false;
 
@@ -482,7 +485,7 @@ namespace algui {
                     else if (newMouse) {
                         result = _mouseEnter(event);
                     }
-                    else {
+                    else if (oldMouse) {
                         result = _mouseLeave(event);
                     }
                 }
