@@ -53,6 +53,19 @@ namespace algui {
         Event_DescentantLostFocus,
 
         /**
+         * Joystick move event.
+         * Dispatched at the widget tree that contains the input focus.
+         */
+        Event_JoystickMove,
+
+        /**
+         * Unused joystick move event.
+         * Dispatched at the widget tree that contains the mouse.
+         * Its default implementation moves the input focus according to the joystick direction.
+         */
+        Event_UnusedJoystickMove,
+
+        /**
          * Joystick button down event.
          * Dispatched at the widget tree that contains the input focus.
          */
@@ -914,7 +927,7 @@ namespace algui {
         bool m_hasMouse : 1;
         bool m_focusContainer : 1;
 
-        //internal functions
+        //various internal functions
         void _invalidateScreenGeometry();
         void _invalidateGeometryConstraints();
         void _invalidateParentGeometryConstraints();
@@ -931,26 +944,6 @@ namespace algui {
         void _resetChildWithMouseState();
         Widget* _getChildFromCoords(float screenX, float screenY) const;
         Widget* _getEnabledChild(float screenX, float screenY) const;
-        bool _joystickButtonEventCapture(const ALLEGRO_EVENT& event, EventType eventType);
-        bool _joystickButtonEventBubble(const ALLEGRO_EVENT& event, EventType eventType);
-        bool _propagateJoystickButtonEventToChildren(const ALLEGRO_EVENT& event, EventType eventType);
-        bool _joystickButtonEvent(const ALLEGRO_EVENT& event, EventType eventType);
-        bool _mouseButtonEvent(const ALLEGRO_EVENT& event, EventType eventType);
-        bool _mouseButtonDown(const ALLEGRO_EVENT& event);
-        bool _mouseButtonUp(const ALLEGRO_EVENT& event);
-        bool _mouseMove(const ALLEGRO_EVENT& event, EventType eventType);
-        bool _mouseEnter(const ALLEGRO_EVENT& event);
-        bool _mouseMove(const ALLEGRO_EVENT& event);
-        bool _mouseLeave(const ALLEGRO_EVENT& event);
-        bool _mouseWheel(const ALLEGRO_EVENT& event);
-        bool _keyEvent(const ALLEGRO_EVENT& event, EventType eventType);
-        bool _propagateKeyEventCapture(const ALLEGRO_EVENT& event, EventType eventType);
-        bool _propagateKeyEventBubble(const ALLEGRO_EVENT& event, EventType eventType);
-        bool _propagateKeyEvent(const ALLEGRO_EVENT& event, EventType eventType);
-        bool _dispatchUnusedKeyEvent(const ALLEGRO_EVENT& event, EventType eventType, EventPhaseType phase);
-        bool _unusedKeyEventChildren(const ALLEGRO_EVENT& event, EventType eventType);
-        bool _unusedKeyEvent(const ALLEGRO_EVENT& event, EventType eventType);
-        bool _moveFocusByKey(const ALLEGRO_EVENT& event);
         Widget* _getClosestFocusContainerAncestor() const;
         Widget* _getDescentantWithLowerTabIndex(int tabIndex) const;
         Widget* _getDescentantWithHigherTabIndex(int tabIndex) const;
@@ -961,7 +954,33 @@ namespace algui {
         Widget* _getNextInnermostFocusContainer() const;
         float _getScreenCenterX() const;
         float _getScreenCenterY() const;
+
+        //joystick events
+        bool _joystickButtonEventCapture(const ALLEGRO_EVENT& event, EventType eventType);
+        bool _joystickButtonEventBubble(const ALLEGRO_EVENT& event, EventType eventType);
+        bool _unusedJoystickButtonEvent(const ALLEGRO_EVENT& event, EventType eventType);
+        bool _joystickButtonEvent(const ALLEGRO_EVENT& event, EventType eventType);
+        bool _joystickMoveEventCapture(const ALLEGRO_EVENT& event);
+        bool _joystickMoveEventBubble(const ALLEGRO_EVENT& event);
+        bool _unusedJoystickMoveEvent(const ALLEGRO_EVENT& event);
         bool _joystickMoveEvent(const ALLEGRO_EVENT& event);
+
+        //mouse events
+        bool _mouseButtonEvent(const ALLEGRO_EVENT& event, EventType eventType);
+        bool _mouseButtonDown(const ALLEGRO_EVENT& event);
+        bool _mouseButtonUp(const ALLEGRO_EVENT& event);
+        bool _mouseMove(const ALLEGRO_EVENT& event, EventType eventType);
+        bool _mouseEnter(const ALLEGRO_EVENT& event);
+        bool _mouseMove(const ALLEGRO_EVENT& event);
+        bool _mouseLeave(const ALLEGRO_EVENT& event);
+        bool _mouseWheel(const ALLEGRO_EVENT& event);
+
+        //keyboard events
+        bool _keyEventCapture(const ALLEGRO_EVENT& event, EventType eventType);
+        bool _keyEventBubble(const ALLEGRO_EVENT& event, EventType eventType);
+        bool _unusedKeyEvent(const ALLEGRO_EVENT& event, EventType eventType);
+        bool _moveFocusByKey(const ALLEGRO_EVENT& event);
+        bool _keyEvent(const ALLEGRO_EVENT& event, EventType eventType);
     };
 
 

@@ -1116,6 +1116,124 @@ namespace algui {
     }
 
 
+    Widget* Widget::_getClosestFocusContainerAncestor() const {
+        for (Widget* ancestor = getParent(); ancestor; ancestor = ancestor->getParent()) {
+            if (ancestor->m_focusContainer) {
+                return ancestor;
+            }
+        }
+        return nullptr;
+    }
+
+
+    Widget* Widget::_getDescentantWithLowerTabIndex(int tabIndex) const {
+        for (Widget* descentant = getFirstChild(); descentant; descentant = getNext(descentant)) {
+            if (descentant->_canGetFocus() && descentant->m_tabIndex < tabIndex) {
+                return descentant;
+            }
+        }
+        return nullptr;
+    }
+
+
+    Widget* Widget::_getDescentantWithHigherTabIndex(int tabIndex) const {
+        for (Widget* descentant = getFirstChild(); descentant; descentant = getNext(descentant)) {
+            if (descentant->_canGetFocus() && descentant->m_tabIndex > tabIndex) {
+                return descentant;
+            }
+        }
+        return nullptr;
+    }
+
+
+    Widget* Widget::_getPrevFocusDescentant(Widget* focusedWidget) const {
+        if (focusedWidget) {
+            for (Widget* descentant = getPrev(focusedWidget); descentant; descentant = getPrev(descentant)) {
+                if (descentant->_canGetFocus()) {
+                    return descentant;
+                }
+            }
+        }
+
+        for (Widget* descentant = getInnermostLastChild(); descentant != focusedWidget; descentant = getPrev(descentant)) {
+            if (descentant->_canGetFocus()) {
+                return descentant;
+            }
+        }
+
+        return nullptr;
+    }
+
+
+    Widget* Widget::_getNextFocusDescentant(Widget* focusedWidget) const {
+        if (focusedWidget) {
+            for (Widget* descentant = getNext(focusedWidget); descentant; descentant = getNext(descentant)) {
+                if (descentant->_canGetFocus()) {
+                    return descentant;
+                }
+            }
+        }
+
+        for (Widget* descentant = getFirstChild(); descentant != focusedWidget; descentant = getNext(descentant)) {
+            if (descentant->_canGetFocus()) {
+                return descentant;
+            }
+        }
+
+        return nullptr;
+    }
+
+
+    bool Widget::_isValidFocusContainer() const {
+        if (m_enabled && m_focusContainer) {
+            for (Widget* descentant = getFirstChild(); descentant; descentant = getNext(descentant)) {
+                if (descentant->_canGetFocus()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+
+    Widget* Widget::_getPrevInnermostFocusContainer() const {
+        for (Widget* child = getLastChild(); child; child = child->getPrevSibling()) {
+            if (child->_isValidFocusContainer()) {
+                Widget* descentant = child->_getPrevInnermostFocusContainer();
+                if (descentant) {
+                    return descentant;
+                }
+                return child;
+            }
+        }
+        return nullptr;
+    }
+
+
+    Widget* Widget::_getNextInnermostFocusContainer() const {
+        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+            if (child->_isValidFocusContainer()) {
+                Widget* descentant = child->_getNextInnermostFocusContainer();
+                if (descentant) {
+                    return descentant;
+                }
+                return child;
+            }
+        }
+        return nullptr;
+    }
+
+
+    float Widget::_getScreenCenterX() const {
+        return (m_screenLeft + m_screenRight) / 2.0f;
+    }
+
+
+    float Widget::_getScreenCenterY() const {
+        return (m_screenTop + m_screenBottom) / 2.0f;
+    }
+
+
     bool Widget::_joystickButtonEventCapture(const ALLEGRO_EVENT& event, EventType eventType) {
         Widget* parent = getParent();
         if (parent && parent->_joystickButtonEventCapture(event, eventType)) {
@@ -1137,11 +1255,11 @@ namespace algui {
     }
 
 
-    bool Widget::_propagateJoystickButtonEventToChildren(const ALLEGRO_EVENT& event, EventType eventType) {
+    bool Widget::_unusedJoystickButtonEvent(const ALLEGRO_EVENT& event, EventType eventType) {
         if (dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
             return true;
         }
-        if (m_childWithMouse && m_childWithMouse->_propagateJoystickButtonEventToChildren(event, eventType)) {
+        if (m_childWithMouse && m_childWithMouse->_unusedJoystickButtonEvent(event, eventType)) {
             return true;
         }
         return dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
@@ -1157,7 +1275,81 @@ namespace algui {
                 return true;
             }
         }
-        return _propagateJoystickButtonEventToChildren(event, (EventType)(eventType + 2));
+        return _unusedJoystickButtonEvent(event, (EventType)(eventType + 2));
+    }
+
+
+    bool Widget::_joystickMoveEventCapture(const ALLEGRO_EVENT& event) {
+        Widget* parent = getParent();
+        if (parent && parent->_joystickMoveEventCapture(event)) {
+            return true;
+        }
+        return dispatchEvent(Event_JoystickMove, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture);
+    }
+
+
+    bool Widget::_joystickMoveEventBubble(const ALLEGRO_EVENT& event) {
+        if (dispatchEvent(Event_JoystickMove, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble)) {
+            return true;
+        }
+        Widget* parent = getParent();
+        if (parent && parent->_joystickMoveEventBubble(event)) {
+            return true;
+        }
+        return false;
+    }
+
+
+    bool Widget::_unusedJoystickMoveEvent(const ALLEGRO_EVENT& event) {
+        if (dispatchEvent(Event_UnusedJoystickMove, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
+            return true;
+        }
+        if (m_childWithMouse && m_childWithMouse->_unusedJoystickMoveEvent(event)) {
+            return true;
+        }
+        return dispatchEvent(Event_UnusedJoystickMove, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
+    }
+
+
+    bool Widget::_joystickMoveEvent(const ALLEGRO_EVENT& event) {
+        //send joystick move event to the focus tree
+        if (_focusedWidget) {
+            if (_focusedWidget->_joystickMoveEventCapture(event)) {
+                return true;
+            }
+            if (_focusedWidget->_joystickMoveEventBubble(event)) {
+                return true;
+            }
+        }
+
+        //sent unused joystick move event to the mouse tree
+        if (_unusedJoystickMoveEvent(event)) {
+            return true;
+        }
+
+        //move focus by joystick
+
+        //0 axis is the horizontal axis.
+        if (event.joystick.axis == 0) {
+            if (event.joystick.pos < 0) {
+                return moveFocusLeft();
+            }
+            else if (event.joystick.pos > 0) {
+                return moveFocusRight();
+            }
+        }
+
+        //1 axis is the vertical axis.
+        else if (event.joystick.axis == 1) {
+            if (event.joystick.pos < 0) {
+                return moveFocusUp();
+            }
+            else if (event.joystick.pos > 0) {
+                return moveFocusDown();
+            }
+        }
+
+        return 0;
     }
 
 
@@ -1282,11 +1474,99 @@ namespace algui {
     }
 
 
+    //do capture phase for key event
+    bool Widget::_keyEventCapture(const ALLEGRO_EVENT& event, EventType eventType) {
+        Widget* parent = getParent();
+        if (parent && parent->_keyEventCapture(event, eventType)) {
+            return true;
+        }
+        return dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture);
+    }
+
+
+    //do bubble phase for key event
+    bool Widget::_keyEventBubble(const ALLEGRO_EVENT& event, EventType eventType) {
+        if (dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble)) {
+            return true;
+        }
+        Widget* parent = getParent();
+        if (parent && parent->_keyEventBubble(event, eventType)) {
+            return true;
+        }
+        return false;
+    }
+
+
+    //unused key event
+    bool Widget::_unusedKeyEvent(const ALLEGRO_EVENT& event, EventType eventType) {
+        //dispatch event in capture phase
+        if (dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
+            return true;
+        }
+
+        //send event to children
+        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+            if (child->m_enabled && child->_unusedKeyEvent(event, eventType)) {
+                return true;
+            }
+        }
+
+        //dispatch event in bubble phase
+        return dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
+    }
+
+
+    //moves the focus according to the key pressed;
+    //the focus is moved either to the sibling with a higher tab index,
+    //or if there is no sibling with a higher tab index, then to the closest widget
+    //that can get the input focus.
+    bool Widget::_moveFocusByKey(const ALLEGRO_EVENT& event) {
+        switch (event.keyboard.keycode) {
+        case ALLEGRO_KEY_LEFT:
+            if (event.keyboard.modifiers & ALLEGRO_KEYMOD_SHIFT) {
+                return moveFocusRight();
+            }
+            return moveFocusLeft();
+
+        case ALLEGRO_KEY_UP:
+            if (event.keyboard.modifiers & ALLEGRO_KEYMOD_SHIFT) {
+                return moveFocusDown();
+            }
+            return moveFocusUp();
+
+        case ALLEGRO_KEY_RIGHT:
+            if (event.keyboard.modifiers & ALLEGRO_KEYMOD_SHIFT) {
+                return moveFocusLeft();
+            }
+            return moveFocusRight();
+
+        case ALLEGRO_KEY_DOWN:
+            if (event.keyboard.modifiers & ALLEGRO_KEYMOD_SHIFT) {
+                return moveFocusUp();
+            }
+            return moveFocusDown();
+
+        case ALLEGRO_KEY_TAB:
+            if (event.keyboard.modifiers & ALLEGRO_KEYMOD_SHIFT) {
+                return moveFocusBackward();
+            }
+            return moveFocusForward();
+        }
+
+        return false;
+    }
+
+
     //key event
     bool Widget::_keyEvent(const ALLEGRO_EVENT& event, EventType eventType) {
         //dispatch to focus widget first
-        if (_focusedWidget && _focusedWidget->_propagateKeyEvent(event, eventType)) {
-            return true;
+        if (_focusedWidget) {
+            if (_focusedWidget->_keyEventCapture(event, eventType)) {
+                return true;
+            }
+            if (_focusedWidget->_keyEventBubble(event, eventType)) {
+                return true;
+            }
         }
 
         //do unused key event
@@ -1301,283 +1581,6 @@ namespace algui {
 
         //event not processed at all
         return false;
-    }
-
-
-    //do capture phase for key event
-    bool Widget::_propagateKeyEventCapture(const ALLEGRO_EVENT& event, EventType eventType) {
-        Widget* parent = getParent();
-
-        //propagate to parent
-        if (parent && parent->_propagateKeyEventCapture(event, eventType)) {
-            return true;
-        }
-
-        //dispatch event in capture phase
-        return dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture);
-    }
-
-
-    //do bubble phase for key event
-    bool Widget::_propagateKeyEventBubble(const ALLEGRO_EVENT& event, EventType eventType) {
-        //dispatch event in bubble phase
-        if (dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble)) {
-            return true;
-        }
-
-        Widget* parent = getParent();
-
-        //propagate to parent
-        if (parent && parent->_propagateKeyEventBubble(event, eventType)) {
-            return true;
-        }
-
-        //not processed
-        return false;
-    }
-
-
-    //do capture/bubble for key event
-    bool Widget::_propagateKeyEvent(const ALLEGRO_EVENT& event, EventType eventType) {
-        if (_propagateKeyEventCapture(event, eventType)) {
-            return true;
-        }
-        return _propagateKeyEventBubble(event, eventType);
-    }
-
-
-    //dispatch unused key event
-    bool Widget::_dispatchUnusedKeyEvent(const ALLEGRO_EVENT& event, EventType eventType, EventPhaseType phase) {
-        return dispatchEvent(eventType, AllegroEvent(this, event), phase);
-    }
-
-
-    //pass event to children
-    bool Widget::_unusedKeyEventChildren(const ALLEGRO_EVENT& event, EventType eventType) {
-        //dispatch event to the children in capture phase
-        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
-            if (child->m_enabled && child->_dispatchUnusedKeyEvent(event, eventType, EventPhase_Capture)) {
-                return true;
-            }
-        }
-
-        //send event to children
-        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
-            if (child->m_enabled && child->_unusedKeyEventChildren(event, eventType)) {
-                return true;
-            }
-        }
-
-        //dispatch event to the children in bubble phase
-        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
-            if (child->m_enabled && child->_dispatchUnusedKeyEvent(event, eventType, EventPhase_Bubble)) {
-                return true;
-            }
-        }
-
-        //event not processed
-        return false;
-    }
-
-
-    //unused key event
-    bool Widget::_unusedKeyEvent(const ALLEGRO_EVENT& event, EventType eventType) {
-        //dispatch event in capture phase
-        if (dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
-            return true;
-        }
-
-        //dispatch event to children
-        if (_unusedKeyEventChildren(event, eventType)) {
-            return true;
-        }
-
-        //dispatch event in bubble phase
-        return dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
-    }
-
-
-    //moves the focus according to the key pressed;
-    //the focus is moved either to the sibling with a higher tab index,
-    //or if there is no sibling with a higher tab index, then to the closest widget
-    //that can get the input focus.
-    bool Widget::_moveFocusByKey(const ALLEGRO_EVENT& event) {
-        switch (event.keyboard.keycode) {
-            case ALLEGRO_KEY_LEFT:
-                if (event.keyboard.modifiers & ALLEGRO_KEYMOD_SHIFT) {
-                    return moveFocusRight();
-                }
-                return moveFocusLeft();
-
-            case ALLEGRO_KEY_UP:
-                if (event.keyboard.modifiers & ALLEGRO_KEYMOD_SHIFT) {
-                    return moveFocusDown();
-                }
-                return moveFocusUp();
-
-            case ALLEGRO_KEY_RIGHT:
-                if (event.keyboard.modifiers & ALLEGRO_KEYMOD_SHIFT) {
-                    return moveFocusLeft();
-                }
-                return moveFocusRight();
-
-            case ALLEGRO_KEY_DOWN:
-                if (event.keyboard.modifiers & ALLEGRO_KEYMOD_SHIFT) {
-                    return moveFocusUp();
-                }
-                return moveFocusDown();
-
-            case ALLEGRO_KEY_TAB:
-                if (event.keyboard.modifiers & ALLEGRO_KEYMOD_SHIFT) {
-                    return moveFocusBackward();
-                }
-                return moveFocusForward();
-        }
-
-        return false;
-    }
-
-
-    Widget* Widget::_getClosestFocusContainerAncestor() const {
-        for (Widget* ancestor = getParent(); ancestor; ancestor = ancestor->getParent()) {
-            if (ancestor->m_focusContainer) {
-                return ancestor;
-            }
-        }
-        return nullptr;
-    }
-
-
-    Widget* Widget::_getDescentantWithLowerTabIndex(int tabIndex) const {
-        for (Widget* descentant = getFirstChild(); descentant; descentant = getNext(descentant)) {
-            if (descentant->_canGetFocus() && descentant->m_tabIndex < tabIndex) {
-                return descentant;
-            }
-        }
-        return nullptr;
-    }
-
-
-    Widget* Widget::_getDescentantWithHigherTabIndex(int tabIndex) const {
-        for (Widget* descentant = getFirstChild(); descentant; descentant = getNext(descentant)) {
-            if (descentant->_canGetFocus() && descentant->m_tabIndex > tabIndex) {
-                return descentant;
-            }
-        }
-        return nullptr;
-    }
-
-
-    Widget* Widget::_getPrevFocusDescentant(Widget* focusedWidget) const {
-        if (focusedWidget) {
-            for (Widget* descentant = getPrev(focusedWidget); descentant; descentant = getPrev(descentant)) {
-                if (descentant->_canGetFocus()) {
-                    return descentant;
-                }
-            }
-        }
-
-        for (Widget* descentant = getInnermostLastChild(); descentant != focusedWidget; descentant = getPrev(descentant)) {
-            if (descentant->_canGetFocus()) {
-                return descentant;
-            }
-        }
-
-        return nullptr;
-    }
-
-
-    Widget* Widget::_getNextFocusDescentant(Widget* focusedWidget) const {
-        if (focusedWidget) {
-            for (Widget* descentant = getNext(focusedWidget); descentant; descentant = getNext(descentant)) {
-                if (descentant->_canGetFocus()) {
-                    return descentant;
-                }
-            }
-        }
-
-        for (Widget* descentant = getFirstChild(); descentant != focusedWidget; descentant = getNext(descentant)) {
-            if (descentant->_canGetFocus()) {
-                return descentant;
-            }
-        }
-
-        return nullptr;
-    }
-
-
-    bool Widget::_isValidFocusContainer() const {
-        if (m_enabled && m_focusContainer) {
-            for (Widget* descentant = getFirstChild(); descentant; descentant = getNext(descentant)) {
-                if (descentant->_canGetFocus()) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-
-    Widget* Widget::_getPrevInnermostFocusContainer() const {
-        for (Widget* child = getLastChild(); child; child = child->getPrevSibling()) {
-            if (child->_isValidFocusContainer()) {
-                Widget* descentant = child->_getPrevInnermostFocusContainer();
-                if (descentant) {
-                    return descentant;
-                }
-                return child;
-            }
-        }
-        return nullptr;
-    }
-
-
-    Widget* Widget::_getNextInnermostFocusContainer() const {
-        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
-            if (child->_isValidFocusContainer()) {
-                Widget* descentant = child->_getNextInnermostFocusContainer();
-                if (descentant) {
-                    return descentant;
-                }
-                return child;
-            }
-        }
-        return nullptr;
-    }
-
-
-    float Widget::_getScreenCenterX() const {
-        return (m_screenLeft + m_screenRight) / 2.0f;
-    }
-
-
-    float Widget::_getScreenCenterY() const {
-        return (m_screenTop + m_screenBottom) / 2.0f;
-    }
-
-
-    bool Widget::_joystickMoveEvent(const ALLEGRO_EVENT& event) {
-        //0 axis is the horizontal axis.
-        if (event.joystick.axis == 0) {
-            if (event.joystick.pos < 0) {
-                return moveFocusLeft();
-            }
-            else if (event.joystick.pos > 0) {
-                return moveFocusRight();
-            }
-        }
-
-        //1 axis is the vertical axis.
-        else if (event.joystick.axis == 1) {
-            if (event.joystick.pos < 0) {
-                return moveFocusUp();
-            }
-            else if (event.joystick.pos > 0) {
-                return moveFocusDown();
-            }
-        }
-
-        return 0;
     }
 
 
