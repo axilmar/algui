@@ -149,6 +149,9 @@ namespace algui {
         /** Mouse wheel event. */
         Event_MouseWheel,
 
+        /** timer event. */
+        Event_Timer,
+
         /** First value available for user events. */
         Event_User = 256
     };
@@ -249,6 +252,7 @@ namespace algui {
          * The destructor.
          * Deletes all children.
          * Resets the focus widget pointer to null if it is this widget.
+         * Removes itself from the set of widgets that receive timer events, if needed.
          */
         ~Widget();
 
@@ -844,6 +848,21 @@ namespace algui {
          */
         bool moveFocusDown();
 
+        /**
+         * Adds this widget to the set of the widgets that receive timer events.
+         * If the widget is already added, the call is ignored.
+         * By default, a widget does not receive timer events.
+         */
+        void enableTimerEvents();
+
+        /**
+         * Removes this widget from the set of widgets that receive timer events.
+         * If the widget is already removed, the call is ignored.
+         * By default, a widget does not receive timer events.
+         * It is called automatically from the widget's destructor.
+         */
+        void disableTimerEvents();
+
     protected:
         /**
          * Invoked to allow a widget to compute its geometry constraints
@@ -926,6 +945,7 @@ namespace algui {
         bool m_focusable : 1;
         bool m_hasMouse : 1;
         bool m_focusContainer : 1;
+        bool m_hasTimer : 1;
 
         //various internal functions
         void _invalidateScreenGeometry();
@@ -981,6 +1001,9 @@ namespace algui {
         bool _unusedKeyEvent(const ALLEGRO_EVENT& event, EventType eventType);
         bool _moveFocusByKey(const ALLEGRO_EVENT& event);
         bool _keyEvent(const ALLEGRO_EVENT& event, EventType eventType);
+
+        //timer event
+        bool _timerEvent(const ALLEGRO_EVENT& event);
     };
 
 

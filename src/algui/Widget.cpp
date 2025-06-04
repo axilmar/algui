@@ -27,6 +27,10 @@ namespace algui {
     static Widget* _focusedWidget = nullptr;
 
 
+    //widgets that have registered for timer events
+    static std::set<Widget*> _timerWidgets;
+
+
     //calc rect intersection
     static bool _intersect(
         float x1, float y1, float x2, float y2,
@@ -88,16 +92,23 @@ namespace algui {
         , m_focusable(true)
         , m_hasMouse(false)
         , m_focusContainer(false)
+        , m_hasTimer(false)
     {
     }
 
 
     //the destructor
     Widget::~Widget() {
+        //delete children
         deleteAll();
+
+        //manage focus widget
         if (this == _focusedWidget) {
             _focusedWidget = nullptr;
         }
+
+        //do not receive timer widgets
+        disableTimerEvents();
     }
 
 
@@ -537,6 +548,9 @@ namespace algui {
 
             case ALLEGRO_EVENT_JOYSTICK_AXIS:
                 return _joystickMoveEvent(event);
+
+            case ALLEGRO_EVENT_TIMER:
+                return _timerEvent(event);
         }
 
         //event not processed
@@ -839,6 +853,24 @@ namespace algui {
         }
 
         return false;
+    }
+
+
+    //Adds this widget to the set of the widgets that receive timer events.
+    void Widget::enableTimerEvents() {
+        if (!m_hasTimer) {
+            m_hasTimer = true;
+            _timerWidgets.insert(this);
+        }
+    }
+
+
+    //Removes this widget from the set of widgets that receive timer events.
+    void Widget::disableTimerEvents() {
+        if (m_hasTimer) {
+            m_hasTimer = false;
+            _timerWidgets.erase(this);
+        }
     }
 
 
@@ -1581,6 +1613,15 @@ namespace algui {
 
         //event not processed at all
         return false;
+    }
+
+
+    bool Widget::_timerEvent(const ALLEGRO_EVENT& event) {
+        bool result = false;
+        for (Widget* wgt : _timerWidgets) {
+            result = wgt->dispatchEvent(Event_Timer, AllegroEvent(wgt, event)) || result;
+        }
+        return result;
     }
 
 
