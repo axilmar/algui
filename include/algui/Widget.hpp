@@ -70,6 +70,48 @@ namespace algui {
         /** Mouse wheel event. */
         Event_MouseWheel,
 
+        /**
+         * Key down event.
+         * Delivered to the widget with the focus.
+         * If there is no focus widget to get the input focus,
+         * then an used key down event is sent to all widgets in the tree.
+         */
+        Event_KeyDown,
+
+        /**
+         * Key up event.
+         * Delivered to the widget with the focus.
+         * If there is no focus widget to get the input focus,
+         * then an used key down event is sent to all widgets in the tree.
+         */
+        Event_KeyUp,
+
+        /**
+         * Character event.
+         * Delivered to the widget with the focus.
+         * If there is no focus widget to get the input focus,
+         * then an used key down event is sent to all widgets in the tree.
+         */
+        Event_KeyChar,
+
+        /**
+         * Sent to the root widget when a key down goes unused.
+         * The default implementation sends the event to all of a widget's children.
+         */
+        Event_UnusedKeyDown,
+
+        /**
+         * Sent to the root widget when a key up goes unused.
+         * The default implementation sends the event to all of a widget's children.
+         */
+        Event_UnusedKeyUp,
+
+        /**
+         * Sent to the root widget when a key character goes unused.
+         * The default implementation sends the event to all of a widget's children.
+         */
+        Event_UnusedKeyChar,
+
         /** First value available for user events. */
         Event_User = 256
     };
@@ -80,14 +122,15 @@ namespace algui {
      */
     enum EventPhaseType {
         /**
+         * Bubble phase: events are propagated from child to parent.
+         * It is the default value for all events that do not have a capture phase.
+         */
+        EventPhase_Bubble,
+
+        /**
          * Capture phase: events are propagated from parent to child.
          */
         EventPhase_Capture,
-
-        /**
-         * Bubble phase: events are propagated from child to parent.
-         */
-        EventPhase_Bubble,
 
         /** First value available for user event phases. */
         EventPhase_User = 256
@@ -368,6 +411,24 @@ namespace algui {
         }
 
         /**
+         * Returns the tab index of the widget.
+         * @return the tab index of the widget.
+         */
+        int getTabIndex() const {
+            return m_tabIndex;
+        }
+
+        /**
+         * Returns the focus container state.
+         * A widget that is a focus container does not allow moving of focus with the keyboard outside of itself.
+         * By default, no widget is a focus container, allowing moving of focus with the keyboard on the whole UI.
+         * @return the focus container state.
+         */
+        bool isFocusContainer() const {
+            return m_focusContainer;
+        }
+
+        /**
          * Returns the clipping mode.
          * @return the clipping mode.
          */
@@ -585,6 +646,24 @@ namespace algui {
         void setMaximumHeight(const Coord& maximumHeight);
 
         /**
+         * Sets the tab index of the widget.
+         * @param tabIndex the new tab index.
+         */
+        void setTabIndex(int tabIndex) {
+            m_tabIndex = tabIndex;
+        }
+
+        /**
+         * Sets the focus container flag.
+         * A widget that is a focus container does not allow moving of focus with the keyboard outside of itself.
+         * By default, no widget is a focus container, allowing moving of focus with the keyboard on the whole UI.
+         * If the widget gets the focus container state, it loses the focusable state,
+         * since a widget cannot have the focus and also be a focus container.
+         * @param focusContainer the new focus container state.
+         */
+        void setFocusContainer(bool focusContainer);
+
+        /**
          * Sets the clipping mode.
          * @@param the clipping mode.
          */
@@ -636,7 +715,8 @@ namespace algui {
 
         /**
          * Sets the focusable state.
-         * If not focusable, it and its descentants cannot get the focus.
+         * If the widget becomes focusable, it loses the focus container status,
+         * since a widget can either be focusable or contain the focus, but not both.
          * @param focusable the new focusable state.
          */
         void setFocusable(bool focusable);
@@ -750,6 +830,7 @@ namespace algui {
         //state
         std::string m_id;
         Widget* m_childWithMouse;
+        int m_tabIndex;
         ClippingMode m_clippingMode : 4;
         bool m_visible : 1;
         bool m_screenGeometryDirty : 1;
@@ -771,6 +852,7 @@ namespace algui {
         bool m_treeVisualStateDirty : 1;
         bool m_focusable : 1;
         bool m_hasMouse : 1;
+        bool m_focusContainer : 1;
 
         //internal functions
         void _invalidateScreenGeometry();
@@ -796,6 +878,30 @@ namespace algui {
         bool _mouseMove(const ALLEGRO_EVENT& event);
         bool _mouseLeave(const ALLEGRO_EVENT& event);
         bool _mouseWheel(const ALLEGRO_EVENT& event);
+        bool _keyEvent(const ALLEGRO_EVENT& event, EventType eventType);
+        bool _propagateKeyEventCapture(const ALLEGRO_EVENT& event, EventType eventType);
+        bool _propagateKeyEventBubble(const ALLEGRO_EVENT& event, EventType eventType);
+        bool _propagateKeyEvent(const ALLEGRO_EVENT& event, EventType eventType);
+        bool _dispatchUnusedKeyEvent(const ALLEGRO_EVENT& event, EventType eventType, EventPhaseType phase);
+        bool _unusedKeyEventChildren(const ALLEGRO_EVENT& event, EventType eventType);
+        bool _unusedKeyEvent(const ALLEGRO_EVENT& event, EventType eventType);
+        bool _moveFocusByKey(const ALLEGRO_EVENT& event);
+        Widget* _getClosestFocusContainerAncestor() const;
+        Widget* _getDescentantWithLowerTabIndex(int tabIndex) const;
+        Widget* _getDescentantWithHigherTabIndex(int tabIndex) const;
+        Widget* _getPrevFocusDescentant(Widget* focusedWidget) const;
+        Widget* _getNextFocusDescentant(Widget* focusedWidget) const;
+        bool _isValidFocusContainer() const;
+        Widget* _getPrevInnermostFocusContainer() const;
+        Widget* _getNextInnermostFocusContainer() const;
+        bool _moveFocusByKeyBackward();
+        bool _moveFocusByKeyForward();
+        float _getScreenCenterX() const;
+        float _getScreenCenterY() const;
+        bool _moveFocusByKeyLeft();
+        bool _moveFocusByKeyUp();
+        bool _moveFocusByKeyRight();
+        bool _moveFocusByKeyDown();
     };
 
 

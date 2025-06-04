@@ -114,18 +114,23 @@ namespace algui {
 
         /**
          * Returns the previous of the given node within this tree.
+         * @param node node to get the previous of.
          * @return the previous of the given node within this tree.
          */
         T* getPrev(const T* node) const {
             if (containsDescentant(node)) {
-                return node->getPrev();
+                if (node->m_prevSibling) {
+                    return node->m_prevSibling->getInnermostLastChild();
+                }
+                return node->m_parent != this ? node->m_parent : nullptr;
             }
             return nullptr;
         }
 
         /**
          * Returns the next of the given node within this tree.
-         * @return the net of the given node within this tree.
+         * @param node node to get the next of.
+         * @return the next of the given node within this tree.
          */
         T* getNext(const T* node) const {
             if (contains(node)) {
@@ -150,7 +155,7 @@ namespace algui {
          * @return the root.
          */
         T* getRoot() const {
-            T* node = const_cast<T*>(this);
+            T* node = const_cast<T*>(static_cast<const T*>(this));
             for(; node->m_parent; node = node->m_parent) {}
             return node;
         }

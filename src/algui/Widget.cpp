@@ -40,6 +40,12 @@ namespace algui {
     }
 
 
+    //calc distance between two points
+    static float distance(float x1, float y1, float x2, float y2) {
+        return std::hypot(abs(x1 - x2), abs(y1 - y2));
+    }
+
+
     /**************************************************************************
         PUBLIC
      **************************************************************************/ 
@@ -58,6 +64,7 @@ namespace algui {
         , m_screenScalingX(1)
         , m_screenScalingY(1)
         , m_childWithMouse(nullptr)
+        , m_tabIndex(0)
         , m_clippingMode(ClippingMode::None)
         , m_visible(true)
         , m_screenGeometryDirty(false)
@@ -79,6 +86,7 @@ namespace algui {
         , m_treeVisualStateDirty(false)
         , m_focusable(true)
         , m_hasMouse(false)
+        , m_focusContainer(false)
     {
     }
 
@@ -288,6 +296,15 @@ namespace algui {
     }
 
 
+    //set the focus container flag.
+    void Widget::setFocusContainer(bool focusContainer) {
+        m_focusContainer = focusContainer;
+        if (m_focusContainer) {
+            m_focusable = false;
+        }
+    }
+
+
     //Sets the enabled state of the widget.
     void Widget::setEnabled(bool enabled) {
         if (enabled != m_enabled) {
@@ -402,11 +419,9 @@ namespace algui {
 
     //Sets the focusable state.
     void Widget::setFocusable(bool focusable) {
-        if (focusable != m_focusable) {
-            if (!m_focusable && contains(_focusedWidget)) {
-                _focusedWidget->setFocused(false);
-            }
-            m_focusable = focusable;
+        m_focusable = focusable;
+        if (focusable) {
+            m_focusContainer = false;
         }
     }
 
@@ -503,6 +518,15 @@ namespace algui {
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
                 return _mouseButtonUp(event);
+
+            case ALLEGRO_EVENT_KEY_DOWN:
+                return _keyEvent(event, Event_KeyDown);
+
+            case ALLEGRO_EVENT_KEY_UP:
+                return _keyEvent(event, Event_KeyUp);
+
+            case ALLEGRO_EVENT_KEY_CHAR:
+                return _keyEvent(event, Event_KeyChar);
         }
 
         //event not processed
@@ -733,12 +757,7 @@ namespace algui {
 
 
     bool Widget::_canGetFocus() const {
-        for (const Widget* wgt = this; wgt; wgt = wgt->getParent()) {
-            if (!wgt->m_enabled || !wgt->m_focusable) {
-                return false;
-            }
-        }
-        return true;
+        return m_focusable && _enabledTree();
     }
 
 
@@ -912,6 +931,586 @@ namespace algui {
 
         //dispatch event in bubble phase
         return dispatchEvent(Event_MouseWheel, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
+    }
+
+
+    //key event
+    bool Widget::_keyEvent(const ALLEGRO_EVENT& event, EventType eventType) {
+        //dispatch to focus widget first
+        if (_focusedWidget && _focusedWidget->_propagateKeyEvent(event, eventType)) {
+            return true;
+        }
+
+        //do unused key event
+        if (_unusedKeyEvent(event, (EventType)(eventType + 3))) {
+            return true;
+        }
+
+        //move the focus in response to key pressed
+        if (eventType == Event_KeyChar && _moveFocusByKey(event)) {
+            return true;
+        }
+
+        //event not processed at all
+        return false;
+    }
+
+
+    //do capture phase for key event
+    bool Widget::_propagateKeyEventCapture(const ALLEGRO_EVENT& event, EventType eventType) {
+        Widget* parent = getParent();
+
+        //propagate to parent
+        if (parent && parent->_propagateKeyEventCapture(event, eventType)) {
+            return true;
+        }
+
+        //dispatch event in capture phase
+        return dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture);
+    }
+
+
+    //do bubble phase for key event
+    bool Widget::_propagateKeyEventBubble(const ALLEGRO_EVENT& event, EventType eventType) {
+        //dispatch event in bubble phase
+        if (dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble)) {
+            return true;
+        }
+
+        Widget* parent = getParent();
+
+        //propagate to parent
+        if (parent && parent->_propagateKeyEventBubble(event, eventType)) {
+            return true;
+        }
+
+        //not processed
+        return false;
+    }
+
+
+    //do capture/bubble for key event
+    bool Widget::_propagateKeyEvent(const ALLEGRO_EVENT& event, EventType eventType) {
+        //propagate to parent first to do capture phase
+        if (_propagateKeyEventCapture(event, eventType)) {
+            return true;
+        }
+
+        //do bubble phase
+        if (_propagateKeyEventBubble(event, eventType)) {
+            return true;
+        }
+
+        //event not processed
+        return false;
+    }
+
+
+    //dispatch unused key event
+    bool Widget::_dispatchUnusedKeyEvent(const ALLEGRO_EVENT& event, EventType eventType, EventPhaseType phase) {
+        return dispatchEvent(eventType, AllegroEvent(this, event), phase);
+    }
+
+
+    //pass event to children
+    bool Widget::_unusedKeyEventChildren(const ALLEGRO_EVENT& event, EventType eventType) {
+        //dispatch event to the children in capture phase
+        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+            if (child->m_enabled && child->_dispatchUnusedKeyEvent(event, eventType, EventPhase_Capture)) {
+                return true;
+            }
+        }
+
+        //send event to children
+        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+            if (child->m_enabled && child->_unusedKeyEventChildren(event, eventType)) {
+                return true;
+            }
+        }
+
+        //dispatch event to the children in bubble phase
+        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+            if (child->m_enabled && child->_dispatchUnusedKeyEvent(event, eventType, EventPhase_Bubble)) {
+                return true;
+            }
+        }
+
+        //event not processed
+        return false;
+    }
+
+
+    //unused key event
+    bool Widget::_unusedKeyEvent(const ALLEGRO_EVENT& event, EventType eventType) {
+        //dispatch event in capture phase
+        if (dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
+            return true;
+        }
+
+        //dispatch event to children
+        if (_unusedKeyEventChildren(event, eventType)) {
+            return true;
+        }
+
+        //dispatch event in bubble phase
+        return dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
+    }
+
+
+    //moves the focus according to the key pressed;
+    //the focus is moved either to the sibling with a higher tab index,
+    //or if there is no sibling with a higher tab index, then to the closest widget
+    //that can get the input focus.
+    bool Widget::_moveFocusByKey(const ALLEGRO_EVENT& event) {
+        switch (event.keyboard.keycode) {
+            case ALLEGRO_KEY_LEFT:
+                if (event.keyboard.modifiers & ALLEGRO_KEYMOD_SHIFT) {
+                    return _moveFocusByKeyRight();
+                }
+                return _moveFocusByKeyLeft();
+
+            case ALLEGRO_KEY_UP:
+                if (event.keyboard.modifiers & ALLEGRO_KEYMOD_SHIFT) {
+                    return _moveFocusByKeyDown();
+                }
+                return _moveFocusByKeyUp();
+
+            case ALLEGRO_KEY_RIGHT:
+                if (event.keyboard.modifiers & ALLEGRO_KEYMOD_SHIFT) {
+                    return _moveFocusByKeyLeft();
+                }
+                return _moveFocusByKeyRight();
+
+            case ALLEGRO_KEY_DOWN:
+                if (event.keyboard.modifiers & ALLEGRO_KEYMOD_SHIFT) {
+                    return _moveFocusByKeyUp();
+                }
+                return _moveFocusByKeyDown();
+
+            case ALLEGRO_KEY_TAB:
+                if (event.keyboard.modifiers & ALLEGRO_KEYMOD_SHIFT) {
+                    return _moveFocusByKeyBackward();
+                }
+                return _moveFocusByKeyForward();
+        }
+
+        return false;
+    }
+
+
+    Widget* Widget::_getClosestFocusContainerAncestor() const {
+        for (Widget* ancestor = getParent(); ancestor; ancestor = ancestor->getParent()) {
+            if (ancestor->m_focusContainer) {
+                return ancestor;
+            }
+        }
+        return nullptr;
+    }
+
+
+    Widget* Widget::_getDescentantWithLowerTabIndex(int tabIndex) const {
+        for (Widget* descentant = getFirstChild(); descentant; descentant = getNext(descentant)) {
+            if (descentant->_canGetFocus() && descentant->m_tabIndex < tabIndex) {
+                return descentant;
+            }
+        }
+        return nullptr;
+    }
+
+
+    Widget* Widget::_getDescentantWithHigherTabIndex(int tabIndex) const {
+        for (Widget* descentant = getFirstChild(); descentant; descentant = getNext(descentant)) {
+            if (descentant->_canGetFocus() && descentant->m_tabIndex > tabIndex) {
+                return descentant;
+            }
+        }
+        return nullptr;
+    }
+
+
+    Widget* Widget::_getPrevFocusDescentant(Widget* focusedWidget) const {
+        if (focusedWidget) {
+            for (Widget* descentant = getPrev(focusedWidget); descentant; descentant = getPrev(descentant)) {
+                if (descentant->_canGetFocus()) {
+                    return descentant;
+                }
+            }
+        }
+
+        for (Widget* descentant = getInnermostLastChild(); descentant != focusedWidget; descentant = getPrev(descentant)) {
+            if (descentant->_canGetFocus()) {
+                return descentant;
+            }
+        }
+
+        return nullptr;
+    }
+
+
+    Widget* Widget::_getNextFocusDescentant(Widget* focusedWidget) const {
+        if (focusedWidget) {
+            for (Widget* descentant = getNext(focusedWidget); descentant; descentant = getNext(descentant)) {
+                if (descentant->_canGetFocus()) {
+                    return descentant;
+                }
+            }
+        }
+
+        for (Widget* descentant = getFirstChild(); descentant != focusedWidget; descentant = getNext(descentant)) {
+            if (descentant->_canGetFocus()) {
+                return descentant;
+            }
+        }
+
+        return nullptr;
+    }
+
+
+    bool Widget::_isValidFocusContainer() const {
+        if (m_enabled && m_focusContainer) {
+            for (Widget* descentant = getFirstChild(); descentant; descentant = getNext(descentant)) {
+                if (descentant->_canGetFocus()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+
+    Widget* Widget::_getPrevInnermostFocusContainer() const {
+        for (Widget* child = getLastChild(); child; child = child->getPrevSibling()) {
+            if (child->_isValidFocusContainer()) {
+                Widget* descentant = child->_getPrevInnermostFocusContainer();
+                if (descentant) {
+                    return descentant;
+                }
+                return child;
+            }
+        }
+        return nullptr;
+    }
+
+
+    Widget* Widget::_getNextInnermostFocusContainer() const {
+        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+            if (child->_isValidFocusContainer()) {
+                Widget* descentant = child->_getNextInnermostFocusContainer();
+                if (descentant) {
+                    return descentant;
+                }
+                return child;
+            }
+        }
+        return nullptr;
+    }
+
+
+    bool Widget::_moveFocusByKeyBackward() {
+        Widget* focusContainer = nullptr;
+        int tabIndex = INT_MAX;
+
+        //if there is a focused widget, limit the focus movement within the focus container
+        //the focused widget belongs to
+        if (_focusedWidget) {
+            focusContainer = _focusedWidget->_getClosestFocusContainerAncestor();
+            tabIndex = _focusedWidget->m_tabIndex;
+        }
+
+        //otherwise move the focus within the last innermost focus container
+        if (!focusContainer) {
+            focusContainer = _getPrevInnermostFocusContainer();
+            if (!focusContainer) {
+                focusContainer = getRoot();
+            }
+        }
+
+        //find widget with lower tab index; if found, give it the focus
+        Widget* widgetWithLowerTabIndex = focusContainer->_getDescentantWithLowerTabIndex(tabIndex);
+        if (widgetWithLowerTabIndex) {
+            widgetWithLowerTabIndex->setFocused(true);
+            return true;
+        }
+
+        //since no lower tab index is found, find previous widget that can get the input focus
+        Widget* prevWidgetToFocus = focusContainer->_getPrevFocusDescentant(_focusedWidget);
+        if (prevWidgetToFocus) {
+            prevWidgetToFocus->setFocused(true);
+            return true;
+        }
+
+        return false;
+    }
+
+
+    bool Widget::_moveFocusByKeyForward() {
+        Widget* focusContainer = nullptr;
+        int tabIndex = 0;
+
+        //if there is a focused widget, limit the focus movement within the focus container
+        //the focused widget belongs to
+        if (_focusedWidget) {
+            focusContainer = _focusedWidget->_getClosestFocusContainerAncestor();
+            tabIndex = _focusedWidget->m_tabIndex;
+        }
+
+        //otherwise move the focus within the first innermost focus container
+        if (!focusContainer) {
+            focusContainer = _getNextInnermostFocusContainer();
+            if (!focusContainer) {
+                focusContainer = getRoot();
+            }
+        }
+
+        //find widget with higher tab index; if found, give it the focus
+        Widget* widgetWithHigherTabIndex = focusContainer->_getDescentantWithHigherTabIndex(tabIndex);
+        if (widgetWithHigherTabIndex) {
+            widgetWithHigherTabIndex->setFocused(true);
+            return true;
+        }
+
+        //since no higher tab index is found, find next widget that can get the input focus
+        Widget* nextWidgetToFocus = focusContainer->_getNextFocusDescentant(_focusedWidget);
+        if (nextWidgetToFocus) {
+            nextWidgetToFocus->setFocused(true);
+            return true;
+        }
+
+        return false;
+    }
+
+
+    float Widget::_getScreenCenterX() const {
+        return (m_screenLeft + m_screenRight) / 2.0f;
+    }
+
+
+    float Widget::_getScreenCenterY() const {
+        return (m_screenTop + m_screenBottom) / 2.0f;
+    }
+
+
+    bool Widget::_moveFocusByKeyLeft() {
+        Widget* focusContainer = nullptr;
+
+        if (_focusedWidget) {
+            focusContainer = _focusedWidget->_getClosestFocusContainerAncestor();
+        }
+
+        if (!focusContainer) {
+            focusContainer = _getPrevInnermostFocusContainer();
+            if (!focusContainer) {
+                focusContainer = getRoot();
+            }
+        }
+
+        if (!_focusedWidget) {
+            Widget* wgt = focusContainer->_getPrevFocusDescentant(nullptr);
+            if (wgt) {
+                wgt->setFocused(true);
+                return true;
+            }
+        }
+
+        Widget* bestWidget = nullptr;
+        float bestDist = FLT_MAX;
+        for (Widget* wgt = focusContainer->getFirstChild(); wgt; wgt = focusContainer->getNext(wgt)) {
+            if (wgt != _focusedWidget && wgt->m_enabled && wgt->m_focusable && wgt->m_screenRight <= _focusedWidget->m_screenRight) {
+                const float dist1 = distance(wgt->m_screenRight, wgt->m_screenTop   , _focusedWidget->m_screenLeft, _focusedWidget->m_screenTop   );
+                const float dist2 = distance(wgt->m_screenRight, wgt->m_screenBottom, _focusedWidget->m_screenLeft, _focusedWidget->m_screenTop   );
+                const float dist3 = distance(wgt->m_screenRight, wgt->m_screenTop   , _focusedWidget->m_screenLeft, _focusedWidget->m_screenBottom);
+                const float dist4 = distance(wgt->m_screenRight, wgt->m_screenBottom, _focusedWidget->m_screenLeft, _focusedWidget->m_screenBottom);
+                const float dist5 = distance(wgt->m_screenLeft , wgt->m_screenTop   , _focusedWidget->m_screenLeft, _focusedWidget->m_screenTop   );
+                const float dist6 = distance(wgt->m_screenLeft , wgt->m_screenBottom, _focusedWidget->m_screenLeft, _focusedWidget->m_screenTop   );
+                const float dist7 = distance(wgt->m_screenLeft , wgt->m_screenTop   , _focusedWidget->m_screenLeft, _focusedWidget->m_screenBottom);
+                const float dist8 = distance(wgt->m_screenLeft , wgt->m_screenBottom, _focusedWidget->m_screenLeft, _focusedWidget->m_screenBottom);
+                const float dist = std::min(dist1, std::min(dist2, std::min(dist3, std::min(dist4, std::min(dist5, std::min(dist6, std::min(dist7, dist8)))))));
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    bestWidget = wgt;
+                }
+            }
+        }
+        if (bestWidget) {
+            bestWidget->setFocused(true);
+            return true;
+        }
+
+        Widget* wgt = focusContainer->_getPrevFocusDescentant(nullptr);
+        if (wgt) {
+            wgt->setFocused(true);
+            return true;
+        }
+
+        return false;
+    }
+
+
+    bool Widget::_moveFocusByKeyUp() {
+        Widget* focusContainer = nullptr;
+
+        if (_focusedWidget) {
+            focusContainer = _focusedWidget->_getClosestFocusContainerAncestor();
+        }
+
+        if (!focusContainer) {
+            focusContainer = _getPrevInnermostFocusContainer();
+            if (!focusContainer) {
+                focusContainer = getRoot();
+            }
+        }
+
+        if (!_focusedWidget) {
+            Widget* wgt = focusContainer->_getPrevFocusDescentant(nullptr);
+            if (wgt) {
+                wgt->setFocused(true);
+                return true;
+            }
+        }
+
+        Widget* bestWidget = nullptr;
+        float bestDist = FLT_MAX;
+        for (Widget* wgt = focusContainer->getFirstChild(); wgt; wgt = focusContainer->getNext(wgt)) {
+            if (wgt != _focusedWidget && wgt->m_enabled && wgt->m_focusable && wgt->m_screenBottom <= _focusedWidget->m_screenBottom) {
+                const float dist1 = distance(wgt->m_screenLeft , wgt->m_screenBottom, _focusedWidget->m_screenLeft , _focusedWidget->m_screenTop);
+                const float dist2 = distance(wgt->m_screenRight, wgt->m_screenBottom, _focusedWidget->m_screenLeft , _focusedWidget->m_screenTop);
+                const float dist3 = distance(wgt->m_screenLeft , wgt->m_screenBottom, _focusedWidget->m_screenRight, _focusedWidget->m_screenTop);
+                const float dist4 = distance(wgt->m_screenRight, wgt->m_screenBottom, _focusedWidget->m_screenRight, _focusedWidget->m_screenTop);
+                const float dist5 = distance(wgt->m_screenLeft , wgt->m_screenTop   , _focusedWidget->m_screenLeft , _focusedWidget->m_screenTop);
+                const float dist6 = distance(wgt->m_screenRight, wgt->m_screenTop   , _focusedWidget->m_screenLeft , _focusedWidget->m_screenTop);
+                const float dist7 = distance(wgt->m_screenLeft , wgt->m_screenTop   , _focusedWidget->m_screenRight, _focusedWidget->m_screenTop);
+                const float dist8 = distance(wgt->m_screenRight, wgt->m_screenTop   , _focusedWidget->m_screenRight, _focusedWidget->m_screenTop);
+                const float dist = std::min(dist1, std::min(dist2, std::min(dist3, std::min(dist4, std::min(dist5, std::min(dist6, std::min(dist7, dist8)))))));
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    bestWidget = wgt;
+                }
+            }
+        }
+        if (bestWidget) {
+            bestWidget->setFocused(true);
+            return true;
+        }
+
+        Widget* wgt = focusContainer->_getPrevFocusDescentant(nullptr);
+        if (wgt) {
+            wgt->setFocused(true);
+            return true;
+        }
+
+        return false;
+    }
+
+
+    bool Widget::_moveFocusByKeyRight() {
+        Widget* focusContainer = nullptr;
+
+        if (_focusedWidget) {
+            focusContainer = _focusedWidget->_getClosestFocusContainerAncestor();
+        }
+
+        if (!focusContainer) {
+            focusContainer = _getNextInnermostFocusContainer();
+            if (!focusContainer) {
+                focusContainer = getRoot();
+            }
+        }
+
+        if (!_focusedWidget) {
+            Widget* wgt = focusContainer->_getNextFocusDescentant(nullptr);
+            if (wgt) {
+                wgt->setFocused(true);
+                return true;
+            }
+        }
+
+        Widget* bestWidget = nullptr;
+        float bestDist = FLT_MAX;
+        for (Widget* wgt = focusContainer->getFirstChild(); wgt; wgt = focusContainer->getNext(wgt)) {
+            if (wgt != _focusedWidget && wgt->m_enabled && wgt->m_focusable && wgt->m_screenLeft >= _focusedWidget->m_screenLeft) {
+                const float dist1 = distance(wgt->m_screenRight, wgt->m_screenTop   , _focusedWidget->m_screenRight, _focusedWidget->m_screenTop   );
+                const float dist2 = distance(wgt->m_screenRight, wgt->m_screenBottom, _focusedWidget->m_screenRight, _focusedWidget->m_screenTop   );
+                const float dist3 = distance(wgt->m_screenRight, wgt->m_screenTop   , _focusedWidget->m_screenRight, _focusedWidget->m_screenBottom);
+                const float dist4 = distance(wgt->m_screenRight, wgt->m_screenBottom, _focusedWidget->m_screenRight, _focusedWidget->m_screenBottom);
+                const float dist5 = distance(wgt->m_screenLeft , wgt->m_screenTop   , _focusedWidget->m_screenRight, _focusedWidget->m_screenTop   );
+                const float dist6 = distance(wgt->m_screenLeft , wgt->m_screenBottom, _focusedWidget->m_screenRight, _focusedWidget->m_screenTop   );
+                const float dist7 = distance(wgt->m_screenLeft , wgt->m_screenTop   , _focusedWidget->m_screenRight, _focusedWidget->m_screenBottom);
+                const float dist8 = distance(wgt->m_screenLeft , wgt->m_screenBottom, _focusedWidget->m_screenRight, _focusedWidget->m_screenBottom);
+                const float dist = std::min(dist1, std::min(dist2, std::min(dist3, std::min(dist4, std::min(dist5, std::min(dist6, std::min(dist7, dist8)))))));
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    bestWidget = wgt;
+                }
+            }
+        }
+        if (bestWidget) {
+            bestWidget->setFocused(true);
+            return true;
+        }
+
+        Widget* wgt = focusContainer->_getNextFocusDescentant(nullptr);
+        if (wgt) {
+            wgt->setFocused(true);
+            return true;
+        }
+
+        return false;
+    }
+
+
+    bool Widget::_moveFocusByKeyDown() {
+        Widget* focusContainer = nullptr;
+
+        if (_focusedWidget) {
+            focusContainer = _focusedWidget->_getClosestFocusContainerAncestor();
+        }
+
+        if (!focusContainer) {
+            focusContainer = _getNextInnermostFocusContainer();
+            if (!focusContainer) {
+                focusContainer = getRoot();
+            }
+        }
+
+        if (!_focusedWidget) {
+            Widget* wgt = focusContainer->_getNextFocusDescentant(nullptr);
+            if (wgt) {
+                wgt->setFocused(true);
+                return true;
+            }
+        }
+
+        Widget* bestWidget = nullptr;
+        float bestDist = FLT_MAX;
+        for (Widget* wgt = focusContainer->getFirstChild(); wgt; wgt = focusContainer->getNext(wgt)) {
+            if (wgt != _focusedWidget && wgt->m_enabled && wgt->m_focusable && wgt->m_screenTop >= _focusedWidget->m_screenTop) {
+                const float dist1 = distance(wgt->m_screenLeft , wgt->m_screenBottom, _focusedWidget->m_screenLeft , _focusedWidget->m_screenBottom);
+                const float dist2 = distance(wgt->m_screenRight, wgt->m_screenBottom, _focusedWidget->m_screenLeft , _focusedWidget->m_screenBottom);
+                const float dist3 = distance(wgt->m_screenLeft , wgt->m_screenBottom, _focusedWidget->m_screenRight, _focusedWidget->m_screenBottom);
+                const float dist4 = distance(wgt->m_screenRight, wgt->m_screenBottom, _focusedWidget->m_screenRight, _focusedWidget->m_screenBottom);
+                const float dist5 = distance(wgt->m_screenLeft , wgt->m_screenTop   , _focusedWidget->m_screenLeft , _focusedWidget->m_screenBottom);
+                const float dist6 = distance(wgt->m_screenRight, wgt->m_screenTop   , _focusedWidget->m_screenLeft , _focusedWidget->m_screenBottom);
+                const float dist7 = distance(wgt->m_screenLeft , wgt->m_screenTop   , _focusedWidget->m_screenRight, _focusedWidget->m_screenBottom);
+                const float dist8 = distance(wgt->m_screenRight, wgt->m_screenTop   , _focusedWidget->m_screenRight, _focusedWidget->m_screenBottom);
+                const float dist = std::min(dist1, std::min(dist2, std::min(dist3, std::min(dist4, std::min(dist5, std::min(dist6, std::min(dist7, dist8)))))));
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    bestWidget = wgt;
+                }
+            }
+        }
+        if (bestWidget) {
+            bestWidget->setFocused(true);
+            return true;
+        }
+
+        Widget* wgt = focusContainer->_getNextFocusDescentant(nullptr);
+        if (wgt) {
+            wgt->setFocused(true);
+            return true;
+        }
+
+        return false;
     }
 
 

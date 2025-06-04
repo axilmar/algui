@@ -51,7 +51,7 @@ protected:
 
     void onPaint() const override {
         al_draw_filled_rectangle(getScreenLeft(), getScreenTop(), getScreenRight(), getScreenBottom(), isEnabledTree() ? al_map_rgb(255, 255, 255) : al_map_rgb(192, 192, 192));
-        al_draw_rectangle(getScreenLeft() + 0.5f, getScreenTop() + 0.5f, getScreenRight(), getScreenBottom(), al_map_rgb(0, 0, 0), isFocused() ? 2 : 0);
+        al_draw_rectangle(getScreenLeft() + 0.5f, getScreenTop() + 0.5f, getScreenRight(), getScreenBottom(), al_map_rgb(0, 0, 0), isFocused() ? 4 : 0);
     }
 
 private:
@@ -98,6 +98,7 @@ int main(int argc, char** argv) {
     form2->setWidth(200);
     form2->setHeight(150);
     //form2->setEnabled(false);
+    form2->setFocusContainer(true);
     root->add(form2);
 
     Test* form3 = new Test("form3");
@@ -119,6 +120,8 @@ int main(int argc, char** argv) {
     button2->setTop(60);
     button2->setWidth(50_pct);
     button2->setHeight(40);
+    //button2->setFocusContainer(true);
+    button2->setFocusable(false);
     form2->add(button2);
 
     Test* button3 = new Test("button3");
@@ -131,6 +134,20 @@ int main(int argc, char** argv) {
         std::cout << "Button 3 got the focus\n";
         return false;
     }, EventPhase_Bubble);
+
+    Test* buttonChild1 = new Test("buttonChild1");
+    buttonChild1->setLeft(10);
+    buttonChild1->setTop(5);
+    buttonChild1->setWidth(30);
+    buttonChild1->setHeight(20);
+    button2->add(buttonChild1);
+
+    Test* buttonChild2 = new Test("buttonChild2");
+    buttonChild2->setLeft(20);
+    buttonChild2->setTop(15);
+    buttonChild2->setWidth(30);
+    buttonChild2->setHeight(20);
+    button2->add(buttonChild2);
 
     for (;;) {
         ALLEGRO_EVENT event;
