@@ -52,23 +52,29 @@ namespace algui {
         /** Descentant widget lost the focus. */
         Event_DescentantLostFocus,
 
-        /** Mouse button down event. */
-        Event_MouseButtonDown,
+        /**
+         * Joystick button down event.
+         * Dispatched at the widget tree that contains the input focus.
+         */
+        Event_JoystickButtonDown,
 
-        /** Mouse button up event. */
-        Event_MouseButtonUp,
+        /**
+         * Joystick button up event.
+         * Dispatched at the widget tree that contains the input focus.
+         */
+        Event_JoystickButtonUp,
 
-        /** Mouse enter event. */
-        Event_MouseEnter,
+        /**
+         * Unused joystick button down event.
+         * Dispatched at the widget tree that contains the mouse.
+         */
+        Event_UnusedJoystickButtonDown,
 
-        /** Mouse move event. */
-        Event_MouseMove,
-
-        /** Mouse leave event. */
-        Event_MouseLeave,
-
-        /** Mouse wheel event. */
-        Event_MouseWheel,
+        /**
+         * Unused joystick button up event.
+         * Dispatched at the widget tree that contains the mouse.
+         */
+        Event_UnusedJoystickButtonUp,
 
         /**
          * Key down event.
@@ -111,6 +117,24 @@ namespace algui {
          * The default implementation sends the event to all of a widget's children.
          */
         Event_UnusedKeyChar,
+
+        /** Mouse button down event. */
+        Event_MouseButtonDown,
+
+        /** Mouse button up event. */
+        Event_MouseButtonUp,
+
+        /** Mouse enter event. */
+        Event_MouseEnter,
+
+        /** Mouse move event. */
+        Event_MouseMove,
+
+        /** Mouse leave event. */
+        Event_MouseLeave,
+
+        /** Mouse wheel event. */
+        Event_MouseWheel,
 
         /** First value available for user events. */
         Event_User = 256
@@ -771,6 +795,42 @@ namespace algui {
          */
         bool processAllegroEvent(const ALLEGRO_EVENT& event);
 
+        /**
+         * Moves the focus backward, according to tab index and widget order.
+         * @return true if the focus was moved, false otherwise.
+         */
+        bool moveFocusBackward();
+
+        /**
+         * Moves the focus forward, according to tab index and widget order.
+         * @return true if the focus was moved, false otherwise.
+         */
+        bool moveFocusForward();
+
+        /**
+         * Moves the focus to the left of the currently focused widget, depending on widget position.
+         * @return true if the focus was moved, false otherwise.
+         */
+        bool moveFocusLeft();
+
+        /**
+         * Moves the focus above the currently focused widget, depending on widget position.
+         * @return true if the focus was moved, false otherwise.
+         */
+        bool moveFocusUp();
+
+        /**
+         * Moves the focus to the right of the currently focused widget, depending on widget position.
+         * @return true if the focus was moved, false otherwise.
+         */
+        bool moveFocusRight();
+
+        /**
+         * Moves the focus under the currently focused widget, depending on widget position.
+         * @return true if the focus was moved, false otherwise.
+         */
+        bool moveFocusDown();
+
     protected:
         /**
          * Invoked to allow a widget to compute its geometry constraints
@@ -871,6 +931,11 @@ namespace algui {
         void _resetChildWithMouseState();
         Widget* _getChildFromCoords(float screenX, float screenY) const;
         Widget* _getEnabledChild(float screenX, float screenY) const;
+        bool _joystickButtonEventCapture(const ALLEGRO_EVENT& event, EventType eventType);
+        bool _joystickButtonEventBubble(const ALLEGRO_EVENT& event, EventType eventType);
+        bool _propagateJoystickButtonEventToChildren(const ALLEGRO_EVENT& event, EventType eventType);
+        bool _joystickButtonEvent(const ALLEGRO_EVENT& event, EventType eventType);
+        bool _mouseButtonEvent(const ALLEGRO_EVENT& event, EventType eventType);
         bool _mouseButtonDown(const ALLEGRO_EVENT& event);
         bool _mouseButtonUp(const ALLEGRO_EVENT& event);
         bool _mouseMove(const ALLEGRO_EVENT& event, EventType eventType);
@@ -894,14 +959,8 @@ namespace algui {
         bool _isValidFocusContainer() const;
         Widget* _getPrevInnermostFocusContainer() const;
         Widget* _getNextInnermostFocusContainer() const;
-        bool _moveFocusByKeyBackward();
-        bool _moveFocusByKeyForward();
         float _getScreenCenterX() const;
         float _getScreenCenterY() const;
-        bool _moveFocusByKeyLeft();
-        bool _moveFocusByKeyUp();
-        bool _moveFocusByKeyRight();
-        bool _moveFocusByKeyDown();
     };
 
 
