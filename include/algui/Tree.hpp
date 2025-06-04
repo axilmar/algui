@@ -72,6 +72,47 @@ namespace algui {
         }
 
         /**
+         * Returns the innermost last child.
+         * @return the innermost last child.
+         */
+        T* getInnermostLastChild() const {
+            T* node = const_cast<T*>(static_cast<const T*>(this));
+            for (; node->m_lastChild; node = node->m_lastChild) {};
+            return node;
+        }
+
+        /**
+         * Returns the previous object, as if the tree was a flat list.
+         * @return the previous object, as if the tree was a flat list.
+         */
+        T* getPrev() const {
+            if (m_prevSibling) {
+                return m_prevSibling->getInnermostLastChild();
+            }
+            return m_parent;
+        }
+
+        /**
+         * Returns the next object, as if the tree was a flat list.
+         * @return the next object, as if the tree was a flat list.
+         */
+        T* getNext() const {
+            if (m_firstChild) {
+                return m_firstChild;
+            }
+            for (const T* node = static_cast<const T*>(this);;) {
+                if (node->m_nextSibling) {
+                    return node->m_nextSibling;
+                }
+                node = node->m_parent;
+                if (!node) {
+                    break;
+                }
+            }
+            return nullptr;
+        }
+
+        /**
          * Returns the root.
          * @return the root.
          */
