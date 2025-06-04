@@ -40,82 +40,115 @@ namespace algui {
      * Event types.
      */
     enum EventType {
-        /** Widget got the focus. */
+        /**
+         * Widget got the focus. 
+         */
         Event_GotFocus,
 
-        /** Widget lost the focus. */
+        /**
+         * Widget lost the focus.
+         */
         Event_LostFocus,
 
-        /** Descentant widget got the focus. */
+        /**
+         * Descentant widget got the focus.
+         * Dispatched from child to parent.
+         */
         Event_DescentantGotFocus,
 
-        /** Descentant widget lost the focus. */
+        /**
+         * Descentant widget lost the focus.
+         * Dispatched from child to parent.
+         */
         Event_DescentantLostFocus,
 
         /**
          * Joystick move event.
          * Dispatched at the widget tree that contains the input focus,
-         * then if unused to the whole UI tree.
+         * then if unused to the whole UI tree, from parent to children, depth first.
+         * If no widget processes the event, then the input focus is moved according to joystick direction.
          */
         Event_JoystickMove,
 
         /**
          * Joystick button down event.
          * Dispatched at the widget tree that contains the input focus,
-         * then if unused to the UI tree under the mouse.
+         * then if unused to the UI tree under the mouse, from parent to child.
          */
         Event_JoystickButtonDown,
 
         /**
          * Joystick button up event.
          * Dispatched at the widget tree that contains the input focus,
-         * then if unused to the UI tree under the mouse.
+         * then if unused to the UI tree under the mouse, from parent to child.
          */
         Event_JoystickButtonUp,
 
         /**
          * Key down event.
-         * Delivered to the widget with the focus.
-         * If there is no focus widget to get the input focus,
-         * then it is sent to the whole UI tree.
+         * Dispatched to the widget with the focus.
+         * If there is no focus widget to get the event,
+         * then it is sent to the whole UI tree, from parent to children, depth first.
          */
         Event_KeyDown,
 
         /**
          * Key up event.
-         * Delivered to the widget with the focus.
-         * If there is no focus widget to get the input focus,
-         * then it is sent to the whole UI tree.
+         * Dispatched to the widget with the focus.
+         * If there is no focus widget to get the event,
+         * then it is sent to the whole UI tree, from parent to children, depth first.
          */
         Event_KeyUp,
 
         /**
          * Character event.
-         * Delivered to the widget with the focus.
-         * If there is no focus widget to get the input focus,
-         * then it is sent to the whole UI tree.
+         * Dispatched to the widget with the focus.
+         * If there is no focus widget to get event,
+         * then it is sent to the whole UI tree, from parent to children, depth first.
+         * If no widget processes the event, then the input focus is moved according to key press.
          */
         Event_KeyChar,
 
-        /** Mouse button down event. */
+        /** 
+         * Mouse button down event.
+         * Dispatched from parent to child.
+         */
         Event_MouseButtonDown,
 
-        /** Mouse button up event. */
+        /** 
+         * Mouse button up event.
+         * Dispatched from parent to child.
+         */
         Event_MouseButtonUp,
 
-        /** Mouse enter event. */
+        /**
+         * Mouse enter event.
+         * Dispatched from parent to child.
+         */
         Event_MouseEnter,
 
-        /** Mouse move event. */
+        /**
+         * Mouse move event.
+         * Dispatched from parent to child.
+         */
         Event_MouseMove,
 
-        /** Mouse leave event. */
+        /**
+         * Mouse leave event. 
+         * Dispatched from parent to child.
+         */
         Event_MouseLeave,
 
-        /** Mouse wheel event. */
+        /**
+         * Mouse wheel event.
+         * Dispatched from parent to child.
+         */
         Event_MouseWheel,
 
-        /** timer event. */
+        /** 
+         * Timer event.
+         * Dispatched from parent to child.
+         */
         Event_Timer,
 
         /** First value available for user events. */
@@ -814,21 +847,6 @@ namespace algui {
          */
         bool moveFocusDown();
 
-        /**
-         * Adds this widget to the set of the widgets that receive timer events.
-         * If the widget is already added, the call is ignored.
-         * By default, a widget does not receive timer events.
-         */
-        void enableTimerEvents();
-
-        /**
-         * Removes this widget from the set of widgets that receive timer events.
-         * If the widget is already removed, the call is ignored.
-         * By default, a widget does not receive timer events.
-         * It is called automatically from the widget's destructor.
-         */
-        void disableTimerEvents();
-
     protected:
         /**
          * Invoked to allow a widget to compute its geometry constraints
@@ -911,7 +929,6 @@ namespace algui {
         bool m_focusable : 1;
         bool m_hasMouse : 1;
         bool m_focusContainer : 1;
-        bool m_hasTimer : 1;
 
         //various internal functions
         void _invalidateScreenGeometry();
