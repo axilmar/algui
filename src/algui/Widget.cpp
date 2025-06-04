@@ -23,6 +23,7 @@ namespace algui {
      **************************************************************************/
 
 
+    //the currently focused widget
     static Widget* _focusedWidget = nullptr;
 
 
@@ -533,6 +534,9 @@ namespace algui {
 
             case ALLEGRO_EVENT_JOYSTICK_BUTTON_UP:
                 return _joystickButtonEvent(event, Event_JoystickButtonUp);
+
+            case ALLEGRO_EVENT_JOYSTICK_AXIS:
+                return _joystickMoveEvent(event);
         }
 
         //event not processed
@@ -1549,6 +1553,31 @@ namespace algui {
 
     float Widget::_getScreenCenterY() const {
         return (m_screenTop + m_screenBottom) / 2.0f;
+    }
+
+
+    bool Widget::_joystickMoveEvent(const ALLEGRO_EVENT& event) {
+        //0 axis is the horizontal axis.
+        if (event.joystick.axis == 0) {
+            if (event.joystick.pos < 0) {
+                return moveFocusLeft();
+            }
+            else if (event.joystick.pos > 0) {
+                return moveFocusRight();
+            }
+        }
+
+        //1 axis is the vertical axis.
+        else if (event.joystick.axis == 1) {
+            if (event.joystick.pos < 0) {
+                return moveFocusUp();
+            }
+            else if (event.joystick.pos > 0) {
+                return moveFocusDown();
+            }
+        }
+
+        return 0;
     }
 
 

@@ -961,6 +961,7 @@ namespace algui {
         Widget* _getNextInnermostFocusContainer() const;
         float _getScreenCenterX() const;
         float _getScreenCenterY() const;
+        bool _joystickMoveEvent(const ALLEGRO_EVENT& event);
     };
 
 
