@@ -1018,17 +1018,26 @@ namespace algui {
     /**
      * Returns the maximum time, in milliseconds, that can pass in order to register a click.
      * The time for double clicks is twice as large.
-     * @return the click interval.
+     * @return the click delay.
      */
-    size_t getClickInterval();
+    size_t getClickDelay();
 
 
     /**
-     * Sets the click interval, i.e. the maximum time than can pass in order to register a click.
+     * Sets the click delay, i.e. the maximum time than can pass in order to register a click.
      * The time for double clicks is twice as large.
-     * @param msecs click interval in milliseconds.
+     * @param msecs click delay in milliseconds.
      */
-    void setClickInterval(size_t msecs);
+    void setClickDelay(size_t msecs);
+
+
+    /**
+     * Returns the UI event source.
+     * It is used internally for managing things like double clicks, which require measuring time
+     * and then creating user events.
+     * @return the UI event source. It is managed automatically by this library.
+     */
+    ALLEGRO_EVENT_SOURCE* getUIEventSource();
 
 
 } //namespace algui

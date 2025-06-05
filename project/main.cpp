@@ -82,6 +82,7 @@ int main(int argc, char** argv) {
     al_register_event_source(eventQueue, al_get_joystick_event_source());
     al_register_event_source(eventQueue, al_get_timer_event_source(timer));
     al_register_event_source(eventQueue, al_get_joystick_event_source());
+    al_register_event_source(eventQueue, getUIEventSource());
 
     al_start_timer(timer);
 

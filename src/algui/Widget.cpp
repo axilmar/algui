@@ -4,6 +4,8 @@
 #include <cmath>
 #include <stdexcept>
 #include <chrono>
+#include <deque>
+#include <thread>
 #include "allegro5/allegro.h"
 #include "algui/Widget.hpp"
 
@@ -24,15 +26,104 @@ namespace algui {
      **************************************************************************/
 
 
+    #define _ALGUI_EVENT_TYPE  ALLEGRO_GET_EVENT_TYPE('a', 'g', 'u', 'i')
+
+
+    //event source
+    class _AllegroEventSource {
+    public:
+        _AllegroEventSource() {
+            al_init_user_event_source(&m_eventSource);
+        }
+
+        ~_AllegroEventSource() {
+            al_destroy_user_event_source(&m_eventSource);
+        }
+
+        ALLEGRO_EVENT_SOURCE* getEventSource() {
+            return &m_eventSource;
+        }
+
+    private:
+        ALLEGRO_EVENT_SOURCE m_eventSource;
+    };
+
+
+    class _JobThread {
+    public:
+        _JobThread() {
+            m_mutex = al_create_mutex();
+            m_cond = al_create_cond();
+            m_thread = al_create_thread(&_JobThread::_threadFunc, this);
+            al_start_thread(m_thread);
+        }
+
+        ~_JobThread() {
+            al_destroy_thread(m_thread);
+            al_destroy_cond(m_cond);
+            al_destroy_mutex(m_mutex);
+        }
+
+        void put(const std::function<void()>& func) {
+            al_lock_mutex(m_mutex);
+            m_jobs.push_front({func});
+            al_unlock_mutex(m_mutex);
+            al_signal_cond(m_cond);
+        }
+
+    private:
+        struct _Job {
+            std::function<void()> func;
+        };
+
+        ALLEGRO_MUTEX* m_mutex;
+        ALLEGRO_COND* m_cond;
+        ALLEGRO_THREAD* m_thread;
+        std::deque<_Job> m_jobs;
+
+        void _runThread(ALLEGRO_THREAD* thread) {
+            for (;;) {
+                al_lock_mutex(m_mutex);
+                
+                //wait for either thread stop or a job
+                while (!al_get_thread_should_stop(thread) && m_jobs.empty()) {
+                    al_wait_cond(m_cond, m_mutex);
+                }
+
+                //if thread should stop, break
+                if (al_get_thread_should_stop(thread)) {
+                    al_unlock_mutex(m_mutex);
+                    break;
+                }
+
+                //execute job at back and pop it
+                if (!m_jobs.empty()) {
+                    _Job& job = m_jobs.back();
+                    job.func();
+                    m_jobs.pop_back();
+                }
+
+                al_unlock_mutex(m_mutex);
+
+            }
+        }
+
+        static void* _threadFunc(ALLEGRO_THREAD* thread, void* allegroThreadObj) {
+            reinterpret_cast<_JobThread*>(allegroThreadObj)->_runThread(thread);
+            return nullptr;
+        }
+    };
+
+
     //the currently focused widget
     static Widget* _focusedWidget = nullptr;
 
 
     //click/double click context
     static constexpr int _MAX_CLICK_COUNT = 3;
-    static size_t _clickInterval = 500;
-    static std::map<int, std::chrono::steady_clock::time_point> _clickBeginTime;
-    static std::map<int, int> _clickCount;
+    static size_t _clickDelay = 500;
+    static std::atomic_int _clickButton = 0;
+    static std::atomic_int _clickCounter = 0;
 
 
     //calc rect intersection
@@ -50,23 +141,28 @@ namespace algui {
 
 
     //calc distance between two points
-    static float distance(float x1, float y1, float x2, float y2) {
+    static float _distance(float x1, float y1, float x2, float y2) {
         return std::hypot(abs(x1 - x2), abs(y1 - y2));
     }
 
 
-    //begin measuring clicks
-    static void _beginClick(const ALLEGRO_EVENT event) {
-        if (_clickCount[event.mouse.button] == 0) {
-            _clickBeginTime[event.mouse.button] = std::chrono::high_resolution_clock::now();
-        }
+    //get the job thread
+    static _JobThread& _getJobThread() {
+        static _JobThread _jobThread;
+        return _jobThread;
     }
 
 
-    //end measuring clicks
-    static void _endClick(const ALLEGRO_EVENT& event) {
-        //TODO
-    }
+    //the function that waits for click delay and then emits a user event for clicks
+    static std::function<void()> _emitClickEventFunction = [&]() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(_clickDelay));
+        ALLEGRO_EVENT event{};
+        event.type = _ALGUI_EVENT_TYPE;
+        event.user.data1 = _clickCounter;
+        _clickCounter = 0;
+        _clickButton = 0;
+        al_emit_user_event(getUIEventSource(), &event, nullptr);
+    };
 
 
     /**************************************************************************
@@ -539,18 +635,22 @@ namespace algui {
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
             {
-                _beginClick(event);
                 const bool result = _mouseButtonDownEvent(event);
-                _beginClickEvent(event);
+                if (_clickButton == 0) {
+                    _beginClickEvent(event);
+                    _clickButton = event.mouse.button;
+                    _getJobThread().put(_emitClickEventFunction);
+                }
                 return result;
             }
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
             {
-                _endClick(event);
-                const bool result1 = _mouseButtonUpEvent(event);
-                const bool result2 = _endClickEvent(event);
-                return result1 || result2;
+                const bool result = _mouseButtonUpEvent(event);
+                if (event.mouse.button == _clickButton) {
+                    ++_clickCounter;
+                }
+                return result;
             }
 
             case ALLEGRO_EVENT_KEY_DOWN:
@@ -576,6 +676,9 @@ namespace algui {
 
             case ALLEGRO_EVENT_DISPLAY_EXPOSE:
                 return _exposeEvent(event);
+
+            case _ALGUI_EVENT_TYPE:
+                return _endClickEvent(event);
         }
 
         //event not processed
@@ -683,14 +786,14 @@ namespace algui {
         float bestDist = FLT_MAX;
         for (Widget* wgt = focusContainer->getFirstChild(); wgt; wgt = focusContainer->getNext(wgt)) {
             if (wgt != _focusedWidget && wgt->m_enabled && wgt->m_focusable && wgt->m_screenRight <= _focusedWidget->m_screenRight) {
-                const float dist1 = distance(wgt->m_screenRight, wgt->m_screenTop, _focusedWidget->m_screenLeft, _focusedWidget->m_screenTop);
-                const float dist2 = distance(wgt->m_screenRight, wgt->m_screenBottom, _focusedWidget->m_screenLeft, _focusedWidget->m_screenTop);
-                const float dist3 = distance(wgt->m_screenRight, wgt->m_screenTop, _focusedWidget->m_screenLeft, _focusedWidget->m_screenBottom);
-                const float dist4 = distance(wgt->m_screenRight, wgt->m_screenBottom, _focusedWidget->m_screenLeft, _focusedWidget->m_screenBottom);
-                const float dist5 = distance(wgt->m_screenLeft, wgt->m_screenTop, _focusedWidget->m_screenLeft, _focusedWidget->m_screenTop);
-                const float dist6 = distance(wgt->m_screenLeft, wgt->m_screenBottom, _focusedWidget->m_screenLeft, _focusedWidget->m_screenTop);
-                const float dist7 = distance(wgt->m_screenLeft, wgt->m_screenTop, _focusedWidget->m_screenLeft, _focusedWidget->m_screenBottom);
-                const float dist8 = distance(wgt->m_screenLeft, wgt->m_screenBottom, _focusedWidget->m_screenLeft, _focusedWidget->m_screenBottom);
+                const float dist1 = _distance(wgt->m_screenRight, wgt->m_screenTop, _focusedWidget->m_screenLeft, _focusedWidget->m_screenTop);
+                const float dist2 = _distance(wgt->m_screenRight, wgt->m_screenBottom, _focusedWidget->m_screenLeft, _focusedWidget->m_screenTop);
+                const float dist3 = _distance(wgt->m_screenRight, wgt->m_screenTop, _focusedWidget->m_screenLeft, _focusedWidget->m_screenBottom);
+                const float dist4 = _distance(wgt->m_screenRight, wgt->m_screenBottom, _focusedWidget->m_screenLeft, _focusedWidget->m_screenBottom);
+                const float dist5 = _distance(wgt->m_screenLeft, wgt->m_screenTop, _focusedWidget->m_screenLeft, _focusedWidget->m_screenTop);
+                const float dist6 = _distance(wgt->m_screenLeft, wgt->m_screenBottom, _focusedWidget->m_screenLeft, _focusedWidget->m_screenTop);
+                const float dist7 = _distance(wgt->m_screenLeft, wgt->m_screenTop, _focusedWidget->m_screenLeft, _focusedWidget->m_screenBottom);
+                const float dist8 = _distance(wgt->m_screenLeft, wgt->m_screenBottom, _focusedWidget->m_screenLeft, _focusedWidget->m_screenBottom);
                 const float dist = std::min(dist1, std::min(dist2, std::min(dist3, std::min(dist4, std::min(dist5, std::min(dist6, std::min(dist7, dist8)))))));
                 if (dist < bestDist) {
                     bestDist = dist;
@@ -739,14 +842,14 @@ namespace algui {
         float bestDist = FLT_MAX;
         for (Widget* wgt = focusContainer->getFirstChild(); wgt; wgt = focusContainer->getNext(wgt)) {
             if (wgt != _focusedWidget && wgt->m_enabled && wgt->m_focusable && wgt->m_screenBottom <= _focusedWidget->m_screenBottom) {
-                const float dist1 = distance(wgt->m_screenLeft, wgt->m_screenBottom, _focusedWidget->m_screenLeft, _focusedWidget->m_screenTop);
-                const float dist2 = distance(wgt->m_screenRight, wgt->m_screenBottom, _focusedWidget->m_screenLeft, _focusedWidget->m_screenTop);
-                const float dist3 = distance(wgt->m_screenLeft, wgt->m_screenBottom, _focusedWidget->m_screenRight, _focusedWidget->m_screenTop);
-                const float dist4 = distance(wgt->m_screenRight, wgt->m_screenBottom, _focusedWidget->m_screenRight, _focusedWidget->m_screenTop);
-                const float dist5 = distance(wgt->m_screenLeft, wgt->m_screenTop, _focusedWidget->m_screenLeft, _focusedWidget->m_screenTop);
-                const float dist6 = distance(wgt->m_screenRight, wgt->m_screenTop, _focusedWidget->m_screenLeft, _focusedWidget->m_screenTop);
-                const float dist7 = distance(wgt->m_screenLeft, wgt->m_screenTop, _focusedWidget->m_screenRight, _focusedWidget->m_screenTop);
-                const float dist8 = distance(wgt->m_screenRight, wgt->m_screenTop, _focusedWidget->m_screenRight, _focusedWidget->m_screenTop);
+                const float dist1 = _distance(wgt->m_screenLeft, wgt->m_screenBottom, _focusedWidget->m_screenLeft, _focusedWidget->m_screenTop);
+                const float dist2 = _distance(wgt->m_screenRight, wgt->m_screenBottom, _focusedWidget->m_screenLeft, _focusedWidget->m_screenTop);
+                const float dist3 = _distance(wgt->m_screenLeft, wgt->m_screenBottom, _focusedWidget->m_screenRight, _focusedWidget->m_screenTop);
+                const float dist4 = _distance(wgt->m_screenRight, wgt->m_screenBottom, _focusedWidget->m_screenRight, _focusedWidget->m_screenTop);
+                const float dist5 = _distance(wgt->m_screenLeft, wgt->m_screenTop, _focusedWidget->m_screenLeft, _focusedWidget->m_screenTop);
+                const float dist6 = _distance(wgt->m_screenRight, wgt->m_screenTop, _focusedWidget->m_screenLeft, _focusedWidget->m_screenTop);
+                const float dist7 = _distance(wgt->m_screenLeft, wgt->m_screenTop, _focusedWidget->m_screenRight, _focusedWidget->m_screenTop);
+                const float dist8 = _distance(wgt->m_screenRight, wgt->m_screenTop, _focusedWidget->m_screenRight, _focusedWidget->m_screenTop);
                 const float dist = std::min(dist1, std::min(dist2, std::min(dist3, std::min(dist4, std::min(dist5, std::min(dist6, std::min(dist7, dist8)))))));
                 if (dist < bestDist) {
                     bestDist = dist;
@@ -795,14 +898,14 @@ namespace algui {
         float bestDist = FLT_MAX;
         for (Widget* wgt = focusContainer->getFirstChild(); wgt; wgt = focusContainer->getNext(wgt)) {
             if (wgt != _focusedWidget && wgt->m_enabled && wgt->m_focusable && wgt->m_screenLeft >= _focusedWidget->m_screenLeft) {
-                const float dist1 = distance(wgt->m_screenRight, wgt->m_screenTop, _focusedWidget->m_screenRight, _focusedWidget->m_screenTop);
-                const float dist2 = distance(wgt->m_screenRight, wgt->m_screenBottom, _focusedWidget->m_screenRight, _focusedWidget->m_screenTop);
-                const float dist3 = distance(wgt->m_screenRight, wgt->m_screenTop, _focusedWidget->m_screenRight, _focusedWidget->m_screenBottom);
-                const float dist4 = distance(wgt->m_screenRight, wgt->m_screenBottom, _focusedWidget->m_screenRight, _focusedWidget->m_screenBottom);
-                const float dist5 = distance(wgt->m_screenLeft, wgt->m_screenTop, _focusedWidget->m_screenRight, _focusedWidget->m_screenTop);
-                const float dist6 = distance(wgt->m_screenLeft, wgt->m_screenBottom, _focusedWidget->m_screenRight, _focusedWidget->m_screenTop);
-                const float dist7 = distance(wgt->m_screenLeft, wgt->m_screenTop, _focusedWidget->m_screenRight, _focusedWidget->m_screenBottom);
-                const float dist8 = distance(wgt->m_screenLeft, wgt->m_screenBottom, _focusedWidget->m_screenRight, _focusedWidget->m_screenBottom);
+                const float dist1 = _distance(wgt->m_screenRight, wgt->m_screenTop, _focusedWidget->m_screenRight, _focusedWidget->m_screenTop);
+                const float dist2 = _distance(wgt->m_screenRight, wgt->m_screenBottom, _focusedWidget->m_screenRight, _focusedWidget->m_screenTop);
+                const float dist3 = _distance(wgt->m_screenRight, wgt->m_screenTop, _focusedWidget->m_screenRight, _focusedWidget->m_screenBottom);
+                const float dist4 = _distance(wgt->m_screenRight, wgt->m_screenBottom, _focusedWidget->m_screenRight, _focusedWidget->m_screenBottom);
+                const float dist5 = _distance(wgt->m_screenLeft, wgt->m_screenTop, _focusedWidget->m_screenRight, _focusedWidget->m_screenTop);
+                const float dist6 = _distance(wgt->m_screenLeft, wgt->m_screenBottom, _focusedWidget->m_screenRight, _focusedWidget->m_screenTop);
+                const float dist7 = _distance(wgt->m_screenLeft, wgt->m_screenTop, _focusedWidget->m_screenRight, _focusedWidget->m_screenBottom);
+                const float dist8 = _distance(wgt->m_screenLeft, wgt->m_screenBottom, _focusedWidget->m_screenRight, _focusedWidget->m_screenBottom);
                 const float dist = std::min(dist1, std::min(dist2, std::min(dist3, std::min(dist4, std::min(dist5, std::min(dist6, std::min(dist7, dist8)))))));
                 if (dist < bestDist) {
                     bestDist = dist;
@@ -851,14 +954,14 @@ namespace algui {
         float bestDist = FLT_MAX;
         for (Widget* wgt = focusContainer->getFirstChild(); wgt; wgt = focusContainer->getNext(wgt)) {
             if (wgt != _focusedWidget && wgt->m_enabled && wgt->m_focusable && wgt->m_screenTop >= _focusedWidget->m_screenTop) {
-                const float dist1 = distance(wgt->m_screenLeft, wgt->m_screenBottom, _focusedWidget->m_screenLeft, _focusedWidget->m_screenBottom);
-                const float dist2 = distance(wgt->m_screenRight, wgt->m_screenBottom, _focusedWidget->m_screenLeft, _focusedWidget->m_screenBottom);
-                const float dist3 = distance(wgt->m_screenLeft, wgt->m_screenBottom, _focusedWidget->m_screenRight, _focusedWidget->m_screenBottom);
-                const float dist4 = distance(wgt->m_screenRight, wgt->m_screenBottom, _focusedWidget->m_screenRight, _focusedWidget->m_screenBottom);
-                const float dist5 = distance(wgt->m_screenLeft, wgt->m_screenTop, _focusedWidget->m_screenLeft, _focusedWidget->m_screenBottom);
-                const float dist6 = distance(wgt->m_screenRight, wgt->m_screenTop, _focusedWidget->m_screenLeft, _focusedWidget->m_screenBottom);
-                const float dist7 = distance(wgt->m_screenLeft, wgt->m_screenTop, _focusedWidget->m_screenRight, _focusedWidget->m_screenBottom);
-                const float dist8 = distance(wgt->m_screenRight, wgt->m_screenTop, _focusedWidget->m_screenRight, _focusedWidget->m_screenBottom);
+                const float dist1 = _distance(wgt->m_screenLeft, wgt->m_screenBottom, _focusedWidget->m_screenLeft, _focusedWidget->m_screenBottom);
+                const float dist2 = _distance(wgt->m_screenRight, wgt->m_screenBottom, _focusedWidget->m_screenLeft, _focusedWidget->m_screenBottom);
+                const float dist3 = _distance(wgt->m_screenLeft, wgt->m_screenBottom, _focusedWidget->m_screenRight, _focusedWidget->m_screenBottom);
+                const float dist4 = _distance(wgt->m_screenRight, wgt->m_screenBottom, _focusedWidget->m_screenRight, _focusedWidget->m_screenBottom);
+                const float dist5 = _distance(wgt->m_screenLeft, wgt->m_screenTop, _focusedWidget->m_screenLeft, _focusedWidget->m_screenBottom);
+                const float dist6 = _distance(wgt->m_screenRight, wgt->m_screenTop, _focusedWidget->m_screenLeft, _focusedWidget->m_screenBottom);
+                const float dist7 = _distance(wgt->m_screenLeft, wgt->m_screenTop, _focusedWidget->m_screenRight, _focusedWidget->m_screenBottom);
+                const float dist8 = _distance(wgt->m_screenRight, wgt->m_screenTop, _focusedWidget->m_screenRight, _focusedWidget->m_screenBottom);
                 const float dist = std::min(dist1, std::min(dist2, std::min(dist3, std::min(dist4, std::min(dist5, std::min(dist6, std::min(dist7, dist8)))))));
                 if (dist < bestDist) {
                     bestDist = dist;
@@ -1466,9 +1569,11 @@ namespace algui {
 
     //end click event
     bool Widget::_endClickEvent(const ALLEGRO_EVENT& event) {
-        const int buttonClickCount = _clickCount[event.mouse.button];
+        const int buttonClickCount = (int)event.user.data1;
         if (buttonClickCount > 0 && buttonClickCount <= _MAX_CLICK_COUNT) {
-            return _clickEvent(event, (EventType)(Event_Click + buttonClickCount - 1));
+            const bool result = _clickEvent(event, (EventType)(Event_Click + buttonClickCount - 1));
+            _resetButtonState();
+            return result;
         }
         return false;
     }
@@ -1700,14 +1805,21 @@ namespace algui {
 
 
     //Returns the maximum time, in milliseconds, that can pass in order to register a click.
-    size_t getClickInterval() {
-        return _clickInterval;
+    size_t getClickDelay() {
+        return _clickDelay;
     }
 
 
-    //Sets the click interval, i.e. the maximum time than can pass in order to register a click.
-    void setClickInterval(size_t msecs) {
-        _clickInterval = msecs;
+    //Sets the click delay, i.e. the maximum time than can pass in order to register a click.
+    void setClickDelay(size_t msecs) {
+        _clickDelay = msecs;
+    }
+
+
+    //returns the allegro event source for the UI
+    ALLEGRO_EVENT_SOURCE* getUIEventSource() {
+        static _AllegroEventSource UIEventSource;
+        return UIEventSource.getEventSource();
     }
 
 
