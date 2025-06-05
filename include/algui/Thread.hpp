@@ -18,8 +18,9 @@ namespace algui {
          * Creates a thread.
          * It also creates a mutex and a condition variable,
          * in order to allow a thread loop to run idle
+         * @param start if true, then the thread starts immediately.
          */
-        Thread();
+        Thread(bool start = true);
 
         Thread(const Thread&) = delete;
         Thread(Thread&&) = delete;

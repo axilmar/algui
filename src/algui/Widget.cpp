@@ -6,6 +6,7 @@
 #include <deque>
 #include <thread>
 #include "algui/Widget.hpp"
+#include "algui/TimerThread.hpp"
 
 
 #ifdef min
@@ -54,72 +55,6 @@ namespace algui {
     };
 
 
-    class _JobThread {
-    public:
-        _JobThread() {
-            m_mutex = al_create_mutex();
-            m_cond = al_create_cond();
-            m_thread = al_create_thread(&_JobThread::_threadFunc, this);
-            al_start_thread(m_thread);
-        }
-
-        ~_JobThread() {
-            al_destroy_thread(m_thread);
-            al_destroy_cond(m_cond);
-            al_destroy_mutex(m_mutex);
-        }
-
-        void put(const std::function<void()>& func) {
-            al_lock_mutex(m_mutex);
-            m_jobs.push_front({func});
-            al_unlock_mutex(m_mutex);
-            al_signal_cond(m_cond);
-        }
-
-    private:
-        struct _Job {
-            std::function<void()> func;
-        };
-
-        ALLEGRO_MUTEX* m_mutex;
-        ALLEGRO_COND* m_cond;
-        ALLEGRO_THREAD* m_thread;
-        std::deque<_Job> m_jobs;
-
-        void _runThread(ALLEGRO_THREAD* thread) {
-            for (;;) {
-                al_lock_mutex(m_mutex);
-                
-                //wait for either thread stop or a job
-                while (!al_get_thread_should_stop(thread) && m_jobs.empty()) {
-                    al_wait_cond(m_cond, m_mutex);
-                }
-
-                //if thread should stop, break
-                if (al_get_thread_should_stop(thread)) {
-                    al_unlock_mutex(m_mutex);
-                    break;
-                }
-
-                //execute job at back and pop it
-                if (!m_jobs.empty()) {
-                    _Job& job = m_jobs.back();
-                    job.func();
-                    m_jobs.pop_back();
-                }
-
-                al_unlock_mutex(m_mutex);
-
-            }
-        }
-
-        static void* _threadFunc(ALLEGRO_THREAD* thread, void* allegroThreadObj) {
-            reinterpret_cast<_JobThread*>(allegroThreadObj)->_runThread(thread);
-            return nullptr;
-        }
-    };
-
-
     enum _ClickType {
         _ClickType_None,
         _ClickType_Mouse,
@@ -133,7 +68,7 @@ namespace algui {
 
     //click/double click context
     static constexpr int _MAX_CLICK_COUNT = 3;
-    static size_t _clickDelay = 500;
+    static size_t _clickDelay = 250;
     static std::atomic_int _clickButton = 0;
     static std::atomic_int _clickCounter = 0;
     static std::atomic_int _clickType = _ClickType_None;
@@ -164,10 +99,10 @@ namespace algui {
     }
 
 
-    //get the job thread
-    static _JobThread& _getJobThread() {
-        static _JobThread _jobThread;
-        return _jobThread;
+    //get the timer thread
+    static TimerThread& _getTimerThread() {
+        static TimerThread timerThread;
+        return timerThread;
     }
 
 
@@ -1472,7 +1407,7 @@ namespace algui {
             _clickType = clickType;
             _clickButton = button;
             _beginClickEvent(event);
-            _getJobThread().put(_emitClickEventFunction);
+            _getTimerThread().add(_emitClickEventFunction, _clickDelay);
         }
     }
 

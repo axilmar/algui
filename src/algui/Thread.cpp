@@ -6,16 +6,20 @@ namespace algui {
 
 
     //Creates a thread.
-    Thread::Thread()
+    Thread::Thread(bool start)
         : m_mutex(al_create_mutex())
         , m_cond(al_create_cond())
         , m_thread(al_create_thread(&Thread::_threadProc, this))
     {
+        if (start) {
+            this->start();
+        }
     }
 
 
     //Stops and destroys the thread.
     Thread::~Thread() {
+        stop();
         al_destroy_thread(m_thread);
         al_destroy_cond(m_cond);
         al_destroy_mutex(m_mutex);
@@ -30,6 +34,8 @@ namespace algui {
 
     //Stops the thread.
     void Thread::stop() {
+        al_set_thread_should_stop(m_thread);
+        notify();
         al_join_thread(m_thread, nullptr);
     }
 
