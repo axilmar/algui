@@ -174,6 +174,14 @@ namespace algui {
     };
 
 
+    //adds a click, only if the currently initiated click session is for the given click type and button
+    static void _addClick(_ClickType clickType, int button) {
+        if (_clickType == clickType && _clickButton == button) {
+            ++_clickCounter;
+        }
+    }
+
+
     /**************************************************************************
         PUBLIC
      **************************************************************************/ 
@@ -645,21 +653,14 @@ namespace algui {
             case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
             {
                 const bool result = _mouseButtonDownEvent(event);
-                if (_clickType == _ClickType_None) {
-                    _clickType = _ClickType_Mouse;
-                    _clickButton = event.mouse.button;
-                    _beginClickEvent(event);
-                    _getJobThread().put(_emitClickEventFunction);
-                }
+                _initClick(_ClickType_Mouse, event.mouse.button, event);
                 return result;
             }
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
             {
                 const bool result = _mouseButtonUpEvent(event);
-                if (_clickType == _ClickType_Mouse && _clickButton == event.mouse.button) {
-                    ++_clickCounter;
-                }
+                _addClick(_ClickType_Mouse, event.mouse.button);
                 return result;
             }
 
@@ -675,24 +676,15 @@ namespace algui {
             case ALLEGRO_EVENT_JOYSTICK_BUTTON_DOWN:
             {
                 bool result = _joystickButtonEvent(event, Event_JoystickButtonDown);
-                if (!result && _clickType == _ClickType_None) {
-                    _clickType = _ClickType_Joystick;
-                    _clickButton = event.joystick.button;
-                    _beginClickEvent(event);
-                    _getJobThread().put(_emitClickEventFunction);
-                }
+                _initClick(_ClickType_Joystick, event.joystick.button, event);
                 return result;
             }
 
             case ALLEGRO_EVENT_JOYSTICK_BUTTON_UP:
             {
-                if (_clickType != _ClickType_Joystick) {
-                    return _joystickButtonEvent(event, Event_JoystickButtonUp);
-                }
-                if (_clickType == _ClickType_Joystick && _clickButton == event.joystick.button) {
-                    ++_clickCounter;
-                }
-                return false;
+                const bool result = _joystickButtonEvent(event, Event_JoystickButtonUp);
+                _addClick(_ClickType_Joystick, event.joystick.button);
+                return result;
             }
 
             case ALLEGRO_EVENT_JOYSTICK_AXIS:
@@ -1416,6 +1408,16 @@ namespace algui {
 
     float Widget::_getScreenCenterY() const {
         return (m_screenTop + m_screenBottom) / 2.0f;
+    }
+
+
+    void Widget::_initClick(int clickType, int button, const ALLEGRO_EVENT& event) {
+        if (_clickType == _ClickType_None) {
+            _clickType = clickType;
+            _clickButton = button;
+            _beginClickEvent(event);
+            _getJobThread().put(_emitClickEventFunction);
+        }
     }
 
 

@@ -972,6 +972,7 @@ namespace algui {
         Widget* _getNextInnermostFocusContainer() const;
         float _getScreenCenterX() const;
         float _getScreenCenterY() const;
+        void _initClick(int clickType, int button, const ALLEGRO_EVENT& event);
 
         //joystick events
         bool _joystickButtonEventCapture(const ALLEGRO_EVENT& event, EventType eventType);
