@@ -151,6 +151,24 @@ namespace algui {
          */
         Event_Timer,
 
+        /**
+         * Click event.
+         * Dispatched from parent to child.
+         */
+        Event_Click,
+
+        /**
+         * Double click event.
+         * Dispatched from parent to child.
+         */
+        Event_DoubleClick,
+
+        /**
+         * Triple click event.
+         * Dispatched from parent to child.
+         */
+        Event_TripleClick,
+
         /** First value available for user events. */
         Event_User = 256
     };
@@ -748,12 +766,6 @@ namespace algui {
         void setFocused(bool focused);
 
         /**
-         * Returns the widget with the focus.
-         * @return the widget with the focus.
-         */
-        static Widget* getFocusedWidget();
-
-        /**
          * Sets the focusable state.
          * If the widget becomes focusable, it loses the focus container status,
          * since a widget can either be focusable or contain the focus, but not both.
@@ -906,6 +918,7 @@ namespace algui {
         //state
         std::string m_id;
         Widget* m_childWithMouse;
+        Widget* m_childWithButton;
         int m_tabIndex;
         ClippingMode m_clippingMode : 4;
         bool m_visible : 1;
@@ -944,7 +957,9 @@ namespace algui {
         bool _canGetFocus() const;
         bool _enabledTree() const;
         void _resetMouseState();
-        void _resetChildWithMouseState();
+        void _resetButtonState();
+        void _resetMouseAndButtonState();
+        void _resetChildState(Widget* child);
         Widget* _getChildFromCoords(float screenX, float screenY) const;
         Widget* _getEnabledChild(float screenX, float screenY) const;
         Widget* _getClosestFocusContainerAncestor() const;
@@ -970,7 +985,11 @@ namespace algui {
         bool _joystickMoveEvent(const ALLEGRO_EVENT& event);
 
         //mouse events
-        bool _mouseButtonEvent(const ALLEGRO_EVENT& event, EventType eventType);
+        bool _mouseButtonDownEvent(const ALLEGRO_EVENT& event);
+        bool _mouseButtonUpEvent(const ALLEGRO_EVENT& event);
+        bool _clickEvent(const ALLEGRO_EVENT& event, EventType eventType);
+        void _beginClickEvent(const ALLEGRO_EVENT& event);
+        bool _endClickEvent(const ALLEGRO_EVENT& event);
         bool _mouseMove(const ALLEGRO_EVENT& event, EventType eventType);
         bool _mouseEnter(const ALLEGRO_EVENT& event);
         bool _mouseLeave(const ALLEGRO_EVENT& event);
@@ -987,6 +1006,29 @@ namespace algui {
         bool _timerEvent(const ALLEGRO_EVENT& event);
         bool _exposeEvent(const ALLEGRO_EVENT& event);
     };
+
+
+    /**
+     * Returns the widget with the focus.
+     * @return the widget with the focus.
+     */
+    Widget* getFocusedWidget();
+
+
+    /**
+     * Returns the maximum time, in milliseconds, that can pass in order to register a click.
+     * The time for double clicks is twice as large.
+     * @return the click interval.
+     */
+    size_t getClickInterval();
+
+
+    /**
+     * Sets the click interval, i.e. the maximum time than can pass in order to register a click.
+     * The time for double clicks is twice as large.
+     * @param msecs click interval in milliseconds.
+     */
+    void setClickInterval(size_t msecs);
 
 
 } //namespace algui

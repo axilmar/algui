@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <chrono>
 #include "allegro5/allegro.h"
 #include "algui/Widget.hpp"
 
@@ -27,6 +28,13 @@ namespace algui {
     static Widget* _focusedWidget = nullptr;
 
 
+    //click/double click context
+    static constexpr int _MAX_CLICK_COUNT = 3;
+    static size_t _clickInterval = 500;
+    static std::map<int, std::chrono::steady_clock::time_point> _clickBeginTime;
+    static std::map<int, int> _clickCount;
+
+
     //calc rect intersection
     static bool _intersect(
         float x1, float y1, float x2, float y2,
@@ -44,6 +52,20 @@ namespace algui {
     //calc distance between two points
     static float distance(float x1, float y1, float x2, float y2) {
         return std::hypot(abs(x1 - x2), abs(y1 - y2));
+    }
+
+
+    //begin measuring clicks
+    static void _beginClick(const ALLEGRO_EVENT event) {
+        if (_clickCount[event.mouse.button] == 0) {
+            _clickBeginTime[event.mouse.button] = std::chrono::high_resolution_clock::now();
+        }
+    }
+
+
+    //end measuring clicks
+    static void _endClick(const ALLEGRO_EVENT& event) {
+        //TODO
     }
 
 
@@ -65,6 +87,7 @@ namespace algui {
         , m_screenScalingX(1)
         , m_screenScalingY(1)
         , m_childWithMouse(nullptr)
+        , m_childWithButton(nullptr)
         , m_tabIndex(0)
         , m_clippingMode(ClippingMode::None)
         , m_visible(true)
@@ -129,6 +152,9 @@ namespace algui {
             //so as that it is later recomputed
             child->_invalidateTreeVisualState();
 
+            //also reset child state
+            child->_resetMouseAndButtonState();
+
             //successful addition
             return true;
         }
@@ -153,13 +179,9 @@ namespace algui {
                 _focusedWidget->setFocused(false);
             }
 
-            //reset child mouse state
-            if (child == m_childWithMouse) {
-                _resetChildWithMouseState();
-            }
-            else {
-                child->_resetMouseState();
-            }
+            //reset mouse/button state
+            child->_resetMouseAndButtonState();
+            _resetChildState(child);
 
             //success
             return true;
@@ -236,6 +258,12 @@ namespace algui {
             m_visible = visible;
             _invalidateParentGeometryConstraints();
             _invalidateParentLayout();
+            if (!visible) {
+                _resetMouseAndButtonState();
+                if (getParent()) {
+                    getParent()->_resetChildState(this);
+                }
+            }
         }
     }
 
@@ -320,12 +348,10 @@ namespace algui {
                     _focusedWidget->setFocused(false);
                 }
 
-                //reset the mouse state
-                if (getParent() && getParent()->m_childWithMouse == this) {
-                    getParent()->_resetChildWithMouseState();
-                }
-                else {
-                    _resetMouseState();
+                //reset the mouse/button state
+                _resetMouseAndButtonState();
+                if (getParent()) {
+                    getParent()->_resetChildState(this);
                 }
             }
 
@@ -412,12 +438,6 @@ namespace algui {
             m_validContent = validContent;
             _invalidateTreeVisualState();
         }
-    }
-
-
-    //Returns the widget with the focus.
-    Widget* Widget::getFocusedWidget() {
-        return _focusedWidget;
     }
 
 
@@ -518,10 +538,20 @@ namespace algui {
             }
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
-                return _mouseButtonEvent(event, Event_MouseButtonDown);
+            {
+                _beginClick(event);
+                const bool result = _mouseButtonDownEvent(event);
+                _beginClickEvent(event);
+                return result;
+            }
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
-                return _mouseButtonEvent(event, Event_MouseButtonUp);
+            {
+                _endClick(event);
+                const bool result1 = _mouseButtonUpEvent(event);
+                const bool result2 = _endClickEvent(event);
+                return result1 || result2;
+            }
 
             case ALLEGRO_EVENT_KEY_DOWN:
                 return _keyEvent(event, Event_KeyDown);
@@ -1089,9 +1119,9 @@ namespace algui {
 
 
     void Widget::_resetMouseState() {
-        if (m_hasMouse) {
-            m_childWithMouse = nullptr;
+        if (m_hasMouse || m_childWithMouse) {
             m_hasMouse = false;
+            m_childWithMouse = nullptr;
             forEach([](Widget* child) {
                 child->_resetMouseState();
             });
@@ -1099,10 +1129,26 @@ namespace algui {
     }
 
 
-    void Widget::_resetChildWithMouseState() {
-        if (m_childWithMouse) {
-            m_childWithMouse->_resetMouseState();
+    void Widget::_resetButtonState() {
+        if (m_childWithButton) {
+            m_childWithButton->_resetButtonState();
+            m_childWithButton = nullptr;
+        }
+    }
+
+
+    void Widget::_resetMouseAndButtonState() {
+        _resetMouseState();
+        _resetButtonState();
+    }
+
+
+    void Widget::_resetChildState(Widget* child) {
+        if (m_childWithMouse == child) {
             m_childWithMouse = nullptr;
+        }
+        if (m_childWithButton == child) {
+            m_childWithButton = nullptr;
         }
     }
 
@@ -1368,20 +1414,63 @@ namespace algui {
     }
 
 
-    //mouse button event
-    bool Widget::_mouseButtonEvent(const ALLEGRO_EVENT& event, EventType eventType) {
-        //dispatch event in capture phase
+    //mouse button down event
+    bool Widget::_mouseButtonDownEvent(const ALLEGRO_EVENT& event) {
+        if (dispatchEvent(Event_MouseButtonDown, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
+            return true;
+        }
+        if (m_childWithMouse && m_childWithMouse->_mouseButtonDownEvent(event)) {
+            return true;
+        }
+        return dispatchEvent(Event_MouseButtonDown, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
+    }
+
+
+    //mouse button up event
+    bool Widget::_mouseButtonUpEvent(const ALLEGRO_EVENT& event) {
+        if (dispatchEvent(Event_MouseButtonUp, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
+            return true;
+        }
+        if (m_childWithMouse && m_childWithMouse->_mouseButtonUpEvent(event)) {
+            return true;
+        }
+        return dispatchEvent(Event_MouseButtonUp, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
+    }
+
+
+    //click event
+    bool Widget::_clickEvent(const ALLEGRO_EVENT& event, EventType eventType) {
         if (dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
+            _resetButtonState();
             return true;
         }
-
-        //dispatch event in child with mouse
-        if (m_childWithMouse && m_childWithMouse->_mouseButtonEvent(event, eventType)) {
-            return true;
+        if (m_childWithButton) {
+            if (m_childWithButton->m_enabled && m_childWithButton->_clickEvent(event, eventType)) {
+                _resetButtonState();
+                return true;
+            }
         }
-
-        //dispatch event in bubble phase
+        _resetButtonState();
         return dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
+    }
+
+
+    //begin click event
+    void Widget::_beginClickEvent(const ALLEGRO_EVENT& event) {
+        m_childWithButton = _getEnabledChild(event.mouse.x, event.mouse.y);
+        if (m_childWithButton) {
+            m_childWithButton->_beginClickEvent(event);
+        }
+    }
+
+
+    //end click event
+    bool Widget::_endClickEvent(const ALLEGRO_EVENT& event) {
+        const int buttonClickCount = _clickCount[event.mouse.button];
+        if (buttonClickCount > 0 && buttonClickCount <= _MAX_CLICK_COUNT) {
+            return _clickEvent(event, (EventType)(Event_Click + buttonClickCount - 1));
+        }
+        return false;
     }
 
 
@@ -1437,17 +1526,17 @@ namespace algui {
 
         //dispatch event in capture phase
         if (dispatchEvent(Event_MouseLeave, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
-            _resetChildWithMouseState();
+            _resetMouseAndButtonState();
             return true;
         }
 
         //pass event to child with mouse
         if (m_childWithMouse && m_childWithMouse->_mouseLeave(event)) {
-            _resetChildWithMouseState();
+            _resetMouseAndButtonState();
             return true;
         }
 
-        _resetChildWithMouseState();
+        _resetMouseAndButtonState();
 
         //dispatch event in bubble phase
         return dispatchEvent(Event_MouseLeave, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
@@ -1596,6 +1685,29 @@ namespace algui {
         render();
         al_set_clipping_rectangle(x, y, w, h);
         return true;
+    }
+
+
+    /**************************************************************************
+        EXPORTED
+    **************************************************************************/
+
+
+    //Returns the widget with the focus.
+    Widget* getFocusedWidget() {
+        return _focusedWidget;
+    }
+
+
+    //Returns the maximum time, in milliseconds, that can pass in order to register a click.
+    size_t getClickInterval() {
+        return _clickInterval;
+    }
+
+
+    //Sets the click interval, i.e. the maximum time than can pass in order to register a click.
+    void setClickInterval(size_t msecs) {
+        _clickInterval = msecs;
     }
 
 

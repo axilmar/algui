@@ -34,6 +34,9 @@ public:
         addEventHandler(Event_MouseButtonDown, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": mouse button down (bubble)\n"; return false; }, EventPhase_Bubble);
         addEventHandler(Event_MouseButtonUp, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": mouse button up (capture)\n"; return false; }, EventPhase_Capture);
         addEventHandler(Event_MouseButtonUp, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": mouse button up (bubble)\n"; return false; }, EventPhase_Bubble);
+        addEventHandler(Event_Click, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": click (bubble)\n"; return false; }, EventPhase_Bubble);
+        addEventHandler(Event_DoubleClick, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": double click (bubble)\n"; return false; }, EventPhase_Bubble);
+        addEventHandler(Event_TripleClick, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": triple click (bubble)\n"; return false; }, EventPhase_Bubble);
     }
 
 protected:
