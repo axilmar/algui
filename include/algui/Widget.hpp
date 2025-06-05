@@ -52,20 +52,23 @@ namespace algui {
 
         /**
          * Descentant widget got the focus.
-         * Dispatched from child to parent.
+         * Dispatched from child to parent, in the capture phase,
+         * then from child to parent, in the bubble phase.
          */
         Event_DescentantGotFocus,
 
         /**
          * Descentant widget lost the focus.
-         * Dispatched from child to parent.
+         * Dispatched from child to parent, in the capture phase,
+         * then from child to parent, in the bubble phase.
          */
         Event_DescentantLostFocus,
 
         /**
          * Joystick move event.
          * Dispatched at the widget tree that contains the input focus,
-         * then if unused to the whole UI tree, from parent to children, depth first.
+         * then if unused to the whole UI tree, from parent to children, depth first, in the capture phase,
+         * then from child to parent, in the bubble phase.
          * If no widget processes the event, then the input focus is moved according to joystick direction.
          */
         Event_JoystickMove,
@@ -73,14 +76,17 @@ namespace algui {
         /**
          * Joystick button down event.
          * Dispatched at the widget tree that contains the input focus,
-         * then if unused to the UI tree under the mouse, from parent to child.
+         * then if unused to the UI tree under the mouse, from parent to child, in the capture phase,
+         * then from child to parent, in the bubble phase.
+         * Also initiates click/double click/triple click from joystick button.
          */
         Event_JoystickButtonDown,
 
         /**
          * Joystick button up event.
          * Dispatched at the widget tree that contains the input focus,
-         * then if unused to the UI tree under the mouse, from parent to child.
+         * then if unused to the UI tree under the mouse, from parent to child, in the capture phase,
+         * then from child to parent, in the bubble phase.
          */
         Event_JoystickButtonUp,
 
@@ -88,7 +94,8 @@ namespace algui {
          * Key down event.
          * Dispatched to the widget with the focus.
          * If there is no focus widget to get the event,
-         * then it is sent to the whole UI tree, from parent to children, depth first.
+         * then it is sent to the whole UI tree, from parent to children, depth first, in the capture phase,
+         * then from child to parent, in the bubble phase.
          */
         Event_KeyDown,
 
@@ -96,7 +103,8 @@ namespace algui {
          * Key up event.
          * Dispatched to the widget with the focus.
          * If there is no focus widget to get the event,
-         * then it is sent to the whole UI tree, from parent to children, depth first.
+         * then it is sent to the whole UI tree, from parent to children, depth first, in the capture phase,
+         * then from child to parent, in the bubble phase.
          */
         Event_KeyUp,
 
@@ -104,68 +112,81 @@ namespace algui {
          * Character event.
          * Dispatched to the widget with the focus.
          * If there is no focus widget to get event,
-         * then it is sent to the whole UI tree, from parent to children, depth first.
+         * then it is sent to the whole UI tree, from parent to children, depth first, in the capture phase,
+         * then from child to parent, in the bubble phase.
          * If no widget processes the event, then the input focus is moved according to key press.
          */
         Event_KeyChar,
 
         /** 
          * Mouse button down event.
-         * Dispatched from parent to child.
+         * Dispatched from parent to child in the capture phase,
+         * then from child to parent in the bubble phase.
+         * Also initiates click/double click/triple click from mouse button.
          */
         Event_MouseButtonDown,
 
         /** 
          * Mouse button up event.
-         * Dispatched from parent to child.
+         * Dispatched from parent to child in the capture phase,
+         * then from child to parent in the bubble phase.
          */
         Event_MouseButtonUp,
 
         /**
          * Mouse enter event.
-         * Dispatched from parent to child.
+         * Dispatched from parent to child in the capture phase,
+         * then from child to parent in the bubble phase.
          */
         Event_MouseEnter,
 
         /**
          * Mouse move event.
-         * Dispatched from parent to child.
+         * Dispatched from parent to child in the capture phase,
+         * then from child to parent in the bubble phase.
+         * Children may receive mouse enter/mouse leave, if the mouse cursor moved over to another child.
          */
         Event_MouseMove,
 
         /**
          * Mouse leave event. 
-         * Dispatched from parent to child.
+         * Dispatched from parent to child in the capture phase,
+         * then from child to parent in the bubble phase.
          */
         Event_MouseLeave,
 
         /**
          * Mouse wheel event.
-         * Dispatched from parent to child.
+         * Dispatched from parent to child in the capture phase,
+         * then from child to parent in the bubble phase.
          */
         Event_MouseWheel,
 
         /** 
          * Timer event.
-         * Dispatched from parent to child.
+         * Dispatched from parent to child in the capture phase,
+         * then from child to parent in the bubble phase.
          */
         Event_Timer,
 
         /**
          * Click event.
-         * Dispatched from parent to child.
+         * Dispatched from parent to child in the capture phase,
+         * then from child to parent in the bubble phase.
          */
         Event_Click,
 
         /**
          * Double click event.
-         * Dispatched from parent to child.
+         * Dispatched from parent to child in the capture phase,
+         * then from child to parent in the bubble phase.
          */
         Event_DoubleClick,
 
         /**
          * Triple click event.
-         * Dispatched from parent to child.
+         * Dispatched from parent to child in the capture phase,
+         * then from child to parent in the bubble phase.
          */
         Event_TripleClick,
 
