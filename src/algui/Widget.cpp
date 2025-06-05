@@ -77,6 +77,11 @@ namespace algui {
     //drag and drop context
     static bool _dragAndDrop = false;
     static std::any _draggedData;
+    static int _dragStartDelta = 8;
+    static int _dragMouseButton = 0;
+    static int _dragMouseStartX = 0;
+    static int _dragMouseStartY = 0;
+    static Widget* _dragStartWidget = nullptr;
 
 
     //calc rect intersection
@@ -187,6 +192,11 @@ namespace algui {
         //manage focus widget
         if (this == _focusedWidget) {
             _focusedWidget = nullptr;
+        }
+
+        //manage drag start widget
+        if (this == _dragStartWidget) {
+            _dragStartWidget = nullptr;
         }
     }
 
@@ -608,6 +618,11 @@ namespace algui {
                 }
                 const bool result = _mouseButtonDownEvent(event);
                 _initClick(_ClickType_Mouse, event.mouse.button, event);
+                if (!_dragMouseButton) {
+                    _dragMouseButton = event.mouse.button;
+                    _dragMouseStartX = event.mouse.x;
+                    _dragMouseStartY = event.mouse.y;
+                }
                 return result;
             }
 
@@ -640,9 +655,8 @@ namespace algui {
 
             case ALLEGRO_EVENT_JOYSTICK_BUTTON_UP:
             {
-                bool result = _joystickButtonEvent(event, Event_JoystickButtonUp);
+                const bool result = _joystickButtonEvent(event, Event_JoystickButtonUp);
                 _addClick(_ClickType_Joystick, event.joystick.button);
-                result = _endDragAndDrop(event) || result;
                 return result;
             }
 
@@ -963,9 +977,35 @@ namespace algui {
 
 
     //begin drag and drop
-    bool Widget::beginDragAndDrop(const ALLEGRO_EVENT& event) {
+    bool Widget::beginDragAndDrop(const ALLEGRO_EVENT& event, const std::any& data, bool useStartDragDelta) {
         //only one drag-n-drop session can be active.
         if (_dragAndDrop) {
+            return false;
+        }
+
+        //check if the drag start button is still pressed
+        if (_dragMouseButton == 0) {
+            return false;
+        }
+
+        //check distance from original point
+        if (useStartDragDelta && _distance(_dragMouseStartX, _dragMouseStartX, event.mouse.x, event.mouse.y) <= _dragStartDelta) {
+            return false;
+        }
+
+        //the event type must be a mouse event.
+        switch (event.type) {
+            case ALLEGRO_EVENT_MOUSE_AXES:
+            case ALLEGRO_EVENT_MOUSE_WARPED:
+            case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
+                break;
+
+            default:
+                return false;
+        }
+
+        //check the data
+        if (!data.has_value()) {
             return false;
         }
 
@@ -974,21 +1014,12 @@ namespace algui {
             return false;
         }
 
-        //the event type must be a button down event.
-        if (event.type != ALLEGRO_EVENT_MOUSE_BUTTON_DOWN && event.type != ALLEGRO_EVENT_JOYSTICK_BUTTON_DOWN) {
-            return false;
-        }
-
-        //the widget must have dragged data
-        _draggedData = onGetDraggedData();
-        if (!_draggedData.has_value()) {
-            return false;
-        }
-
         //all requirements satisfied; begin drag-n-drop.
         _resetClick();
         _resetMouseAndButtonState();
         _dragAndDrop = true;
+        _draggedData = data;
+        _dragStartWidget = this;
         _dragEvent(event, Event_DragStarted);
         return true;
     }
@@ -1413,13 +1444,16 @@ namespace algui {
 
 
     bool Widget::_endDragAndDrop(const ALLEGRO_EVENT& event) {
-        bool result = false;
         if (_dragAndDrop) {
-            result = _dragEvent(event, Event_DragEnded);
             _dragAndDrop = false;
             _draggedData.reset();
+            _dragMouseButton = 0;
+            if (_dragStartWidget) {
+                _dragStartWidget->_dragEvent(event, Event_DragEnded);
+            }
+            return true;
         }
-        return result;
+        return false;
     }
 
 
@@ -1901,6 +1935,18 @@ namespace algui {
     //Returns the dragged data
     const std::any& getDraggedData() {
         return _draggedData;
+    }
+
+
+    //retrieves the drag start delta
+    int getDragStartDelta() {
+        return _dragStartDelta;
+    }
+
+
+    //sets the drag start delta.
+    void setDragStartDelta(int v) {
+        _dragStartDelta = std::max(v, 2);
     }
 
 

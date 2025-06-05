@@ -38,6 +38,13 @@ public:
         addEventHandler(Event_Click, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": click (bubble)\n"; return false; }, EventPhase_Bubble);
         addEventHandler(Event_DoubleClick, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": double click (bubble)\n"; return false; }, EventPhase_Bubble);
         addEventHandler(Event_TripleClick, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": triple click (bubble)\n"; return false; }, EventPhase_Bubble);
+        addEventHandler(Event_DragEnter, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": drag enter (capture)\n"; return false; }, EventPhase_Capture);
+        addEventHandler(Event_DragEnter, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": drag enter (bubble)\n"; return false; }, EventPhase_Bubble);
+        addEventHandler(Event_Drag, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": drag (capture)\n"; return false; }, EventPhase_Capture);
+        addEventHandler(Event_Drag, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": drag (bubble)\n"; return false; }, EventPhase_Bubble);
+        addEventHandler(Event_DragLeave, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": drag leave (capture)\n"; return false; }, EventPhase_Capture);
+        addEventHandler(Event_DragLeave, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": drag leave (bubble)\n"; return false; }, EventPhase_Bubble);
+        addEventHandler(Event_Drop, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": drop (capture); data = " + std::any_cast<std::string>(getDraggedData())  + "\n"; return true; }, EventPhase_Capture);
     }
 
 protected:
@@ -152,7 +159,7 @@ int main(int argc, char** argv) {
     button3->setWidth(50);
     button3->setHeight(40);
     form2->add(button3);
-    button3->addEventHandler(Event_GotFocus, [&](EventType eventType, const Event& event, EventPhaseType phaseType) {
+    button3->addEventHandler(Event_GotFocus, [&](EventType type, const Event& event, EventPhaseType phaseType) {
         std::cout << "Button 3 got the focus\n";
         return false;
     }, EventPhase_Bubble);
@@ -170,6 +177,23 @@ int main(int argc, char** argv) {
     buttonChild2->setWidth(30);
     buttonChild2->setHeight(20);
     button2->add(buttonChild2);
+
+    button2->addEventHandler(Event_MouseMove, [&](EventType type, const Event& event, EventPhaseType phase) {
+        if (button2->beginDragAndDrop(static_cast<const AllegroEvent&>(event).getEvent(), std::string("The quick brown fox jumped over the lazy dog."))) {
+            return true;
+        }
+        return false;
+    });
+
+    button2->addEventHandler(Event_DragStarted, [&](EventType type, const Event& event, EventPhaseType phase) {
+        std::cout << "drag started from " << (static_cast<const AllegroEvent&>(event).getTarget()->getId()) << "\n";
+        return true;
+    });
+
+    button2->addEventHandler(Event_DragEnded, [&](EventType type, const Event& event, EventPhaseType phase) {
+        std::cout << "drag ended from " << (static_cast<const AllegroEvent&>(event).getTarget()->getId()) << "\n";
+        return true;
+    });
 
     for (;;) {
         ALLEGRO_EVENT event;

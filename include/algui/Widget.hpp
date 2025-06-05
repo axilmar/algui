@@ -934,13 +934,20 @@ namespace algui {
          * Starts drag-n-drop.
          * The drag started event is emitted by this widget, if drag-n-drop is successfully started.
          * @param event event that started the drag-n-drop.
+         * @param data dragged data; must not be empty.
+         * @param useStartDragDelta if true, then the current mouse position
+         *  shall be at least `startDragDelta` pixels away from the button press mouse position
+         *  in order for the drag-n-drop to successfully start.
          * @return true if drag-n-drop started, false if 
          *  there is another drag-n-drop session in progress,
-         *  or the given event is not a mouse button down or joystick button down event,
+         *  or the given event is not a mouse down or mouse axis or mouse warped event,
          *  or the method `onGetDraggedData()` returned an empty std::any value,
-         *  or the widget is disabled.
+         *  or the widget is disabled,
+         *  or `useStartDragDelta` is true but the mouse is not away enough from the button press mouse position,
+         *  or the mouse button that was first pressed is not currently pressed
+         *  or the dragged data are empty.
          */
-        bool beginDragAndDrop(const ALLEGRO_EVENT& event);
+        bool beginDragAndDrop(const ALLEGRO_EVENT& event, const std::any& data, bool useStartDragDelta = true);
 
     protected:
         /**
@@ -971,15 +978,6 @@ namespace algui {
          * The default implementation does nothing.
          */
         virtual void onPaintOverlay() const {
-        }
-
-        /**
-         * Interface for retrieving the dragged data.
-         * The default returns an empty std::any value.
-         * @return the dragged data.
-         */
-        virtual std::any onGetDraggedData() const {
-            return {};
         }
 
     private:
@@ -1154,7 +1152,21 @@ namespace algui {
     const std::any& getDraggedData();
 
 
-} //namespace algui
+    /**
+     * Retrieves the drag start delta, in pixels.
+     * @return the drag start delta.
+     */
+    int getDragStartDelta();
+
+
+    /**
+     * Sets the drag start delta, in pixels.
+     * @param v drag start delta.
+     */
+    void setDragStartDelta(int v);
+
+
+    } //namespace algui
 
 
 #endif //ALGUI_WIDGET_HPP
