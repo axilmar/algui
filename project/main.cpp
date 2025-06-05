@@ -12,6 +12,7 @@
 #include "allegro5/allegro_audio.h"
 
 #include "algui/Widget.hpp"
+//#include "algui/TimerThread.hpp"
 using namespace algui;
 
 static std::string spaces(size_t times) {
@@ -61,8 +62,24 @@ private:
     bool m_layout;
 };
 
+/*
+static void testTimerThread() {
+    TimerThread timerThread;
+    timerThread.start();
+
+    timerThread.add([&]() { std::cout << "event after 5000 milliseconds\n"; }, 5000);
+    timerThread.add([&]() { std::cout << "event every 1000 milliseconds\n"; }, 1000, false);
+    timerThread.add([&]() { std::cout << "event every 2000 milliseconds\n"; }, 2000, false);
+
+    std::string s;
+    std::cin >> s;
+}
+*/
+
 int main(int argc, char** argv) {
     al_init();
+    /*testTimerThread();
+    return 0;*/
     al_init_image_addon();
     al_init_primitives_addon();
     al_init_font_addon();

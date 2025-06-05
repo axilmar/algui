@@ -19,7 +19,7 @@ namespace algui {
         const auto timePoint = std::chrono::high_resolution_clock::now() + delay;
         std::shared_ptr<_Timer> timer = std::make_shared<_Timer>(this, timerFunction, timePoint, delay, once);
         al_lock_mutex(getMutex());
-        timer->it = _insertSorted(timer);
+        timer->it = m_timers.insert(std::make_pair(timePoint, timer));
         al_unlock_mutex(getMutex());
         notify();
         return timer;
@@ -54,7 +54,7 @@ namespace algui {
         }
 
         //wait if the time for the first timer has not yet arrived
-        const std::shared_ptr<_Timer>& firstTimer = m_timers.front();
+        const std::shared_ptr<_Timer>& firstTimer = m_timers.begin()->second;
         return firstTimer->timePoint > std::chrono::high_resolution_clock::now();
     }
 
@@ -68,7 +68,7 @@ namespace algui {
         }
 
         //if time for the first timer has come, don't wait
-        const std::shared_ptr<_Timer>& firstTimer = m_timers.front();
+        const std::shared_ptr<_Timer>& firstTimer = m_timers.begin()->second;
         const auto now = std::chrono::high_resolution_clock::now();
         if (firstTimer->timePoint <= now) {
             return;
@@ -89,7 +89,7 @@ namespace algui {
         //iterate timers
         while (!m_timers.empty()) {
             //get the first timer
-            std::shared_ptr<_Timer> timer = m_timers.front();
+            std::shared_ptr<_Timer> timer = m_timers.begin()->second;
 
             //found future timer; stop
             if (timer->timePoint > now) {
@@ -102,59 +102,17 @@ namespace algui {
             //if timer was only for one time, erase it
             if (timer->once) {
                 timer->owner = nullptr;
-                m_timers.pop_front();
+                m_timers.erase(m_timers.begin());
             }
 
             //else reoccuring timer; reinsert it 
             else {
                 timer->timePoint = now + timer->delay;
-                m_timers.pop_front();
-                timer->it = _insertSorted(timer);
+                m_timers.erase(m_timers.begin());
+                timer->it = m_timers.insert(std::make_pair(timer->timePoint, timer));
             }
         }
     } 
-
-    //insert timer sorted
-    TimerThread::_Iterator TimerThread::_insertSorted(const std::shared_ptr<_Timer>& timer) {
-        //2 or more timers
-        if (m_timers.size() >= 2) {
-
-            //iterate the list from both sides
-            auto it = m_timers.begin();
-            auto itRev = m_timers.rbegin();
-
-            //the loop will always result in an insertion
-            for (;;) {
-                //insert before timer at the front
-                const std::shared_ptr<_Timer>& other = *it;
-                if (timer->timePoint < other->timePoint) {
-                    return m_timers.insert(it, timer);
-                }
-
-                //insert after timer at the back
-                const std::shared_ptr<_Timer>& otherRev = *itRev;
-                if (timer->timePoint >= otherRev->timePoint) {
-                    return m_timers.insert(itRev.base(), timer);
-                }
-
-                //next positions
-                ++it;
-                ++itRev;
-            }
-
-        }
-
-        //only one timer; compare new timer with it
-        else if (m_timers.size() == 1) {
-            const std::shared_ptr<_Timer>& other = m_timers.front();
-            if (timer->timePoint < other->timePoint) {
-                return m_timers.insert(m_timers.begin(), timer);
-            }
-        }
-
-        //no timers or new timer must be placed at the end
-        return m_timers.insert(m_timers.end(), timer);
-    }
 
 
 } //namespace algui

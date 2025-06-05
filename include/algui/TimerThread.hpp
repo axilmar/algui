@@ -4,7 +4,7 @@
 
 #include <functional>
 #include <chrono>
-#include <list>
+#include <map>
 #include <memory>
 #include "Thread.hpp"
 
@@ -32,8 +32,8 @@ namespace algui {
 
         struct _Timer;
 
-        using _TimerList = std::list<std::shared_ptr<_Timer>>;
-        using _Iterator = _TimerList::iterator;
+        using _TimerContainer = std::multimap<_TimePoint, std::shared_ptr<_Timer>>;
+        using _Iterator = _TimerContainer::iterator;
 
         struct _Timer {
             TimerThread* owner;
@@ -109,10 +109,7 @@ namespace algui {
 
     private:
         //fields
-        _TimerList m_timers;
-
-        //private methods
-        _Iterator _insertSorted(const std::shared_ptr<_Timer>& timer);
+        _TimerContainer m_timers;
     };
 
 
