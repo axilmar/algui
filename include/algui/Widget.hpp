@@ -52,15 +52,13 @@ namespace algui {
 
         /**
          * Descentant widget got the focus.
-         * Dispatched from child to parent, in the capture phase,
-         * then from child to parent, in the bubble phase.
+         * Dispatched from child to parent in the bubble phase.
          */
         Event_DescentantGotFocus,
 
         /**
          * Descentant widget lost the focus.
-         * Dispatched from child to parent, in the capture phase,
-         * then from child to parent, in the bubble phase.
+         * Dispatched from child to parent in the bubble phase.
          */
         Event_DescentantLostFocus,
 
