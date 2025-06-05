@@ -70,7 +70,7 @@ namespace algui {
          */
         float calcPixelValue(float size, float scaling = 1.0f) const {
             if (m_type == Percent) {
-                return m_value / 100.0 * size;
+                return m_value / 100.0f * size;
             }
             return m_value * scaling;
         }

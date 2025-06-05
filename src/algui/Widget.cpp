@@ -1,4 +1,3 @@
-#pragma warning (disable: 4309)
 #include <limits>
 #include <algorithm>
 #include <cmath>
@@ -6,7 +5,6 @@
 #include <chrono>
 #include <deque>
 #include <thread>
-#include "allegro5/allegro.h"
 #include "algui/Widget.hpp"
 
 
@@ -27,6 +25,13 @@ namespace algui {
 
 
     #define _ALGUI_EVENT_TYPE  ALLEGRO_GET_EVENT_TYPE('a', 'g', 'u', 'i')
+
+
+    //internal event ids
+    enum _InternalEventId {
+        _Event_Click
+    };
+
 
 
     //event source
@@ -134,6 +139,11 @@ namespace algui {
     static std::atomic_int _clickType = _ClickType_None;
 
 
+    //drag and drop context
+    static bool _dragAndDrop = false;
+    static std::any _draggedData;
+
+
     //calc rect intersection
     static bool _intersect(
         float x1, float y1, float x2, float y2,
@@ -161,16 +171,22 @@ namespace algui {
     }
 
 
+    static void _resetClick() {
+        _clickCounter = 0;
+        _clickButton = 0;
+        _clickType = _ClickType_None;
+    }
+
+
     //the function that waits for click delay and then emits a user event for clicks
     static std::function<void()> _emitClickEventFunction = [&]() {
         std::this_thread::sleep_for(std::chrono::milliseconds(_clickDelay));
         ALLEGRO_EVENT event{};
         event.type = _ALGUI_EVENT_TYPE;
-        event.user.data1 = _clickCounter;
+        event.user.data1 = _Event_Click;
+        event.user.data2 = _clickCounter;
         al_emit_user_event(getUIEventSource(), &event, nullptr);
-        _clickCounter = 0;
-        _clickButton = 0;
-        _clickType = _ClickType_None;
+        _resetClick();
     };
 
 
@@ -632,7 +648,7 @@ namespace algui {
                     const bool oldMouse = m_hasMouse;
                     const bool newMouse = intersects(event.mouse.x, event.mouse.y);
                     if (newMouse && oldMouse) {
-                        result = _mouseMove(event, Event_MouseMove);
+                        result = _mouseMove(event, _dragAndDrop ? Event_Drag : Event_MouseMove);
                     }
                     else if (newMouse) {
                         result = _mouseEnter(event);
@@ -652,6 +668,9 @@ namespace algui {
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
             {
+                if (_dragAndDrop) {
+                    return false;
+                }
                 const bool result = _mouseButtonDownEvent(event);
                 _initClick(_ClickType_Mouse, event.mouse.button, event);
                 return result;
@@ -659,8 +678,9 @@ namespace algui {
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
             {
-                const bool result = _mouseButtonUpEvent(event);
+                bool result = _mouseButtonUpEvent(event);
                 _addClick(_ClickType_Mouse, event.mouse.button);
+                result = _endDragAndDrop(event) || result;
                 return result;
             }
 
@@ -675,6 +695,9 @@ namespace algui {
 
             case ALLEGRO_EVENT_JOYSTICK_BUTTON_DOWN:
             {
+                if (_dragAndDrop) {
+                    return false;
+                }
                 bool result = _joystickButtonEvent(event, Event_JoystickButtonDown);
                 _initClick(_ClickType_Joystick, event.joystick.button, event);
                 return result;
@@ -682,8 +705,9 @@ namespace algui {
 
             case ALLEGRO_EVENT_JOYSTICK_BUTTON_UP:
             {
-                const bool result = _joystickButtonEvent(event, Event_JoystickButtonUp);
+                bool result = _joystickButtonEvent(event, Event_JoystickButtonUp);
                 _addClick(_ClickType_Joystick, event.joystick.button);
+                result = _endDragAndDrop(event) || result;
                 return result;
             }
 
@@ -697,7 +721,7 @@ namespace algui {
                 return _exposeEvent(event);
 
             case _ALGUI_EVENT_TYPE:
-                return _endClickEvent(event);
+                return _internalEvent(event);
         }
 
         //event not processed
@@ -1000,6 +1024,38 @@ namespace algui {
         }
 
         return false;
+    }
+
+
+    //begin drag and drop
+    bool Widget::beginDragAndDrop(const ALLEGRO_EVENT& event) {
+        //only one drag-n-drop session can be active.
+        if (_dragAndDrop) {
+            return false;
+        }
+
+        //the widget must be enabled
+        if (!_enabledTree()) {
+            return false;
+        }
+
+        //the event type must be a button down event.
+        if (event.type != ALLEGRO_EVENT_MOUSE_BUTTON_DOWN && event.type != ALLEGRO_EVENT_JOYSTICK_BUTTON_DOWN) {
+            return false;
+        }
+
+        //the widget must have dragged data
+        _draggedData = onGetDraggedData();
+        if (!_draggedData.has_value()) {
+            return false;
+        }
+
+        //all requirements satisfied; begin drag-n-drop.
+        _resetClick();
+        _resetMouseAndButtonState();
+        _dragAndDrop = true;
+        _dragEvent(event, Event_DragStarted);
+        return true;
     }
 
 
@@ -1412,12 +1468,23 @@ namespace algui {
 
 
     void Widget::_initClick(int clickType, int button, const ALLEGRO_EVENT& event) {
-        if (_clickType == _ClickType_None) {
+        if (!_dragAndDrop && _clickType == _ClickType_None) {
             _clickType = clickType;
             _clickButton = button;
             _beginClickEvent(event);
             _getJobThread().put(_emitClickEventFunction);
         }
+    }
+
+
+    bool Widget::_endDragAndDrop(const ALLEGRO_EVENT& event) {
+        bool result = false;
+        if (_dragAndDrop) {
+            result = _dragEvent(event, Event_DragEnded);
+            _dragAndDrop = false;
+            _draggedData.reset();
+        }
+        return result;
     }
 
 
@@ -1560,13 +1627,13 @@ namespace algui {
 
     //mouse button up event
     bool Widget::_mouseButtonUpEvent(const ALLEGRO_EVENT& event) {
-        if (dispatchEvent(Event_MouseButtonUp, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
+        if (dispatchEvent(_dragAndDrop ? Event_Drop : Event_MouseButtonUp, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
             return true;
         }
         if (m_childWithMouse && m_childWithMouse->_mouseButtonUpEvent(event)) {
             return true;
         }
-        return dispatchEvent(Event_MouseButtonUp, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
+        return dispatchEvent(_dragAndDrop ? Event_Drop : Event_MouseButtonUp, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
     }
 
 
@@ -1598,7 +1665,7 @@ namespace algui {
 
     //end click event
     bool Widget::_endClickEvent(const ALLEGRO_EVENT& event) {
-        const int buttonClickCount = (int)event.user.data1;
+        const int buttonClickCount = (int)event.user.data2;
         if (buttonClickCount > 0 && buttonClickCount <= _MAX_CLICK_COUNT) {
             const bool result = _clickEvent(event, (EventType)(Event_Click + buttonClickCount - 1));
             _resetButtonState();
@@ -1619,7 +1686,7 @@ namespace algui {
 
         //if moved over the same child
         if (oldMouseChild == m_childWithMouse) {
-            if (m_childWithMouse && m_childWithMouse->_mouseMove(event, Event_MouseMove)) {
+            if (m_childWithMouse && m_childWithMouse->_mouseMove(event, _dragAndDrop ? Event_Drag : Event_MouseMove)) {
                 return true;
             }
         }
@@ -1650,7 +1717,7 @@ namespace algui {
     //mouse enter
     bool Widget::_mouseEnter(const ALLEGRO_EVENT& event) {
         m_hasMouse = true;
-        return _mouseMove(event, Event_MouseEnter);
+        return _mouseMove(event, _dragAndDrop ? Event_DragEnter : Event_MouseEnter);
     }
     
 
@@ -1659,7 +1726,7 @@ namespace algui {
         m_hasMouse = false;
 
         //dispatch event in capture phase
-        if (dispatchEvent(Event_MouseLeave, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
+        if (dispatchEvent(_dragAndDrop ? Event_DragLeave : Event_MouseLeave, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
             _resetMouseAndButtonState();
             return true;
         }
@@ -1673,14 +1740,14 @@ namespace algui {
         _resetMouseAndButtonState();
 
         //dispatch event in bubble phase
-        return dispatchEvent(Event_MouseLeave, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
+        return dispatchEvent(_dragAndDrop ? Event_DragLeave : Event_MouseLeave, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
     }
 
 
     //mouse wheel
     bool Widget::_mouseWheel(const ALLEGRO_EVENT& event) {
         //dispatch event in capture phase
-        if (dispatchEvent(Event_MouseWheel, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
+        if (dispatchEvent(_dragAndDrop ? Event_DragWheel : Event_MouseWheel, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
             return true;
         }
 
@@ -1690,7 +1757,7 @@ namespace algui {
         }
 
         //dispatch event in bubble phase
-        return dispatchEvent(Event_MouseWheel, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
+        return dispatchEvent(_dragAndDrop ? Event_DragWheel : Event_MouseWheel, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
     }
 
 
@@ -1822,6 +1889,44 @@ namespace algui {
     }
 
 
+    bool Widget::_dragEventCapture(const ALLEGRO_EVENT& event, EventType eventType) {
+        Widget* parent = getParent();
+        if (parent && parent->_dragEventCapture(event, eventType)) {
+            return true;
+        }
+        return dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture);
+    }
+    
+    
+    bool Widget::_dragEventBubble(const ALLEGRO_EVENT& event, EventType eventType) {
+        if (dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble)) {
+            return true;
+        }
+        Widget* parent = getParent();
+        if (parent && parent->_dragEventBubble(event, eventType)) {
+            return true;
+        }
+        return false;
+    }
+    
+    
+    bool Widget::_dragEvent(const ALLEGRO_EVENT& event, EventType eventType) {
+        if (_dragEventCapture(event, eventType)) {
+            return true;
+        }
+        return _dragEventBubble(event, eventType);
+    }
+
+
+    bool Widget::_internalEvent(const ALLEGRO_EVENT& event) {
+        switch (event.user.data1) {
+            case _Event_Click:
+                return _endClickEvent(event);
+        }
+        return false;
+    }
+
+
     /**************************************************************************
         EXPORTED
     **************************************************************************/
@@ -1849,6 +1954,18 @@ namespace algui {
     ALLEGRO_EVENT_SOURCE* getUIEventSource() {
         static _AllegroEventSource UIEventSource;
         return UIEventSource.getEventSource();
+    }
+
+
+    //return drag-n-drop status
+    bool isDragAndDropActive() {
+        return _dragAndDrop;
+    }
+
+
+    //Returns the dragged data
+    const std::any& getDraggedData() {
+        return _draggedData;
     }
 
 

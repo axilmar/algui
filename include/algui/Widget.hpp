@@ -6,9 +6,12 @@
 #include <memory>
 #include <utility>
 #include <string>
+#include <any>
 #include "Tree.hpp"
 #include "Coord.hpp"
 #include "EventTarget.hpp"
+#pragma warning (disable: 4309)
+#include "allegro5/allegro.h"
 
 
 namespace algui {
@@ -159,6 +162,55 @@ namespace algui {
          * then from child to parent in the bubble phase.
          */
         Event_MouseWheel,
+
+        /**
+         * Drag-n-drop start event.
+         * Emitted from the widget that starts the drag-n-drop.
+         * Dispatched from parent to child in the capture phase,
+         * then from child to parent in the bubble phase.
+         */
+        Event_DragStarted,
+
+        /**
+         * Drag-n-drop end event.
+         * Emitted after a drop event, from the widget that started the drag-n-drop.
+         * Dispatched from parent to child in the capture phase,
+         * then from child to parent in the bubble phase.
+         */
+        Event_DragEnded,
+
+        /**
+         * Drop event (mouse button released while in drag-n-drop mode).
+         * Dispatched from parent to child in the capture phase,
+         * then from child to parent in the bubble phase.
+         */
+        Event_Drop,
+
+        /**
+         * Drag enter event (mouse enter while in drag-n-drop mode).
+         * Dispatched from parent to child in the capture phase,
+         * then from child to parent in the bubble phase.
+         */
+        Event_DragEnter,
+
+        /**
+         * Drag event (mouse move while in drag-n-drop mode).
+         * Dispatched from parent to child in the capture phase,
+         * then from child to parent in the bubble phase.
+         */
+        Event_Drag,
+
+        /**
+         * Drag leave event (mouse enter while in drag-n-drop mode).
+         * Dispatched from parent to child in the capture phase,
+         * then from child to parent in the bubble phase.
+         */
+        Event_DragLeave,
+
+        /**
+         * Same as Event_MouseWheel, but in a drag-n-drop context.
+         */
+        Event_DragWheel,
 
         /** 
          * Timer event.
@@ -878,6 +930,18 @@ namespace algui {
          */
         bool moveFocusDown();
 
+        /**
+         * Starts drag-n-drop.
+         * The drag started event is emitted by this widget, if drag-n-drop is successfully started.
+         * @param event event that started the drag-n-drop.
+         * @return true if drag-n-drop started, false if 
+         *  there is another drag-n-drop session in progress,
+         *  or the given event is not a mouse button down or joystick button down event,
+         *  or the method `onGetDraggedData()` returned an empty std::any value,
+         *  or the widget is disabled.
+         */
+        bool beginDragAndDrop(const ALLEGRO_EVENT& event);
+
     protected:
         /**
          * Invoked to allow a widget to compute its geometry constraints
@@ -907,6 +971,15 @@ namespace algui {
          * The default implementation does nothing.
          */
         virtual void onPaintOverlay() const {
+        }
+
+        /**
+         * Interface for retrieving the dragged data.
+         * The default returns an empty std::any value.
+         * @return the dragged data.
+         */
+        virtual std::any onGetDraggedData() const {
+            return {};
         }
 
     private:
@@ -992,6 +1065,7 @@ namespace algui {
         float _getScreenCenterX() const;
         float _getScreenCenterY() const;
         void _initClick(int clickType, int button, const ALLEGRO_EVENT& event);
+        bool _endDragAndDrop(const ALLEGRO_EVENT& event);
 
         //joystick events
         bool _joystickButtonEventCapture(const ALLEGRO_EVENT& event, EventType eventType);
@@ -1022,9 +1096,15 @@ namespace algui {
         bool _moveFocusByKey(const ALLEGRO_EVENT& event);
         bool _keyEvent(const ALLEGRO_EVENT& event, EventType eventType);
 
+        //drag and drop events
+        bool _dragEventCapture(const ALLEGRO_EVENT& event, EventType eventType);
+        bool _dragEventBubble(const ALLEGRO_EVENT& event, EventType eventType);
+        bool _dragEvent(const ALLEGRO_EVENT& event, EventType eventType);
+
         //other events
         bool _timerEvent(const ALLEGRO_EVENT& event);
         bool _exposeEvent(const ALLEGRO_EVENT& event);
+        bool _internalEvent(const ALLEGRO_EVENT& event);
     };
 
 
@@ -1058,6 +1138,20 @@ namespace algui {
      * @return the UI event source. It is managed automatically by this library.
      */
     ALLEGRO_EVENT_SOURCE* getUIEventSource();
+
+
+    /**
+     * Returns true if drag-n-drop is active.
+     * @return true if drag-n-drop is active.
+     */
+    bool isDragAndDropActive();
+
+
+    /**
+     * Returns the dragged data.
+     * @return the dragged data.
+     */
+    const std::any& getDraggedData();
 
 
 } //namespace algui
