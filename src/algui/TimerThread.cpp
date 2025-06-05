@@ -28,15 +28,17 @@ namespace algui {
 
     //Removes the given timer timer, if not already removed.
     bool TimerThread::remove(const TimerId& id) {
-        al_lock_mutex(getMutex());
-        if (id.timer->owner == this) {
-            id.timer->owner = nullptr;
-            m_timers.erase(id.timer->it);
+        if (id.timer) {
+            al_lock_mutex(getMutex());
+            if (id.timer->owner == this) {
+                id.timer->owner = nullptr;
+                m_timers.erase(id.timer->it);
+                al_unlock_mutex(getMutex());
+                notify();
+                return true;
+            }
             al_unlock_mutex(getMutex());
-            notify();
-            return true;
         }
-        al_unlock_mutex(getMutex());
         return false;
     }
 

@@ -50,6 +50,13 @@ namespace algui {
          * Timer id type.
          */
         struct TimerId {
+        public:
+            /**
+             * The default constructor.
+             * The timer id is empty.
+             */
+            TimerId() {}
+
         private:
             std::shared_ptr<_Timer> timer;
             TimerId(const std::shared_ptr<_Timer>& t) : timer(t) {}
@@ -111,6 +118,12 @@ namespace algui {
         //fields
         _TimerContainer m_timers;
     };
+
+
+    /**
+     * Timer id.
+     */
+    using TimerId = TimerThread::TimerId;
 
 
 } //namespace algui
