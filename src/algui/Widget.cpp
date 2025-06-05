@@ -115,6 +115,13 @@ namespace algui {
     };
 
 
+    enum _ClickType {
+        _ClickType_None,
+        _ClickType_Mouse,
+        _ClickType_Joystick
+    };
+
+
     //the currently focused widget
     static Widget* _focusedWidget = nullptr;
 
@@ -124,6 +131,7 @@ namespace algui {
     static size_t _clickDelay = 500;
     static std::atomic_int _clickButton = 0;
     static std::atomic_int _clickCounter = 0;
+    static std::atomic_int _clickType = _ClickType_None;
 
 
     //calc rect intersection
@@ -159,9 +167,10 @@ namespace algui {
         ALLEGRO_EVENT event{};
         event.type = _ALGUI_EVENT_TYPE;
         event.user.data1 = _clickCounter;
+        al_emit_user_event(getUIEventSource(), &event, nullptr);
         _clickCounter = 0;
         _clickButton = 0;
-        al_emit_user_event(getUIEventSource(), &event, nullptr);
+        _clickType = _ClickType_None;
     };
 
 
@@ -636,9 +645,10 @@ namespace algui {
             case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
             {
                 const bool result = _mouseButtonDownEvent(event);
-                if (_clickButton == 0) {
-                    _beginClickEvent(event);
+                if (_clickType == _ClickType_None) {
+                    _clickType = _ClickType_Mouse;
                     _clickButton = event.mouse.button;
+                    _beginClickEvent(event);
                     _getJobThread().put(_emitClickEventFunction);
                 }
                 return result;
@@ -647,7 +657,7 @@ namespace algui {
             case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
             {
                 const bool result = _mouseButtonUpEvent(event);
-                if (event.mouse.button == _clickButton) {
+                if (_clickType == _ClickType_Mouse && _clickButton == event.mouse.button) {
                     ++_clickCounter;
                 }
                 return result;
@@ -663,10 +673,27 @@ namespace algui {
                 return _keyEvent(event, Event_KeyChar);
 
             case ALLEGRO_EVENT_JOYSTICK_BUTTON_DOWN:
-                return _joystickButtonEvent(event, Event_JoystickButtonDown);
+            {
+                bool result = _joystickButtonEvent(event, Event_JoystickButtonDown);
+                if (!result && _clickType == _ClickType_None) {
+                    _clickType = _ClickType_Joystick;
+                    _clickButton = event.joystick.button;
+                    _beginClickEvent(event);
+                    _getJobThread().put(_emitClickEventFunction);
+                }
+                return result;
+            }
 
             case ALLEGRO_EVENT_JOYSTICK_BUTTON_UP:
-                return _joystickButtonEvent(event, Event_JoystickButtonUp);
+            {
+                if (_clickType != _ClickType_Joystick) {
+                    return _joystickButtonEvent(event, Event_JoystickButtonUp);
+                }
+                if (_clickType == _ClickType_Joystick && _clickButton == event.joystick.button) {
+                    ++_clickCounter;
+                }
+                return false;
+            }
 
             case ALLEGRO_EVENT_JOYSTICK_AXIS:
                 return _joystickMoveEvent(event);
