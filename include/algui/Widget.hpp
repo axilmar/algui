@@ -324,6 +324,16 @@ namespace algui {
 
     /**
      * Base class for UI elements. 
+     *
+     * It provides all the basic functionalities for a UI:
+     * 
+     *  - pixel and percentage coordinates.
+     *  - horizontal and vertical scaling.
+     *  - size constraints and layout management.
+     *  - focus management.
+     *  - allegro event processing and event handling.
+     *  - visual state inheritance.
+     *  - drag-n-drop.
      */
     class Widget 
         : public Tree<Widget>
@@ -949,6 +959,19 @@ namespace algui {
          */
         bool beginDragAndDrop(const ALLEGRO_EVENT& event, const std::any& data, bool useStartDragDelta = true);
 
+        /**
+         * Invalidates the current geometry constraints.
+         * The widget will recalculate them later at the next `render()` call.
+         */
+        void invalidateGeometryConstraints();
+        
+        /**
+         * Invalidates the layout.
+         * The widget will recalculate the layout later at the next `render()` call,
+         * after possibly recalculating the geometry constraints.
+         */
+        void invalidateLayout();
+
     protected:
         /**
          * Invoked to allow a widget to compute its geometry constraints
@@ -1035,10 +1058,8 @@ namespace algui {
 
         //various internal functions
         void _invalidateScreenGeometry();
-        void _invalidateGeometryConstraints();
         void _invalidateParentGeometryConstraints();
         void _updateGeometryConstraints();
-        void _invalidateLayout();
         void _invalidateParentLayout();
         void _calcScreenGeometry();
         void _invalidateTreeVisualState();

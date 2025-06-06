@@ -219,8 +219,8 @@ namespace algui {
 
             //invalidate geometry constraints and layout of this,
             //since a child was added
-            _invalidateGeometryConstraints();
-            _invalidateLayout();
+            invalidateGeometryConstraints();
+            invalidateLayout();
 
             //invalidate tree visual state of child,
             //so as that it is later recomputed
@@ -245,8 +245,8 @@ namespace algui {
 
             //invalidate geometry constraints and layout of this,
             //since a child was removed
-            _invalidateGeometryConstraints();
-            _invalidateLayout();
+            invalidateGeometryConstraints();
+            invalidateLayout();
 
             //if the removed child contains the focus, lose the focus
             if (child->contains(_focusedWidget)) {
@@ -290,7 +290,7 @@ namespace algui {
     void Widget::setWidth(const Coord& width) {
         if (width != m_width) {
             m_width = width;
-            _invalidateLayout();
+            invalidateLayout();
             _invalidateParentLayout();
             _invalidateScreenGeometry();
         }
@@ -301,7 +301,7 @@ namespace algui {
     void Widget::setHeight(const Coord& height) {
         if (height != m_height) {
             m_height = height;
-            _invalidateLayout();
+            invalidateLayout();
             _invalidateParentLayout();
             _invalidateScreenGeometry();
         }
@@ -1025,19 +1025,8 @@ namespace algui {
     }
 
 
-    /**************************************************************************
-        PRIVATE
-    **************************************************************************/
-
-
-    //make the screen geometry invalid
-    void Widget::_invalidateScreenGeometry() {
-        m_screenGeometryDirty = true;
-    }
-
-
     //invalidate geometry constraits of widget
-    void Widget::_invalidateGeometryConstraints() {
+    void Widget::invalidateGeometryConstraints() {
         if (m_geometryConstraintsDirty) {
             return;
         }
@@ -1051,10 +1040,27 @@ namespace algui {
     }
 
 
+    //invalidate the layout of the widget
+    void Widget::invalidateLayout() {
+        m_layoutDirty = true;
+    }
+
+
+    /**************************************************************************
+        PRIVATE
+    **************************************************************************/
+
+
+    //make the screen geometry invalid
+    void Widget::_invalidateScreenGeometry() {
+        m_screenGeometryDirty = true;
+    }
+
+
     //invalidates geometry constraints of parent
     void Widget::_invalidateParentGeometryConstraints() {
         if (getParent()) {
-            getParent()->_invalidateGeometryConstraints();
+            getParent()->invalidateGeometryConstraints();
         }
     }
 
@@ -1074,16 +1080,10 @@ namespace algui {
     }
 
 
-    //invalidate the layout of the widget
-    void Widget::_invalidateLayout() {
-        m_layoutDirty = true;
-    }
-
-
     //invalidate the layout of the widget's parent
     void Widget::_invalidateParentLayout() {
         if (getParent()) {
-            getParent()->_invalidateLayout();
+            getParent()->invalidateLayout();
         }
     }
 
