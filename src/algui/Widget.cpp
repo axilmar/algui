@@ -6,7 +6,6 @@
 #include <deque>
 #include <thread>
 #include "algui/Widget.hpp"
-#include "algui/TimerThread.hpp"
 
 
 #ifdef min
@@ -25,14 +24,7 @@ namespace algui {
      **************************************************************************/
 
 
-    #define _ALGUI_EVENT_TYPE  ALLEGRO_GET_EVENT_TYPE('a', 'g', 'u', 'i')
-
-
-    //internal event ids
-    enum _InternalEventId {
-        _Event_Click
-    };
-
+    #define _ALGUI_EVENT_TYPE  ALLEGRO_GET_EVENT_TYPE('a', 'l', 'u', 'i')
 
 
     //event source
@@ -62,16 +54,22 @@ namespace algui {
     };
 
 
+    struct _TimerFunctionWrapper {
+        TimerFunction function;
+    };
+
+
     //the currently focused widget
     static Widget* _focusedWidget = nullptr;
 
 
     //click/double click context
     static constexpr int _MAX_CLICK_COUNT = 3;
-    static size_t _clickDelay = 250;
-    static std::atomic_int _clickButton = 0;
-    static std::atomic_int _clickCounter = 0;
-    static std::atomic_int _clickType = _ClickType_None;
+    static size_t _clickDelay = 500;
+    static int _clickType = _ClickType_None;
+    static int _clickButton = 0;
+    static int _clickCounter = 0;
+    static ALLEGRO_EVENT _clickStartEvent;
 
 
     //drag and drop context
@@ -107,30 +105,11 @@ namespace algui {
     }
 
 
-    //get the timer thread
-    static TimerThread& _getTimerThread() {
-        static TimerThread timerThread;
-        return timerThread;
-    }
-
-
     static void _resetClick() {
-        _clickCounter = 0;
-        _clickButton = 0;
         _clickType = _ClickType_None;
+        _clickButton = 0;
+        _clickCounter = 0;
     }
-
-
-    //the function that waits for click delay and then emits a user event for clicks
-    static std::function<void()> _emitClickEventFunction = [&]() {
-        std::this_thread::sleep_for(std::chrono::milliseconds(_clickDelay));
-        ALLEGRO_EVENT event{};
-        event.type = _ALGUI_EVENT_TYPE;
-        event.user.data1 = _Event_Click;
-        event.user.data2 = _clickCounter;
-        al_emit_user_event(getUIEventSource(), &event, nullptr);
-        _resetClick();
-    };
 
 
     //adds a click, only if the currently initiated click session is for the given click type and button
@@ -147,6 +126,35 @@ namespace algui {
             al_get_mouse_state(&mouseState);
             al_draw_bitmap(_dragIcon, mouseState.x - _dragIconCenterX, mouseState.y - _dragIconCenterY, 0);
         }
+    }
+
+
+    static TimerThread& _getTimerThread() {
+        static TimerThread _UITimerThread;
+        return _UITimerThread;
+    }
+
+
+    static void _userEventDestructor(ALLEGRO_USER_EVENT* event) {
+        delete reinterpret_cast<_TimerFunctionWrapper*>(event->data1);
+    }
+
+
+    static TimerFunction _createTimerFunctionWrapper(const TimerFunction& func) {
+        return [=]() {
+            ALLEGRO_EVENT event{};
+            event.type = _ALGUI_EVENT_TYPE;
+            _TimerFunctionWrapper* wrapper = new _TimerFunctionWrapper{ func };
+            event.user.data1 = reinterpret_cast<intptr_t>(wrapper);
+            al_emit_user_event(getUIEventSource(), &event, &_userEventDestructor);
+        };
+    }
+
+
+    static bool _alguiEvent(const ALLEGRO_EVENT& event) {
+        reinterpret_cast<_TimerFunctionWrapper*>(event.user.data1)->function();
+        al_unref_user_event(const_cast<ALLEGRO_USER_EVENT*>(&event.user));
+        return true;
     }
 
 
@@ -683,7 +691,7 @@ namespace algui {
                 return _exposeEvent(event);
 
             case _ALGUI_EVENT_TYPE:
-                return _internalEvent(event);
+                return _alguiEvent(event);
         }
 
         //event not processed
@@ -1450,8 +1458,13 @@ namespace algui {
         if (!_dragAndDrop && _clickType == _ClickType_None) {
             _clickType = clickType;
             _clickButton = button;
+            _clickCounter = 0;
+            _clickStartEvent = event;
             _beginClickEvent(event);
-            _getTimerThread().add(_emitClickEventFunction, _clickDelay);
+            TimerFunction dispatchClickEventFunction = [target=this]() {
+                target->_endClickEvent(_clickStartEvent);
+            };
+            setTimeout(dispatchClickEventFunction, _clickDelay);
         }
     }
 
@@ -1626,8 +1639,9 @@ namespace algui {
             _resetButtonState();
             return true;
         }
-        if (m_childWithButton) {
-            if (m_childWithButton->m_enabled && m_childWithButton->_clickEvent(event, eventType)) {
+        Widget* child = _getEnabledChild(event.mouse.x, event.mouse.y);
+        if (child) {
+            if (child->m_enabled && child->_clickEvent(event, eventType)) {
                 _resetButtonState();
                 return true;
             }
@@ -1648,13 +1662,15 @@ namespace algui {
 
     //end click event
     bool Widget::_endClickEvent(const ALLEGRO_EVENT& event) {
-        const int buttonClickCount = (int)event.user.data2;
-        if (buttonClickCount > 0 && buttonClickCount <= _MAX_CLICK_COUNT) {
-            const bool result = _clickEvent(event, (EventType)(Event_Click + buttonClickCount - 1));
-            _resetButtonState();
-            return result;
+        bool result = false;
+        if (_clickType != _ClickType_None) {
+            if (_clickCounter > 0 && _clickCounter <= _MAX_CLICK_COUNT) {
+                result = _clickEvent(event, (EventType)(Event_Click + _clickCounter - 1));
+                _resetButtonState();
+            }
+            _resetClick();
         }
-        return false;
+        return result;
     }
 
 
@@ -1901,15 +1917,6 @@ namespace algui {
     }
 
 
-    bool Widget::_internalEvent(const ALLEGRO_EVENT& event) {
-        switch (event.user.data1) {
-            case _Event_Click:
-                return _endClickEvent(event);
-        }
-        return false;
-    }
-
-
     /**************************************************************************
         EXPORTED
     **************************************************************************/
@@ -1978,6 +1985,24 @@ namespace algui {
 
         //success
         return true;
+    }
+
+
+    //Creates a timer that will invoke the given function periodically at the specified interval.
+    TimerId setInterval(const TimerFunction& func, size_t msecs) {
+        return _getTimerThread().add(_createTimerFunctionWrapper(func), msecs, false);
+    }
+
+
+    //Creates a timer that will invoke the given function once after the given delay.
+    TimerId setTimeout(const TimerFunction& func, size_t msecs) {
+        return _getTimerThread().add(_createTimerFunctionWrapper(func), msecs, true);
+    }
+
+
+    //Stops the given timer.
+    bool stopTimer(const TimerId& timerId) {
+        return _getTimerThread().remove(timerId);
     }
 
 

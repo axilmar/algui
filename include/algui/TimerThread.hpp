@@ -65,20 +65,13 @@ namespace algui {
 
         /**
          * Puts a function to be invoked after the given delay.
-         * @param timerFunction timer function to execute; if the timer returns false, 
-         *   then it is placed back in the queue, in order to be reexecuted after the same delay.
+         * The function will be invoked in the context of the timer thread.
+         * @param timerFunction timer function to execute.
          * @param delay amount of time to wait until the function is executed.
          * @param once if true, then the function is executed once, otherwise at regular intervals.
          * @return the timer id for this timer.
          */
         TimerId add(const TimerFunction& timerFunction, const Duration& delay, bool once = true);
-
-        /**
-         * Same as above, but duration is in milliseconds.
-         */
-        TimerId add(const TimerFunction& timerFunction, const std::chrono::milliseconds& msecs, bool once = true) {
-            return add(timerFunction, std::chrono::duration_cast<Duration>(msecs), once);
-        }
 
         /**
          * Same as above, but duration is in milliseconds value.
@@ -124,6 +117,12 @@ namespace algui {
      * Timer id.
      */
     using TimerId = TimerThread::TimerId;
+
+
+    /**
+     * Timer function.
+     */
+    using TimerFunction = TimerThread::TimerFunction;
 
 
 } //namespace algui

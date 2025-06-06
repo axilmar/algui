@@ -10,6 +10,7 @@
 #include "Tree.hpp"
 #include "Coord.hpp"
 #include "EventTarget.hpp"
+#include "TimerThread.hpp"
 #pragma warning (disable: 4309)
 #include "allegro5/allegro.h"
 
@@ -1123,7 +1124,6 @@ namespace algui {
         //other events
         bool _timerEvent(const ALLEGRO_EVENT& event);
         bool _exposeEvent(const ALLEGRO_EVENT& event);
-        bool _internalEvent(const ALLEGRO_EVENT& event);
     };
 
 
@@ -1202,7 +1202,35 @@ namespace algui {
     bool setDragIcon(ALLEGRO_BITMAP* bitmap, int centerX = -1, int centerY = -1);
 
 
-    } //namespace algui
+    /**
+     * Creates a timer that will invoke the given function periodically at the specified interval.
+     * The function will be called in the context of the main thread, from inside the method `Widget::processAllegroEvent()`.
+     * @param func function to invoke.
+     * @param msecs interval in milliseconds.
+     * @return id of timer.
+     */
+    TimerId setInterval(const TimerFunction& func, size_t msecs);
+
+
+    /**
+     * Creates a timer that will invoke the given function once after the given delay.
+     * The function will be called in the context of the main thread, from inside the method `Widget::processAllegroEvent()`.
+     * @param func function to invoke.
+     * @param msecs delay in milliseconds.
+     * @return id of timer.
+     */
+    TimerId setTimeout(const TimerFunction& func, size_t msecs);
+
+
+    /**
+     * Stops the given timer.
+     * @param timerId id of timer to stop.
+     * @return true if stopped successfully, false if already stopped previously.
+     */
+    bool stopTimer(const TimerId& timerId);
+
+
+} //namespace algui
 
 
 #endif //ALGUI_WIDGET_HPP
