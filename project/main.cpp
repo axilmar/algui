@@ -195,6 +195,25 @@ int main(int argc, char** argv) {
         return true;
     });
 
+    ALLEGRO_BITMAP* dragBitmap = al_create_bitmap(64, 64);
+    ALLEGRO_BITMAP* prevTargetBitmap = al_get_target_bitmap();
+    al_set_target_bitmap(dragBitmap);
+    al_draw_filled_rectangle(0, 0, 64, 64, al_map_rgb(0, 0, 128));
+    al_draw_rectangle(0.5f, 0.5f, 64, 64, al_map_rgb(128, 64, 0), 1);
+    al_set_target_bitmap(prevTargetBitmap);
+
+    button3->addEventHandler(Event_DragEnter, [&](EventType type, const Event& event, EventPhaseType phase) {
+        std::cout << "Setting drag icon from " << (static_cast<const AllegroEvent&>(event).getTarget()->getId()) << "\n";
+        setDragIcon(dragBitmap);
+        return true;
+    });
+
+    button3->addEventHandler(Event_DragLeave, [&](EventType type, const Event& event, EventPhaseType phase) {
+        std::cout << "Resetting drag icon from " << (static_cast<const AllegroEvent&>(event).getTarget()->getId()) << "\n";
+        setDragIcon(nullptr);
+        return true;
+    });
+
     for (;;) {
         ALLEGRO_EVENT event;
         al_wait_for_event(eventQueue, &event);
@@ -216,6 +235,7 @@ int main(int argc, char** argv) {
     }
 
     END:
+    al_destroy_bitmap(dragBitmap);
     al_destroy_timer(timer);
     al_destroy_event_queue(eventQueue);
     al_destroy_display(display);

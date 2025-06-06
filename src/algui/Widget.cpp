@@ -82,6 +82,9 @@ namespace algui {
     static int _dragMouseStartX = 0;
     static int _dragMouseStartY = 0;
     static Widget* _dragStartWidget = nullptr;
+    static ALLEGRO_BITMAP* _dragIcon = nullptr;
+    static int _dragIconCenterX = 0;
+    static int _dragIconCenterY = 0;
 
 
     //calc rect intersection
@@ -134,6 +137,15 @@ namespace algui {
     static void _addClick(_ClickType clickType, int button) {
         if (_clickType == clickType && _clickButton == button) {
             ++_clickCounter;
+        }
+    }
+
+
+    static void _drawDragIcon() {
+        if (_dragIcon) {
+            ALLEGRO_MOUSE_STATE mouseState;
+            al_get_mouse_state(&mouseState);
+            al_draw_bitmap(_dragIcon, mouseState.x - _dragIconCenterX, mouseState.y - _dragIconCenterY, 0);
         }
     }
 
@@ -528,6 +540,7 @@ namespace algui {
     void Widget::render() {
         _updateGeometryConstraints();
         _paint(false, false);
+        _drawDragIcon();
     }
 
 
@@ -1448,6 +1461,7 @@ namespace algui {
             _dragAndDrop = false;
             _draggedData.reset();
             _dragMouseButton = 0;
+            _dragIcon = nullptr;
             if (_dragStartWidget) {
                 _dragStartWidget->_dragEvent(event, Event_DragEnded);
             }
@@ -1947,6 +1961,23 @@ namespace algui {
     //sets the drag start delta.
     void setDragStartDelta(int v) {
         _dragStartDelta = std::max(v, 2);
+    }
+
+
+    //set the drag icon
+    bool setDragIcon(ALLEGRO_BITMAP* bitmap, int centerX, int centerY) {
+        //must be in drag-n-drop session
+        if (!_dragAndDrop) {
+            return false;
+        }
+
+        //set the icon and its center
+        _dragIcon = bitmap;
+        _dragIconCenterX = centerX >= 0 ? centerX : bitmap ? al_get_bitmap_width(bitmap) / 2 : 0;
+        _dragIconCenterY = centerY >= 0 ? centerY : bitmap ? al_get_bitmap_height(bitmap) / 2 : 0;
+
+        //success
+        return true;
     }
 
 

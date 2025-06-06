@@ -1187,6 +1187,21 @@ namespace algui {
     void setDragStartDelta(int v);
 
 
+    /**
+     * Sets the current drag icon bitmap.
+     * If the drag icon bitmap is set, then it is drawn onto the target bitmap upon each mouse move.
+     * This can be used only while drag-n-drop is active; if not active, it has no effect.
+     * The drag icon is automatically reset (i.e. set to null) when drag-n-drop ends.
+     * @param bitmap bitmap to set as the drag icon; if null, then the drag icon is reset.
+     * @param centerX horizontal center of the icon; affects the position of the icon relative to the mouse position; 
+     *  if -1, then the center is the bitmap's horizontal center.
+     * @param centerY vertical center of the icon; affects the position of the icon relative to the mouse position;
+     *  if -1, then the center is the bitmap's vertical center.
+     * @return true if the drag icon was set, false if this was called outside of a drag-n-drop session.
+     */
+    bool setDragIcon(ALLEGRO_BITMAP* bitmap, int centerX = -1, int centerY = -1);
+
+
     } //namespace algui
 
 
