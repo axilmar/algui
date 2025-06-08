@@ -689,6 +689,16 @@ namespace algui {
         }
 
         /**
+         * Returns the geometry-managed state.
+         * A widget with this state set to true has its geometry managed by its parent.
+         * If false, then the widget geometry is free, i.e the parent doesn't manage its geometry.
+         * @return the geometry-managed state.
+         */
+        bool isGeometryManaged() const {
+            return m_geometryManaged;
+        }
+
+        /**
          * Sets the left coordinate.
          * It causes recomputation of screen geometry from the `render()` method.
          * It also causes recomputation of the parent's layout, if there is a parent.
@@ -869,6 +879,14 @@ namespace algui {
         void setId(const std::string& id) {
             m_id = id;
         }
+
+        /**
+         * Sets the geometry-managed state.
+         * A widget with this state set to true has its geometry managed by its parent.
+         * If false, then the widget geometry is free, i.e the parent doesn't manage its geometry.
+         * @param geometryManaged the geometry-managed state.
+         */
+        void setGeometryManaged(bool geometryManaged);
 
         /**
          * Renders the tree into the target bitmap.
@@ -1057,6 +1075,7 @@ namespace algui {
         bool m_focusable : 1;
         bool m_hasMouse : 1;
         bool m_focusContainer : 1;
+        bool m_geometryManaged : 1;
 
         //various internal functions
         void _invalidateScreenGeometry();

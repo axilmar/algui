@@ -197,9 +197,10 @@ namespace algui {
         , m_focusedTree(false)
         , m_validContentTree(false)
         , m_treeVisualStateDirty(false)
-        , m_focusable(true)
+        , m_focusable(false)
         , m_hasMouse(false)
         , m_focusContainer(false)
+        , m_geometryManaged(true)
     {
     }
 
@@ -540,6 +541,16 @@ namespace algui {
         m_focusable = focusable;
         if (focusable) {
             m_focusContainer = false;
+        }
+    }
+
+
+    //set the geometry-managed state
+    void Widget::setGeometryManaged(bool geometryManaged) {
+        if (geometryManaged != m_geometryManaged) {
+            m_geometryManaged = geometryManaged;
+            _invalidateParentGeometryConstraints();
+            _invalidateParentLayout();
         }
     }
 
