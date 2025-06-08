@@ -851,6 +851,7 @@ namespace algui {
          * Sets the focusable state.
          * If the widget becomes focusable, it loses the focus container status,
          * since a widget can either be focusable or contain the focus, but not both.
+         * By default, no widget is focusable.
          * @param focusable the new focusable state.
          */
         void setFocusable(bool focusable);

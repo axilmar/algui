@@ -23,6 +23,8 @@ class Test : public Widget {
 public:
     Test(const std::string& id, bool l = false) : m_layout(l) {
         setId(id);
+        setFocusable(true);
+
         addEventHandler(Event_MouseEnter, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth()*4) << getId() << ": mouse enter (capture)\n"; return false; }, EventPhase_Capture);
         addEventHandler(Event_MouseEnter, [&](EventType type, const Event& event, EventPhaseType phase) { std::cout << spaces(getDepth() * 4) << getId() << ": mouse enter (bubble)\n"; return false; }, EventPhase_Bubble);
         
