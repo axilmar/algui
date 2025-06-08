@@ -231,6 +231,9 @@ int main(int argc, char** argv) {
         return true;
     });
 
+    std::shared_ptr<Theme> theme1 = std::make_shared<Theme>("theme1/theme1.txt");
+    std::shared_ptr<ALLEGRO_BITMAP> bitmap1 = theme1->getBitmap("", "test.bitmap");
+
     for (;;) {
         ALLEGRO_EVENT event;
         al_wait_for_event(eventQueue, &event);
@@ -241,6 +244,7 @@ int main(int argc, char** argv) {
 
             case ALLEGRO_EVENT_TIMER:
                 root->render();
+                //al_draw_bitmap(bitmap1.get(), 10, 10, 0);
                 al_flip_display();
                 break;
 

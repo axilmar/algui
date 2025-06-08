@@ -11,7 +11,12 @@ namespace algui {
 
     //make a relative path
     static std::string _relativePath(const std::string& configPath, const std::string& resourcePath) {
-        return std::filesystem::relative(std::filesystem::path(resourcePath), std::filesystem::path(configPath)).string();
+        std::filesystem::path configPathObj(configPath);
+        configPathObj.remove_filename();
+        std::filesystem::path resourcePathObj(resourcePath);
+        std::filesystem::path result = configPathObj / resourcePathObj;
+        std::string resultStr = result.string();
+        return resultStr;
     }
 
 
