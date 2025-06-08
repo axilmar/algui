@@ -250,6 +250,11 @@ namespace algui {
             //also reset child state
             child->_resetMouseAndButtonState();
 
+            //also set the theme
+            if (m_theme) {
+                child->setTheme(m_theme);
+            }
+
             //successful addition
             return true;
         }
@@ -552,6 +557,25 @@ namespace algui {
             _invalidateParentGeometryConstraints();
             _invalidateParentLayout();
         }
+    }
+
+
+    //set the theme
+    void Widget::setTheme(const std::shared_ptr<Theme>& theme) {
+        m_theme = theme;
+        onTheme();
+        forEach([&](Widget* child) {
+            child->setTheme(theme);
+        });
+    }
+
+
+    //Invokes the callack `onTheme()` for every widget in the tree.
+    void Widget::refreshTheme() {
+        onTheme();
+        forEach([&](Widget* child) {
+            child->refreshTheme();
+        });
     }
 
 

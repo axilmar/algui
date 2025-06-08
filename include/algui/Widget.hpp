@@ -11,8 +11,7 @@
 #include "Coord.hpp"
 #include "EventTarget.hpp"
 #include "TimerThread.hpp"
-#pragma warning (disable: 4309)
-#include "allegro5/allegro.h"
+#include "Theme.hpp"
 
 
 namespace algui {
@@ -358,6 +357,7 @@ namespace algui {
         /**
          * Inserts a child widget.
          * It causes recomputation of the parent's geometry constraints and layout.
+         * It also causes the child's theme to be set from the theme of the parent.
          * @param child child widget to add.
          * @param nextSibling next sibling.
          * @return true on success, false on failure.
@@ -699,6 +699,14 @@ namespace algui {
         }
 
         /**
+         * Returns the theme associated with this widget.
+         * @return the theme associated with this widget.
+         */
+        const std::shared_ptr<Theme> getTheme() const {
+            return m_theme;
+        }
+
+        /**
          * Sets the left coordinate.
          * It causes recomputation of screen geometry from the `render()` method.
          * It also causes recomputation of the parent's layout, if there is a parent.
@@ -889,6 +897,19 @@ namespace algui {
         void setGeometryManaged(bool geometryManaged);
 
         /**
+         * Sets the theme of this widget and its children.
+         * It invokes the callback `onTheme()`.
+         * @param theme the theme; if null, the theme is reset.
+         */
+        void setTheme(const std::shared_ptr<Theme>& theme);
+
+        /**
+         * Invokes the callack `onTheme()` for every widget in the tree.
+         * It is provided so as that changes in a theme are reflected into the widget tree.
+         */
+        void refreshTheme();
+
+        /**
          * Renders the tree into the target bitmap.
          * The current clipping is respected: if a widget falls outside of the current clipping rectangle,
          * it is not repainted.
@@ -1023,6 +1044,13 @@ namespace algui {
         virtual void onPaintOverlay() const {
         }
 
+        /**
+         * Invoked when the theme is set or reset.
+         * It is invoked before the children.
+         */
+        virtual void onTheme() {
+        }
+
     private:
         //geometry
         Coord m_left;
@@ -1047,6 +1075,9 @@ namespace algui {
         float m_screenBottom;
         float m_screenScalingX;
         float m_screenScalingY;
+
+        //theme
+        std::shared_ptr<Theme> m_theme;
 
         //state
         std::string m_id;
