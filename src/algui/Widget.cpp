@@ -691,13 +691,13 @@ namespace algui {
             }
 
             case ALLEGRO_EVENT_KEY_DOWN:
-                return _keyEvent(event, Event_KeyDown);
+                return _dragAndDrop ? _dragKeyEvent(event, Event_DragKeyDown) : _keyEvent(event, Event_KeyDown);
 
             case ALLEGRO_EVENT_KEY_UP:
-                return _keyEvent(event, Event_KeyUp);
+                return _dragAndDrop ? _dragKeyEvent(event, Event_DragKeyUp) : _keyEvent(event, Event_KeyUp);
 
             case ALLEGRO_EVENT_KEY_CHAR:
-                return _keyEvent(event, Event_KeyChar);
+                return _dragAndDrop ? _dragKeyEvent(event, Event_DragKeyChar) : _keyEvent(event, Event_KeyChar);
 
             case ALLEGRO_EVENT_JOYSTICK_BUTTON_DOWN:
             {
@@ -1068,6 +1068,11 @@ namespace algui {
         //the widget must be enabled
         if (!_enabledTree()) {
             return false;
+        }
+
+        //reset the input focus
+        if (_focusedWidget) {
+            _focusedWidget->setFocused(false);
         }
 
         //all requirements satisfied; begin drag-n-drop.
@@ -1949,6 +1954,17 @@ namespace algui {
             return true;
         }
         return _dragEventBubble(event, eventType);
+    }
+
+
+    bool Widget::_dragKeyEvent(const ALLEGRO_EVENT& event, EventType eventType) {
+        if (dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Capture)) {
+            return true;
+        }
+        if (m_childWithMouse && m_childWithMouse->_dragKeyEvent(event, eventType)) {
+            return true;
+        }
+        return dispatchEvent(eventType, AllegroEvent(this, event), EventPhaseType::EventPhase_Bubble);
     }
 
 

@@ -212,6 +212,24 @@ namespace algui {
          */
         Event_DragWheel,
 
+        /**
+         * A key was pressed during a drag-n-drop.
+         * Key events during drag-n-drop are delivered to the widgets under the mouse.
+         */
+        Event_DragKeyDown,
+
+        /**
+         * A key was released during a drag-n-drop.
+         * Key events during drag-n-drop are delivered to the widgets under the mouse.
+         */
+        Event_DragKeyUp,
+        
+        /**
+         * A character was generated from a key press during a drag-n-drop.
+         * Key events during drag-n-drop are delivered to the widgets under the mouse.
+         */
+        Event_DragKeyChar,
+
         /** 
          * Timer event.
          * Dispatched from parent to child in the capture phase,
@@ -334,6 +352,7 @@ namespace algui {
      *  - allegro event processing and event handling.
      *  - visual state inheritance.
      *  - drag-n-drop.
+     *  - theming.
      */
     class Widget 
         : public Tree<Widget>
@@ -1171,6 +1190,7 @@ namespace algui {
         bool _dragEventCapture(const ALLEGRO_EVENT& event, EventType eventType);
         bool _dragEventBubble(const ALLEGRO_EVENT& event, EventType eventType);
         bool _dragEvent(const ALLEGRO_EVENT& event, EventType eventType);
+        bool _dragKeyEvent(const ALLEGRO_EVENT& event, EventType eventType);
 
         //other events
         bool _timerEvent(const ALLEGRO_EVENT& event);
