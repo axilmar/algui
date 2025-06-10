@@ -165,7 +165,9 @@ namespace algui {
 
     //constructor
     Widget::Widget()
-        : m_scalingX(1)
+        : m_width(100_pct)
+        , m_height(100_pct)
+        , m_scalingX(1)
         , m_scalingY(1)
         , m_maximumWidth(FLT_MAX)
         , m_maximumHeight(FLT_MAX)
