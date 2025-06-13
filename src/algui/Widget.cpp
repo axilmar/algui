@@ -1,8 +1,44 @@
 #include <algorithm>
+#include <cmath>
+#include <limits>
 #include "algui/Widget.hpp"
 
 
 namespace algui {
+
+
+    static Widget* _focusedWidget = nullptr;
+    static ALLEGRO_EVENT _lastMouseButtonDownEvent;
+    static ALLEGRO_EVENT _lastMouseMoveEvent;
+    static bool _dragAndDrop = false;
+    static std::any _draggedData;
+    static const float _dragAndDropStartDistance = 5;
+
+
+    static struct _Init {
+        _Init() {
+            _lastMouseButtonDownEvent.mouse.button = 0;
+            _lastMouseMoveEvent.mouse.x = INT_MIN;
+            _lastMouseMoveEvent.mouse.y = INT_MIN;
+        }
+    } _init;
+
+
+    static bool _enabledTree(const Widget* wgt) {
+        for (; wgt; wgt = wgt->getParent()) {
+            if (!wgt->getEnabled()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    static float _distance(float x1, float y1, float x2, float y2) {
+        const float dx = std::abs(x1 - x2);
+        const float dy = std::abs(y1 - y2);
+        return sqrt(dx*dx+dy*dy);
+    }
 
 
     Widget::Widget() 
@@ -15,13 +51,37 @@ namespace algui {
         , m_y1(0)
         , m_x2(0)
         , m_y2(0)
+        , m_minWidth(0)
+        , m_minHeight(0)
+        , m_maxWidth(FLT_MAX)
+        , m_maxHeight(FLT_MAX)
         , m_visible(true)
+        , m_enabled(true)
+        , m_highlighted(false)
+        , m_pressed(false)
+        , m_selected(false)
+        , m_focused(false)
+        , m_error(false)
+        , m_treeVisible(true)
+        , m_treeEnabled(true)
+        , m_treeHighlighted(false)
+        , m_treePressed(false)
+        , m_treeSelected(false)
+        , m_treeFocused(false)
+        , m_treeError(false)
+        , m_layout(true)
+        , m_doingLayout(false)
+        , m_managed(true)
     {
     }
 
 
     Widget::~Widget() {
         detach();
+        removeAll();
+        if (_focusedWidget == this) {
+            _focusedWidget = nullptr;
+        }
     }
 
 
@@ -102,6 +162,96 @@ namespace algui {
     }
 
 
+    bool Widget::getEnabled() const {
+        return m_enabled;
+    }
+
+
+    bool Widget::getHighlighted() const {
+        return m_highlighted;
+    }
+
+
+    bool Widget::getPressed() const {
+        return m_pressed;
+    }
+
+
+    bool Widget::getSelected() const {
+        return m_selected;
+    }
+
+
+    bool Widget::getFocused() const {
+        return m_focused;
+    }
+
+
+    bool Widget::getError() const {
+        return m_error;
+    }
+
+
+    bool Widget::getTreeVisible() const {
+        return m_treeVisible;
+    }
+
+
+    bool Widget::getTreeEnabled() const {
+        return m_treeEnabled;
+    }
+
+
+    bool Widget::getTreeHighlighed() const {
+        return m_treeHighlighted;
+    }
+
+
+    bool Widget::getTreePressed() const {
+        return m_treePressed;
+    }
+
+
+    bool Widget::getTreeSelected() const {
+        return m_treeSelected;
+    }
+
+
+    bool Widget::getTreeFocused() const {
+        return m_treeFocused;
+    }
+
+
+    bool Widget::getTreeError() const {
+        return m_treeError;
+    }
+
+
+    bool Widget::getManaged() const {
+        return m_managed;
+    }
+
+
+    float Widget::getMinWidth() const {
+        return m_minWidth;
+    }
+
+
+    float Widget::getMinHeight() const {
+        return m_minHeight;
+    }
+
+
+    float Widget::getMaxWidth() const {
+        return m_maxWidth;
+    }
+
+
+    float Widget::getMaxHeight() const {
+        return m_maxHeight;
+    }
+
+
     bool Widget::contains(const Widget* wgt) const {
         for (; wgt; wgt = wgt->m_parent) {
             if (wgt == this) {
@@ -109,6 +259,16 @@ namespace algui {
             }
         }
         return false;
+    }
+
+
+    Widget* Widget::get(float x, float y) const {
+        for (Widget* child = getLastChild(); child; child = child->getPrevSibling()) {
+            if (child->m_treeVisible && child->intersects(x, y)) {
+                return child;
+            }
+        }
+        return nullptr;
     }
 
 
@@ -139,46 +299,621 @@ namespace algui {
     }
 
 
+    void Widget::removeAll() {
+        for (auto it = m_children.begin(); it != m_children.end();) {
+            auto nextIt = std::next(it);
+            remove(*it);
+            it = nextIt;
+        }
+    }
+
+
     void Widget::setX(float x) {
+        if (x == m_x) {
+            return;
+        }
         m_x = x;
+        invalidateParentLayout();
     }
 
 
     void Widget::setY(float y) {
+        if (y == m_y) {
+            return;
+        }
         m_y = y;
+        invalidateParentLayout();
     }
 
 
     void Widget::setWidth(float w) {
-        m_width = w >= 0 ? w : 0;
+        if (w < 0) {
+            w = 0;
+        }
+        if (w == m_width) {
+            return;
+        }
+        m_width = w;
+        Widget::invalidateLayout();
+        invalidateParentLayout();
     }
 
 
     void Widget::setHeight(float h) {
-        m_height = h >= 0 ? h : 0;
+        if (h < 0) {
+            h = 0;
+        }
+        if (h == m_height) {
+            return;
+        }
+        m_height = h;
+        Widget::invalidateLayout();
+        invalidateParentLayout();
+    }
+
+
+    void Widget::setPosition(float x, float y) {
+        if (x == m_x && y == m_y) {
+            return;
+        }
+        m_x = x;
+        m_y = y;
+        invalidateParentLayout();
+    }
+
+
+    void Widget::setSize(float width, float height) {
+        if (width == m_width && height == m_height) {
+            return;
+        }
+        m_width = width;
+        m_height = height;
+        Widget::invalidateLayout();
+        invalidateParentLayout();
+    }
+
+
+    void Widget::setGeometry(float x, float y, float width, float height) {
+        const bool samePosition = x == m_x && y == m_y;
+        const bool sameSize = width == m_width && height == m_height;
+        if (samePosition && sameSize) {
+            return;
+        }
+        if (!samePosition) {
+            m_x = x;
+            m_y = y;
+        }
+        if (!sameSize) {
+            width = m_width;
+            height = m_height;
+            Widget::invalidateLayout();
+        }
+        invalidateParentLayout();
+    }
+
+
+    void Widget::setMinWidth(float minW) {
+        if (minW == m_minWidth) {
+            return;
+        }
+        m_minWidth = minW;
+        invalidateParentLayout();
+    }
+
+
+    void Widget::setMinHeight(float minH) {
+        if (minH == m_minHeight) {
+            return;
+        }
+        m_minHeight = minH;
+        invalidateParentLayout();
+    }
+
+
+    void Widget::setMaxWidth(float maxW) {
+        if (maxW == m_maxWidth) {
+            return;
+        }
+        m_maxWidth = maxW;
+        invalidateParentLayout();
+    }
+
+
+    void Widget::setMaxHeight(float maxH) {
+        if (maxH == m_maxHeight) {
+            return;
+        }
+        m_maxHeight = maxH;
+        invalidateParentLayout();
+    }
+
+
+    void Widget::setMinSize(float minW, float minH) {
+        if (minW == m_minWidth && minH == m_minHeight) {
+            return;
+        }
+        m_minWidth = minW;
+        m_minHeight = minH;
+        invalidateParentLayout();
+    }
+
+
+    void Widget::setMaxSize(float maxW, float maxH) {
+        if (maxW == m_maxWidth && maxH == m_maxHeight) {
+            return;
+        }
+        m_maxWidth = maxW;
+        m_maxHeight = maxH;
+        invalidateParentLayout();
+    }
+
+
+    void Widget::setMinMaxSize(float minW, float minH, float maxW, float maxH) {
+        if (minW == m_minWidth && minH == m_minHeight && maxW == m_maxWidth && maxH == m_maxHeight) {
+            return;
+        }
+        m_minWidth = minW;
+        m_minHeight = minH;
+        m_maxWidth = maxW;
+        m_maxHeight = maxH;
+        invalidateParentLayout();
+    }
+
+
+    void Widget::setSize(float width, float height, float minW, float minH, float maxW, float maxH) {
+        const bool sameSize = width == m_width && height == m_height;
+        const bool sameMinSize = minW == m_minWidth && minH == m_minHeight;
+        const bool sameMaxSize = maxW == m_maxWidth && maxH == m_maxHeight;
+        if (sameSize && sameMinSize && sameMaxSize) {
+            return;
+        }
+        if (!sameSize) {
+            m_width = width;
+            m_height = height;
+            Widget::invalidateLayout();
+        }
+        if (!sameMinSize) {
+            m_minWidth = minW;
+            m_minHeight = minH;
+        }
+        if (!sameMaxSize) {
+            m_maxWidth = maxW;
+            m_maxHeight = maxH;
+        }
+        invalidateParentLayout();
+    }
+
+
+    void Widget::setGeometry(float x, float y, float width, float height, float minW, float minH, float maxW, float maxH) {
+        const bool samePosition = x == m_x && y == m_y;
+        const bool sameSize = width == m_width && height == m_height;
+        const bool sameMinSize = minW == m_minWidth && minH == m_minHeight;
+        const bool sameMaxSize = maxW == m_maxWidth && maxH == m_maxHeight;
+        if (samePosition && sameSize && sameMinSize && sameMaxSize) {
+            return;
+        }
+        if (!samePosition) {
+            m_x = x;
+            m_y = y;
+        }
+        if (!sameSize) {
+            m_width = width;
+            m_height = height;
+            Widget::invalidateLayout();
+        }
+        if (!sameMinSize) {
+            m_minWidth = minW;
+            m_minHeight = minH;
+        }
+        if (!sameMaxSize) {
+            m_maxWidth = maxW;
+            m_maxHeight = maxH;
+        }
+        invalidateParentLayout();
     }
 
 
     void Widget::setVisible(bool v) {
+        if (v == m_visible) {
+            return;
+        }
         m_visible = v;
+        invalidateParentLayout();
+    }
+
+
+    void Widget::setEnabled(bool v) {
+        if (v == m_enabled) {
+            return;
+        }
+        if (v && contains(_focusedWidget)) {
+            _focusedWidget->setFocused(false);
+        }
+        m_enabled = v;
+    }
+
+
+    void Widget::setHighlighted(bool v) {
+        m_highlighted = v;
+    }
+
+
+    void Widget::setPressed(bool v) {
+        m_pressed = v;
+    }
+
+
+    void Widget::setSelected(bool v) {
+        m_selected = v;
+    }
+
+
+    void Widget::setFocused(bool v) {
+        if (v == m_focused) {
+            return;
+        }
+        if (v) {
+            if (!_enabledTree(this)) {
+                return;
+            }
+            if (_focusedWidget) {
+                _focusedWidget->setFocused(false);
+            }
+            m_focused = true;
+            _focusedWidget = this;
+            gotFocus();
+        }
+        else {
+            m_focused = false;
+            _focusedWidget = nullptr;
+            lostFocus();
+        }
+    }
+
+
+    void Widget::setError(bool v) {
+        m_error = v;
+    }
+
+
+    void Widget::setManaged(bool v) {
+        if (v != m_managed) {
+            return;
+        }
+        m_managed = v;
+        if (m_parent && !m_parent->m_doingLayout) {
+            m_parent->invalidateLayout();
+        }
+    }
+        
+        
+    void Widget::invalidateLayout() {
+        m_layout = true;
+    }
+
+
+    void Widget::invalidateParentLayout() const {
+        if (m_parent && m_managed && !m_parent->m_doingLayout) {
+            m_parent->invalidateLayout();
+        }
     }
 
 
     void Widget::render() {
         if (m_visible) {
-            m_x1 = m_x;
-            m_y1 = m_y;
             if (m_parent) {
-                m_x1 += m_parent->m_x1;
-                m_y1 += m_parent->m_y1;
+                m_x1 = m_x + m_parent->m_x1;
+                m_y1 = m_y + m_parent->m_y1;
+                m_treeVisible = m_visible && m_parent->m_treeVisible;
+                m_treeEnabled = m_enabled && m_parent->m_treeEnabled;
+                m_treeHighlighted = m_highlighted || m_parent->m_treeHighlighted;
+                m_treePressed = m_pressed || m_parent->m_treePressed;
+                m_treeSelected = m_selected || m_parent->m_treeSelected;
+                m_treeFocused = m_focused || m_parent->m_treeFocused;
+                m_treeError = m_error || m_parent->m_treeError;
+            }
+            else {
+                m_x1 = m_x;
+                m_y1 = m_y;
+                m_treeVisible = m_visible;
+                m_treeEnabled = m_enabled;
+                m_treeHighlighted = m_highlighted;
+                m_treePressed = m_pressed;
+                m_treeSelected = m_selected;
+                m_treeFocused = m_focused;
+                m_treeError = m_error;
             }
             m_x2 = m_x1 + m_width;
             m_y2 = m_y1 + m_height;
             paint();
+            if (m_layout) {
+                m_doingLayout = true;
+                layout();
+                m_doingLayout = false;
+                m_layout = false;
+            }
             for (Widget* child : m_children) {
                 child->render();
             }
         }
+    }
+
+
+    bool Widget::beginDragAndDrop(const std::any& data) {
+        if (!_lastMouseButtonDownEvent.mouse.button || _dragAndDrop || !data.has_value()) {
+            return false;
+        }
+        const float dist = _distance(_lastMouseButtonDownEvent.mouse.x, _lastMouseButtonDownEvent.mouse.y, _lastMouseMoveEvent.mouse.x, _lastMouseMoveEvent.mouse.y);
+        if (dist < _dragAndDropStartDistance) {
+            return false;
+        }
+        if (_focusedWidget) {
+            _focusedWidget->setFocused(false);
+        }
+        _dragAndDrop = true;
+        _draggedData = data;
+        return true;
+    }
+
+
+    bool Widget::doEvent(const ALLEGRO_EVENT& event) {
+        switch (event.type) {
+            case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
+                if (!_lastMouseButtonDownEvent.mouse.button) {
+                    _lastMouseButtonDownEvent = event;
+                }
+                return m_treeEnabled && !_dragAndDrop ? mouseButtonDown(event) : false;
+
+            case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
+            {
+                bool result = false;
+                if (_dragAndDrop) {
+                    if (m_treeEnabled) {
+                        result = drop(event);
+                    }
+                    _dragAndDrop = false;
+                    _draggedData.reset();
+                }
+                else {
+                    if (m_treeEnabled) {
+                        result = mouseButtonUp(event);
+                    }
+                }
+                if (event.mouse.button == _lastMouseButtonDownEvent.mouse.button) {
+                    _lastMouseButtonDownEvent.mouse.button = 0;
+                }
+                return result;
+            }
+
+            case ALLEGRO_EVENT_MOUSE_AXES:
+            case ALLEGRO_EVENT_MOUSE_WARPED:
+            case ALLEGRO_EVENT_MOUSE_ENTER_DISPLAY:
+            {
+                //mouse move
+                bool result1 = false;
+                if (event.mouse.dx || event.mouse.dy) {
+                    if (m_treeEnabled) {
+                        const bool oldMouse = intersects(_lastMouseMoveEvent.mouse.x, _lastMouseMoveEvent.mouse.y);
+                        const bool newMouse = intersects(event.mouse.x, event.mouse.y);
+                        if (oldMouse && newMouse) {
+                            result1 = _dragAndDrop ? drag(event) : mouseMove(event);
+                        }
+                        else if (newMouse) {
+                            result1 = _dragAndDrop ? dragEnter(event) : mouseEnter(event);
+                        }
+                        else if (oldMouse) {
+                            result1 = _dragAndDrop ? dragLeave(event) :mouseLeave(_lastMouseMoveEvent);
+                        }
+                    }
+                    _lastMouseMoveEvent = event;
+                }
+
+                //mouse wheel
+                bool result2 = false;
+                if (event.mouse.dz || event.mouse.dw) {
+                    if (m_treeEnabled) {
+                        result2 = _dragAndDrop ? dragWheel(event) : mouseWheel(event);
+                    }
+                }
+
+                return result1 || result2;
+            }
+
+            case ALLEGRO_EVENT_MOUSE_LEAVE_DISPLAY:
+            {
+                bool result = false;
+                if (m_treeEnabled) {
+                    result = _dragAndDrop ? dragLeave(_lastMouseMoveEvent) : mouseLeave(_lastMouseMoveEvent);
+                }
+                _lastMouseMoveEvent = event;
+                return result;
+            }
+
+            case ALLEGRO_EVENT_KEY_DOWN:
+                if (_focusedWidget) {
+                    return _focusedWidget->keyDown(event);
+                }
+                if (m_treeEnabled) {
+                    return _dragAndDrop ? dragKeyDown(event) : unusedKeyDown(event);
+                }
+                return false;
+
+            case ALLEGRO_EVENT_KEY_UP:
+                if (_focusedWidget) {
+                    return _focusedWidget->keyUp(event);
+                }
+                if (m_treeEnabled) {
+                    return _dragAndDrop ? dragKeyUp(event) : unusedKeyUp(event);
+                }
+                return false;
+
+            case ALLEGRO_EVENT_KEY_CHAR:
+                if (_focusedWidget) {
+                    return _focusedWidget->keyChar(event);
+                }
+                if (m_treeEnabled) {
+                    return _dragAndDrop ? dragKeyChar(event) : unusedKeyChar(event);
+                }
+                return false;
+
+        }
+        return false;
+    }
+
+
+    bool Widget::intersects(float x, float y) const {
+        return x >= m_x1 && x < m_x2 && y >= m_y1 && y < m_y2;
+    }
+
+
+    bool Widget::mouseButtonDown(const ALLEGRO_EVENT& event) {
+        Widget* child = get(event.mouse.x, event.mouse.y);
+        return child && child->m_treeEnabled ? child->mouseButtonDown(event) : false;
+    }
+
+
+    bool Widget::mouseButtonUp(const ALLEGRO_EVENT& event) {
+        Widget* child = get(event.mouse.x, event.mouse.y);
+        return child && child->m_treeEnabled ? child->mouseButtonUp(event) : false;
+    }
+
+
+    bool Widget::mouseEnter(const ALLEGRO_EVENT& event) {
+        Widget* child = get(event.mouse.x, event.mouse.y);
+        return child && child->m_treeEnabled ? child->mouseEnter(event) : false;
+    }
+
+
+    bool Widget::mouseMove(const ALLEGRO_EVENT& event) {
+        Widget* oldChild = get(_lastMouseMoveEvent.mouse.x, _lastMouseMoveEvent.mouse.y);
+        Widget* newChild = get(event.mouse.x, event.mouse.y);
+        if (oldChild == newChild) {
+            return newChild && newChild->m_treeEnabled ? newChild->mouseMove(event) : false;
+        }
+        bool result1 = false, result2 = false;
+        if (oldChild) {
+            result1 = oldChild->m_treeEnabled ? newChild->mouseLeave(_lastMouseMoveEvent) : false;
+        }
+        if (newChild) {
+            result1 = newChild->m_treeEnabled ? newChild->mouseEnter(event) : false;
+        }
+        return result1 || result2;
+    }
+
+
+    bool Widget::mouseLeave(const ALLEGRO_EVENT& event) {
+        Widget* child = get(event.mouse.x, event.mouse.y);
+        return child && child->m_treeEnabled ? child->mouseLeave(event) : false;
+    }
+
+
+    bool Widget::mouseWheel(const ALLEGRO_EVENT& event) {
+        Widget* child = get(event.mouse.x, event.mouse.y);
+        return child && child->m_treeEnabled ? child->mouseWheel(event) : false;
+    }
+
+
+    bool Widget::keyDown(const ALLEGRO_EVENT& event) {
+        return getRoot()->unusedKeyDown(event);
+    }
+
+
+    bool Widget::keyUp(const ALLEGRO_EVENT& event) {
+        return getRoot()->unusedKeyUp(event);
+    }
+
+
+    bool Widget::keyChar(const ALLEGRO_EVENT& event) {
+        return getRoot()->unusedKeyChar(event);
+    }
+
+
+    bool Widget::unusedKeyDown(const ALLEGRO_EVENT& event) {
+        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+            if (child->m_treeEnabled && child->unusedKeyDown(event)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    bool Widget::unusedKeyUp(const ALLEGRO_EVENT& event) {
+        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+            if (child->m_treeEnabled && child->unusedKeyUp(event)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    bool Widget::unusedKeyChar(const ALLEGRO_EVENT& event) {
+        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+            if (child->m_treeEnabled && child->unusedKeyChar(event)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    bool Widget::drop(const ALLEGRO_EVENT& event) {
+        Widget* child = get(event.mouse.x, event.mouse.y);
+        return child && child->m_treeEnabled ? child->drop(event) : false;
+    }
+
+
+    bool Widget::dragEnter(const ALLEGRO_EVENT& event) {
+        Widget* child = get(event.mouse.x, event.mouse.y);
+        return child && child->m_treeEnabled ? child->dragEnter(event) : false;
+    }
+
+
+    bool Widget::drag(const ALLEGRO_EVENT& event) {
+        Widget* oldChild = get(_lastMouseMoveEvent.mouse.x, _lastMouseMoveEvent.mouse.y);
+        Widget* newChild = get(event.mouse.x, event.mouse.y);
+        if (oldChild == newChild) {
+            return newChild && newChild->m_treeEnabled ? newChild->drag(event) : false;
+        }
+        bool result1 = false, result2 = false;
+        if (oldChild) {
+            result1 = oldChild->m_treeEnabled ? newChild->dragLeave(_lastMouseMoveEvent) : false;
+        }
+        if (newChild) {
+            result1 = newChild->m_treeEnabled ? newChild->dragEnter(event) : false;
+        }
+        return result1 || result2;
+    }
+
+
+    bool Widget::dragLeave(const ALLEGRO_EVENT& event) {
+        Widget* child = get(event.mouse.x, event.mouse.y);
+        return child && child->m_treeEnabled ? child->dragLeave(event) : false;
+    }
+
+
+    bool Widget::dragWheel(const ALLEGRO_EVENT& event) {
+        Widget* child = get(event.mouse.x, event.mouse.y);
+        return child && child->m_treeEnabled ? child->dragWheel(event) : false;
+    }
+
+
+    bool Widget::dragKeyDown(const ALLEGRO_EVENT& event) {
+        Widget* child = get(_lastMouseMoveEvent.mouse.x, _lastMouseMoveEvent.mouse.y);
+        return child && child->m_treeEnabled ? child->dragKeyDown(event) : false;
+    }
+
+
+    bool Widget::dragKeyUp(const ALLEGRO_EVENT& event) {
+        Widget* child = get(_lastMouseMoveEvent.mouse.x, _lastMouseMoveEvent.mouse.y);
+        return child && child->m_treeEnabled ? child->dragKeyUp(event) : false;
+    }
+
+
+    bool Widget::dragKeyChar(const ALLEGRO_EVENT& event) {
+        Widget* child = get(_lastMouseMoveEvent.mouse.x, _lastMouseMoveEvent.mouse.y);
+        return child && child->m_treeEnabled ? child->dragKeyChar(event) : false;
     }
 
 
