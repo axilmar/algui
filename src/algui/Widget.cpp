@@ -13,6 +13,9 @@ namespace algui {
     static bool _dragAndDrop = false;
     static std::any _draggedData;
     static const float _dragAndDropStartDistance = 5;
+    static ALLEGRO_BITMAP* _dragIcon = nullptr;
+    static int _dragIconX = 0;
+    static int _dragIconY = 0;
 
 
     static struct _Init {
@@ -51,10 +54,6 @@ namespace algui {
         , m_y1(0)
         , m_x2(0)
         , m_y2(0)
-        , m_minWidth(0)
-        , m_minHeight(0)
-        , m_maxWidth(FLT_MAX)
-        , m_maxHeight(FLT_MAX)
         , m_visible(true)
         , m_enabled(true)
         , m_highlighted(false)
@@ -72,6 +71,7 @@ namespace algui {
         , m_layout(true)
         , m_doingLayout(false)
         , m_managed(true)
+        , m_flexible(true)
     {
     }
 
@@ -82,6 +82,11 @@ namespace algui {
         if (_focusedWidget == this) {
             _focusedWidget = nullptr;
         }
+    }
+
+
+    const std::string& Widget::getId() const {
+        return m_id;
     }
 
 
@@ -232,23 +237,15 @@ namespace algui {
     }
 
 
-    float Widget::getMinWidth() const {
-        return m_minWidth;
+    bool Widget::getFlexible() const {
+        return m_flexible;
     }
 
 
-    float Widget::getMinHeight() const {
-        return m_minHeight;
-    }
-
-
-    float Widget::getMaxWidth() const {
-        return m_maxWidth;
-    }
-
-
-    float Widget::getMaxHeight() const {
-        return m_maxHeight;
+    size_t Widget::getDepth() const {
+        size_t result = 0;
+        for (const Widget* wgt = this; wgt->m_parent; wgt = wgt->m_parent, ++result) {}
+        return result;
     }
 
 
@@ -305,6 +302,11 @@ namespace algui {
             remove(*it);
             it = nextIt;
         }
+    }
+
+
+    void Widget::setId(const std::string& id) {
+        m_id = id;
     }
 
 
@@ -384,130 +386,9 @@ namespace algui {
             m_y = y;
         }
         if (!sameSize) {
-            width = m_width;
-            height = m_height;
-            Widget::invalidateLayout();
-        }
-        invalidateParentLayout();
-    }
-
-
-    void Widget::setMinWidth(float minW) {
-        if (minW == m_minWidth) {
-            return;
-        }
-        m_minWidth = minW;
-        invalidateParentLayout();
-    }
-
-
-    void Widget::setMinHeight(float minH) {
-        if (minH == m_minHeight) {
-            return;
-        }
-        m_minHeight = minH;
-        invalidateParentLayout();
-    }
-
-
-    void Widget::setMaxWidth(float maxW) {
-        if (maxW == m_maxWidth) {
-            return;
-        }
-        m_maxWidth = maxW;
-        invalidateParentLayout();
-    }
-
-
-    void Widget::setMaxHeight(float maxH) {
-        if (maxH == m_maxHeight) {
-            return;
-        }
-        m_maxHeight = maxH;
-        invalidateParentLayout();
-    }
-
-
-    void Widget::setMinSize(float minW, float minH) {
-        if (minW == m_minWidth && minH == m_minHeight) {
-            return;
-        }
-        m_minWidth = minW;
-        m_minHeight = minH;
-        invalidateParentLayout();
-    }
-
-
-    void Widget::setMaxSize(float maxW, float maxH) {
-        if (maxW == m_maxWidth && maxH == m_maxHeight) {
-            return;
-        }
-        m_maxWidth = maxW;
-        m_maxHeight = maxH;
-        invalidateParentLayout();
-    }
-
-
-    void Widget::setMinMaxSize(float minW, float minH, float maxW, float maxH) {
-        if (minW == m_minWidth && minH == m_minHeight && maxW == m_maxWidth && maxH == m_maxHeight) {
-            return;
-        }
-        m_minWidth = minW;
-        m_minHeight = minH;
-        m_maxWidth = maxW;
-        m_maxHeight = maxH;
-        invalidateParentLayout();
-    }
-
-
-    void Widget::setSize(float width, float height, float minW, float minH, float maxW, float maxH) {
-        const bool sameSize = width == m_width && height == m_height;
-        const bool sameMinSize = minW == m_minWidth && minH == m_minHeight;
-        const bool sameMaxSize = maxW == m_maxWidth && maxH == m_maxHeight;
-        if (sameSize && sameMinSize && sameMaxSize) {
-            return;
-        }
-        if (!sameSize) {
             m_width = width;
             m_height = height;
             Widget::invalidateLayout();
-        }
-        if (!sameMinSize) {
-            m_minWidth = minW;
-            m_minHeight = minH;
-        }
-        if (!sameMaxSize) {
-            m_maxWidth = maxW;
-            m_maxHeight = maxH;
-        }
-        invalidateParentLayout();
-    }
-
-
-    void Widget::setGeometry(float x, float y, float width, float height, float minW, float minH, float maxW, float maxH) {
-        const bool samePosition = x == m_x && y == m_y;
-        const bool sameSize = width == m_width && height == m_height;
-        const bool sameMinSize = minW == m_minWidth && minH == m_minHeight;
-        const bool sameMaxSize = maxW == m_maxWidth && maxH == m_maxHeight;
-        if (samePosition && sameSize && sameMinSize && sameMaxSize) {
-            return;
-        }
-        if (!samePosition) {
-            m_x = x;
-            m_y = y;
-        }
-        if (!sameSize) {
-            m_width = width;
-            m_height = height;
-            Widget::invalidateLayout();
-        }
-        if (!sameMinSize) {
-            m_minWidth = minW;
-            m_minHeight = minH;
-        }
-        if (!sameMaxSize) {
-            m_maxWidth = maxW;
-            m_maxHeight = maxH;
         }
         invalidateParentLayout();
     }
@@ -587,6 +468,17 @@ namespace algui {
     }
         
         
+    void Widget::setFlexible(bool v) {
+        if (v != m_flexible) {
+            return;
+        }
+        m_flexible = v;
+        if (m_parent && !m_parent->m_doingLayout) {
+            m_parent->invalidateLayout();
+        }
+    }
+
+
     void Widget::invalidateLayout() {
         m_layout = true;
     }
@@ -600,41 +492,9 @@ namespace algui {
 
 
     void Widget::render() {
-        if (m_visible) {
-            if (m_parent) {
-                m_x1 = m_x + m_parent->m_x1;
-                m_y1 = m_y + m_parent->m_y1;
-                m_treeVisible = m_visible && m_parent->m_treeVisible;
-                m_treeEnabled = m_enabled && m_parent->m_treeEnabled;
-                m_treeHighlighted = m_highlighted || m_parent->m_treeHighlighted;
-                m_treePressed = m_pressed || m_parent->m_treePressed;
-                m_treeSelected = m_selected || m_parent->m_treeSelected;
-                m_treeFocused = m_focused || m_parent->m_treeFocused;
-                m_treeError = m_error || m_parent->m_treeError;
-            }
-            else {
-                m_x1 = m_x;
-                m_y1 = m_y;
-                m_treeVisible = m_visible;
-                m_treeEnabled = m_enabled;
-                m_treeHighlighted = m_highlighted;
-                m_treePressed = m_pressed;
-                m_treeSelected = m_selected;
-                m_treeFocused = m_focused;
-                m_treeError = m_error;
-            }
-            m_x2 = m_x1 + m_width;
-            m_y2 = m_y1 + m_height;
-            paint();
-            if (m_layout) {
-                m_doingLayout = true;
-                layout();
-                m_doingLayout = false;
-                m_layout = false;
-            }
-            for (Widget* child : m_children) {
-                child->render();
-            }
+        _render();
+        if (_dragAndDrop && _dragIcon) {
+            al_draw_bitmap(_dragIcon, _lastMouseMoveEvent.mouse.x - _dragIconY, _lastMouseMoveEvent.mouse.y - _dragIconX, 0);
         }
     }
 
@@ -656,30 +516,39 @@ namespace algui {
     }
 
 
+    void Widget::setDragIcon(ALLEGRO_BITMAP* bitmap, int hotPointX, int hotPointY) {
+        _dragIcon = bitmap;
+        _dragIconX = hotPointX;
+        _dragIconY = hotPointY;
+    }
+
+
     bool Widget::doEvent(const ALLEGRO_EVENT& event) {
         switch (event.type) {
             case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
                 if (!_lastMouseButtonDownEvent.mouse.button) {
                     _lastMouseButtonDownEvent = event;
+                    return m_treeEnabled && !_dragAndDrop ? mouseButtonDown(event) : false;
                 }
-                return m_treeEnabled && !_dragAndDrop ? mouseButtonDown(event) : false;
+                return false;
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
             {
                 bool result = false;
-                if (_dragAndDrop) {
-                    if (m_treeEnabled) {
-                        result = drop(event);
-                    }
-                    _dragAndDrop = false;
-                    _draggedData.reset();
-                }
-                else {
-                    if (m_treeEnabled) {
-                        result = mouseButtonUp(event);
-                    }
-                }
                 if (event.mouse.button == _lastMouseButtonDownEvent.mouse.button) {
+                    if (_dragAndDrop) {
+                        if (m_treeEnabled) {
+                            result = drop(event);
+                        }
+                        _dragAndDrop = false;
+                        _dragIcon = nullptr;
+                        _draggedData.reset();
+                    }
+                    else {
+                        if (m_treeEnabled) {
+                            result = mouseButtonUp(event);
+                        }
+                    }
                     _lastMouseButtonDownEvent.mouse.button = 0;
                 }
                 return result;
@@ -792,7 +661,7 @@ namespace algui {
         }
         bool result1 = false, result2 = false;
         if (oldChild) {
-            result1 = oldChild->m_treeEnabled ? newChild->mouseLeave(_lastMouseMoveEvent) : false;
+            result1 = oldChild->m_treeEnabled ? oldChild->mouseLeave(_lastMouseMoveEvent) : false;
         }
         if (newChild) {
             result1 = newChild->m_treeEnabled ? newChild->mouseEnter(event) : false;
@@ -878,7 +747,7 @@ namespace algui {
         }
         bool result1 = false, result2 = false;
         if (oldChild) {
-            result1 = oldChild->m_treeEnabled ? newChild->dragLeave(_lastMouseMoveEvent) : false;
+            result1 = oldChild->m_treeEnabled ? oldChild->dragLeave(_lastMouseMoveEvent) : false;
         }
         if (newChild) {
             result1 = newChild->m_treeEnabled ? newChild->dragEnter(event) : false;
@@ -914,6 +783,46 @@ namespace algui {
     bool Widget::dragKeyChar(const ALLEGRO_EVENT& event) {
         Widget* child = get(_lastMouseMoveEvent.mouse.x, _lastMouseMoveEvent.mouse.y);
         return child && child->m_treeEnabled ? child->dragKeyChar(event) : false;
+    }
+
+
+    void Widget::_render() {
+        if (m_visible) {
+            if (m_parent) {
+                m_x1 = m_x + m_parent->m_x1;
+                m_y1 = m_y + m_parent->m_y1;
+                m_treeVisible = m_visible && m_parent->m_treeVisible;
+                m_treeEnabled = m_enabled && m_parent->m_treeEnabled;
+                m_treeHighlighted = m_highlighted || m_parent->m_treeHighlighted;
+                m_treePressed = m_pressed || m_parent->m_treePressed;
+                m_treeSelected = m_selected || m_parent->m_treeSelected;
+                m_treeFocused = m_focused || m_parent->m_treeFocused;
+                m_treeError = m_error || m_parent->m_treeError;
+            }
+            else {
+                m_x1 = m_x;
+                m_y1 = m_y;
+                m_treeVisible = m_visible;
+                m_treeEnabled = m_enabled;
+                m_treeHighlighted = m_highlighted;
+                m_treePressed = m_pressed;
+                m_treeSelected = m_selected;
+                m_treeFocused = m_focused;
+                m_treeError = m_error;
+            }
+            m_x2 = m_x1 + m_width;
+            m_y2 = m_y1 + m_height;
+            paint();
+            if (m_layout) {
+                m_doingLayout = true;
+                layout();
+                m_doingLayout = false;
+                m_layout = false;
+            }
+            for (Widget* child : m_children) {
+                child->_render();
+            }
+        }
     }
 
 

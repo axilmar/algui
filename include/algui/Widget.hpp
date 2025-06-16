@@ -4,6 +4,7 @@
 
 #include <list>
 #include <any>
+#include <string>
 #include <allegro5/allegro.h>
 
 
@@ -21,6 +22,8 @@ namespace algui {
 
         Widget& operator =(const Widget&) = delete;
         Widget& operator =(Widget&&) = delete;
+
+        const std::string& getId() const;
 
         Widget* getParent() const;
 
@@ -80,13 +83,9 @@ namespace algui {
 
         bool getManaged() const;
 
-        float getMinWidth() const;
+        bool getFlexible() const;
 
-        float getMinHeight() const;
-
-        float getMaxWidth() const;
-
-        float getMaxHeight() const;
+        size_t getDepth() const;
 
         bool contains(const Widget* wgt) const;
 
@@ -99,6 +98,8 @@ namespace algui {
         void detach();
 
         void removeAll();
+
+        void setId(const std::string& id);
 
         void setX(float x);
 
@@ -113,24 +114,6 @@ namespace algui {
         void setSize(float width, float height);
 
         void setGeometry(float x, float y, float width, float height);
-
-        void setMinWidth(float minW);
-
-        void setMinHeight(float minH);
-
-        void setMaxWidth(float maxW);
-
-        void setMaxHeight(float maxH);
-
-        void setMinSize(float minW, float minH);
-
-        void setMaxSize(float maxW, float maxH);
-
-        void setMinMaxSize(float minW, float minH, float maxW, float maxH);
-
-        void setSize(float width, float height, float minW, float minH, float maxW, float maxH);
-
-        void setGeometry(float x, float y, float width, float height, float minW, float minH, float maxW, float maxH);
 
         void setVisible(bool v);
 
@@ -148,6 +131,8 @@ namespace algui {
 
         void setManaged(bool v);
 
+        void setFlexible(bool v);
+
         virtual void invalidateLayout();
 
         void invalidateParentLayout() const;
@@ -155,6 +140,8 @@ namespace algui {
         void render();
 
         bool beginDragAndDrop(const std::any& data);
+
+        static void setDragIcon(ALLEGRO_BITMAP* bitmap, int hotPointX = 0, int hotPointY = 0);
 
         bool doEvent(const ALLEGRO_EVENT& event);
 
@@ -210,6 +197,7 @@ namespace algui {
         virtual bool dragKeyChar(const ALLEGRO_EVENT& event);
 
     private:
+        std::string m_id;
         Widget* m_parent;
         std::list<Widget*>::iterator m_it;
         std::list<Widget*> m_children;
@@ -217,10 +205,6 @@ namespace algui {
         float m_y;
         float m_width;
         float m_height;
-        float m_minWidth;
-        float m_minHeight;
-        float m_maxWidth;
-        float m_maxHeight;
         float m_x1;
         float m_y1;
         float m_x2;
@@ -242,6 +226,9 @@ namespace algui {
         bool m_layout:1;
         bool m_doingLayout:1;
         bool m_managed:1;
+        bool m_flexible:1;
+
+        void _render();
     };
 
 
