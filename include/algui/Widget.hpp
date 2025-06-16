@@ -18,7 +18,6 @@ namespace algui {
     public:
         /**
          * The default constructor.
-         * It initializes the widget to position 0, 0, size to 0, 0, visible and enabled.
          */
         Widget();
 
