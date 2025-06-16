@@ -164,8 +164,8 @@ int main(int argc, char** argv) {
     al_install_joystick();
     al_install_audio();
 
-    al_set_new_display_flags(ALLEGRO_FULLSCREEN | ALLEGRO_OPENGL);
-    ALLEGRO_DISPLAY* display = al_create_display(640, 480);
+    //al_set_new_display_flags(ALLEGRO_FULLSCREEN | ALLEGRO_OPENGL);
+    ALLEGRO_DISPLAY* display = al_create_display(800, 600);
     ALLEGRO_EVENT_QUEUE* eventQueue = al_create_event_queue();
     ALLEGRO_TIMER* timer = al_create_timer(1.0/60.0);
     al_register_event_source(eventQueue, al_get_display_event_source(display));
