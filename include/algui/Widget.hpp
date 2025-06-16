@@ -440,6 +440,18 @@ namespace algui {
         static void setDragIcon(ALLEGRO_BITMAP* bitmap, int hotPointX = 0, int hotPointY = 0);
 
         /**
+         * Returns the click timeout, in milliseconds.
+         * @return the click timeout, in milliseconds.
+         */
+        static size_t getClickTimeout();
+
+        /**
+         * Sets the click timeout.
+         * @param milliseconds click timeout, in milliseconds.
+         */
+        static void setClickTimeout(size_t milliseconds);
+
+        /**
          * Processes an allegro event and invokes the relevant virtual methods of this widget.
          * @param event allegro event to process.
          * @return true if the event was successfully processed, false otherwise.
@@ -650,6 +662,24 @@ namespace algui {
          * @return true if the event was processed, false otherwise.
          */
         virtual bool timer(const ALLEGRO_EVENT& event);
+
+        /**
+         * Invoked when the user clicks the widget.
+         * The default implementation passes the event to the appropriate child.
+         * For this to work, a valid ALLEGRO_EVENT_TIMER must be passed to `doEvent()`.
+         * @param event the allegro mouse event that caused the click.
+         * @return true if the event was processed, false otherwise.
+         */
+        virtual bool click(const ALLEGRO_EVENT& event);
+
+        /**
+         * Invoked when the user double-clicks the widget.
+         * The default implementation passes the event to the appropriate child.
+         * For this to work, a valid ALLEGRO_EVENT_TIMER must be passed to `doEvent()`.
+         * @param event the allegro mouse event that caused the double-click.
+         * @return true if the event was processed, false otherwise.
+         */
+        virtual bool doubleClick(const ALLEGRO_EVENT& event);
 
     private:
         std::string m_id;

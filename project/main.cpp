@@ -140,6 +140,16 @@ protected:
         std::cout << std::string(getDepth()*4, ' ') << getId() << ": dragKeyChar\n";
         return Widget::dragKeyChar(event);
     }
+
+    bool click(const ALLEGRO_EVENT& event) override {
+        std::cout << std::string(getDepth() * 4, ' ') << getId() << ": click\n";
+        return Widget::click(event);
+    }
+
+    bool doubleClick(const ALLEGRO_EVENT& event) override {
+        std::cout << std::string(getDepth() * 4, ' ') << getId() << ": double click\n";
+        return Widget::doubleClick(event);
+    }
 };
 
 int main(int argc, char** argv) {
@@ -215,6 +225,7 @@ int main(int argc, char** argv) {
                 goto END;
 
             case ALLEGRO_EVENT_TIMER:
+                root->doEvent(event);
                 root->render();
                 al_flip_display();
                 break;

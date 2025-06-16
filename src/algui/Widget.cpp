@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <chrono>
 #include "algui/Widget.hpp"
 
 
@@ -16,6 +17,10 @@ namespace algui {
     static ALLEGRO_BITMAP* _dragIcon = nullptr;
     static int _dragIconX = 0;
     static int _dragIconY = 0;
+    static decltype(std::chrono::high_resolution_clock::now()) _startClickTime;
+    static ALLEGRO_EVENT _clickButtonDownEvent;
+    static std::chrono::milliseconds _clickDuration{ 500 };
+    static int _clickCount = 0;
 
 
     static struct _Init {
@@ -23,6 +28,7 @@ namespace algui {
             _lastMouseButtonDownEvent.mouse.button = 0;
             _lastMouseMoveEvent.mouse.x = INT_MIN;
             _lastMouseMoveEvent.mouse.y = INT_MIN;
+            _clickButtonDownEvent.mouse.button = 0;
         }
     } _init;
 
@@ -527,14 +533,32 @@ namespace algui {
     }
 
 
+    size_t Widget::getClickTimeout() {
+        return static_cast<size_t>(_clickDuration.count());
+    }
+
+
+    void Widget::setClickTimeout(size_t milliseconds) {
+        _clickDuration = std::chrono::milliseconds(milliseconds);
+    }
+
+
     bool Widget::doEvent(const ALLEGRO_EVENT& event) {
         switch (event.type) {
             case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
+            {
+                bool result = false;
                 if (!_lastMouseButtonDownEvent.mouse.button) {
                     _lastMouseButtonDownEvent = event;
-                    return m_treeEnabled && !_dragAndDrop ? mouseButtonDown(event) : false;
+                    result = m_treeEnabled && !_dragAndDrop ? mouseButtonDown(event) : false;
                 }
-                return false;
+                if (!_clickButtonDownEvent.mouse.button) {
+                    _startClickTime = std::chrono::high_resolution_clock::now();
+                    _clickCount = 0;
+                    _clickButtonDownEvent = event;
+                }
+                return result;
+            }
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
             {
@@ -554,6 +578,9 @@ namespace algui {
                         }
                     }
                     _lastMouseButtonDownEvent.mouse.button = 0;
+                }
+                if (event.mouse.button == _clickButtonDownEvent.mouse.button) {
+                    ++_clickCount;
                 }
                 return result;
             }
@@ -630,7 +657,24 @@ namespace algui {
                 return false;
 
             case ALLEGRO_EVENT_TIMER:
-                return m_treeEnabled ? timer(event) : false;
+                {
+                    const bool result1 = m_treeEnabled ? timer(event) : false;
+                    bool result2 = false;
+                    if (_clickButtonDownEvent.mouse.button) {
+                        const auto now = std::chrono::high_resolution_clock::now();
+                        const auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(now - _startClickTime);
+                        if (dur >= _clickDuration) {
+                            if (_clickCount == 1) {
+                                result2 = click(_clickButtonDownEvent);
+                            }
+                            else if (_clickCount == 2) {
+                                result2 = doubleClick(_clickButtonDownEvent);
+                            }
+                            _clickButtonDownEvent.mouse.button = 0;
+                        }
+                    }
+                    return result1 || result2;
+                }
         }
         return false;
     }
@@ -799,6 +843,18 @@ namespace algui {
             }
         }
         return false;
+    }
+
+
+    bool Widget::click(const ALLEGRO_EVENT& event) {
+        Widget* child = get(event.mouse.x, event.mouse.y);
+        return child && child->m_treeEnabled ? child->click(event) : false;
+    }
+
+
+    bool Widget::doubleClick(const ALLEGRO_EVENT& event) {
+        Widget* child = get(event.mouse.x, event.mouse.y);
+        return child && child->m_treeEnabled ? child->doubleClick(event) : false;
     }
 
 
