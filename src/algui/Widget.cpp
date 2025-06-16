@@ -78,7 +78,6 @@ namespace algui {
 
     Widget::~Widget() {
         detach();
-        removeAll();
         if (_focusedWidget == this) {
             _focusedWidget = nullptr;
         }
@@ -452,6 +451,11 @@ namespace algui {
     }
 
 
+    Widget* Widget::getFocusedWidget() {
+        return _focusedWidget;
+    }
+   
+    
     void Widget::setError(bool v) {
         m_error = v;
     }
@@ -625,6 +629,8 @@ namespace algui {
                 }
                 return false;
 
+            case ALLEGRO_EVENT_TIMER:
+                return m_treeEnabled ? timer(event) : false;
         }
         return false;
     }
@@ -783,6 +789,16 @@ namespace algui {
     bool Widget::dragKeyChar(const ALLEGRO_EVENT& event) {
         Widget* child = get(_lastMouseMoveEvent.mouse.x, _lastMouseMoveEvent.mouse.y);
         return child && child->m_treeEnabled ? child->dragKeyChar(event) : false;
+    }
+
+
+    bool Widget::timer(const ALLEGRO_EVENT& event) {
+        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+            if (child->timer(event)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 
