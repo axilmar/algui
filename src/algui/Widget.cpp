@@ -280,6 +280,9 @@ namespace algui {
         }
         child->m_parent = this;
         child->m_it = m_children.insert(nextSibling ? nextSibling->m_it : m_children.end(), child);
+        if (m_theme && !child->m_theme) {
+            child->_initTheme(m_theme);
+        }
         return true;
     }
 
@@ -540,6 +543,35 @@ namespace algui {
 
     void Widget::setClickTimeout(size_t milliseconds) {
         _clickDuration = std::chrono::milliseconds(milliseconds);
+    }
+
+
+    void Widget::setTheme(const std::shared_ptr<Theme>& theme) {
+        m_theme = theme;
+        if (theme) {
+            this->theme(theme);
+        }
+        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+            child->setTheme(theme);
+        }
+    }
+
+
+    void Widget::resetTheme() {
+        m_theme.reset();
+        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+            child->resetTheme();
+        }
+    }
+
+
+    void Widget::refreshTheme() {
+        if (m_theme) {
+            theme(m_theme);
+        }
+        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+            child->refreshTheme();
+        }
     }
 
 
@@ -893,6 +925,17 @@ namespace algui {
             }
             for (Widget* child : m_children) {
                 child->_render();
+            }
+        }
+    }
+
+
+    void Widget::_initTheme(const std::shared_ptr<Theme>& theme) {
+        if (!m_theme) {
+            m_theme = theme;
+            this->theme(theme);
+            for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+                child->_initTheme(theme);
             }
         }
     }

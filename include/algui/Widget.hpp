@@ -5,7 +5,8 @@
 #include <list>
 #include <any>
 #include <string>
-#include <allegro5/allegro.h>
+#include <memory>
+#include "Theme.hpp"
 
 
 namespace algui {
@@ -226,6 +227,12 @@ namespace algui {
         size_t getDepth() const;
 
         /**
+         * Returns the theme of the widget.
+         * @return the theme of the widget.
+         */
+        const std::shared_ptr<Theme>& getTheme() const;
+
+        /**
          * Checks if the given widget is within this widget tree.
          * @param wgt widget to check if within this tree.
          * @return true if the given widget is within this tree, false otherwise.
@@ -243,6 +250,7 @@ namespace algui {
 
         /**
          * Adds a widget as a child of this.
+         * The child widget gets the theme of the parent, if the child does not have a theme attached to it.
          * @param child child to add.
          * @param nextSibling next sibling widget; if null, then the child is added on top of its siblings.
          * @return true if addition succeeded, false if the child pointer is null, or if the child already
@@ -449,6 +457,25 @@ namespace algui {
          * @param milliseconds click timeout, in milliseconds.
          */
         static void setClickTimeout(size_t milliseconds);
+
+        /**
+         * Sets the widget's theme.
+         * It invokes the `theme()` virtual method for each widget in the tree, if the theme pointer is not null.
+         * @param theme pointer to theme; it can be null, in order to detach the theme from the widget tree.
+         */
+        void setTheme(const std::shared_ptr<Theme>& theme);
+
+        /**
+         * Resets the theme pointer for each widget in the tree.
+         */
+        void resetTheme();
+
+        /**
+         * Refreshes the widget's resources from its theme.
+         * It invokes the `theme()` virtual method for each widget in the tree that has a theme attached to it.
+         */
+        void refreshTheme();
+
 
         /**
          * Processes an allegro event and invokes the relevant virtual methods of this widget.
@@ -680,11 +707,20 @@ namespace algui {
          */
         virtual bool doubleClick(const ALLEGRO_EVENT& event);
 
+        /**
+         * Invoked when the theme changes or it is refreshed.
+         * Subclasses can use this call to customize their resources.
+         * The default implementation does nothing.
+         * @param theme pointer to a theme; never null.
+         */
+        virtual void theme(const std::shared_ptr<Theme>& theme) {}
+
     private:
         std::string m_id;
         Widget* m_parent;
         std::list<Widget*>::iterator m_it;
         std::list<Widget*> m_children;
+        std::shared_ptr<Theme> m_theme;
         float m_x;
         float m_y;
         float m_width;
@@ -713,6 +749,7 @@ namespace algui {
         bool m_flexible:1;
 
         void _render();
+        void _initTheme(const std::shared_ptr<Theme>& theme);
     };
 
 
