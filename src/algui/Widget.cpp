@@ -56,10 +56,14 @@ namespace algui {
         , m_y(0)
         , m_width(0)
         , m_height(0)
+        , m_horizontalScaling(1.0f)
+        , m_verticalScaling(1.0f)
         , m_x1(0)
         , m_y1(0)
         , m_x2(0)
         , m_y2(0)
+        , m_treeHorizontalScaling(1.0f)
+        , m_treeVerticalScaling(1.0f)
         , m_visible(true)
         , m_enabled(true)
         , m_highlighted(false)
@@ -147,6 +151,26 @@ namespace algui {
     }
 
 
+    float Widget::getHorizontalScaling() const {
+        return m_horizontalScaling;
+    }
+
+
+    float Widget::getVerticalScaling() const {
+        return m_verticalScaling;
+    }
+
+
+    float Widget::getTreeHorizontalScaling() const {
+        return m_treeHorizontalScaling;
+    }
+
+
+    float Widget::getTreeVerticalScaling() const {
+        return m_treeVerticalScaling;
+    }
+
+
     float Widget::getX1() const {
         return m_x1;
     }
@@ -212,7 +236,7 @@ namespace algui {
     }
 
 
-    bool Widget::getTreeHighlighed() const {
+    bool Widget::getTreeHighlighted() const {
         return m_treeHighlighted;
     }
 
@@ -251,6 +275,11 @@ namespace algui {
         size_t result = 0;
         for (const Widget* wgt = this; wgt->m_parent; wgt = wgt->m_parent, ++result) {}
         return result;
+    }
+
+
+    const std::shared_ptr<Theme>& Widget::getTheme() const {
+        return m_theme;
     }
 
 
@@ -402,6 +431,22 @@ namespace algui {
     }
 
 
+    void Widget::setHorizontalScaling(float f) {
+        m_horizontalScaling = f;
+    }
+
+
+    void Widget::setVerticalScaling(float f) {
+        m_verticalScaling = f;
+    }
+
+
+    void Widget::setScaling(float h, float v) {
+        m_horizontalScaling = h;
+        m_verticalScaling = v;
+    }
+
+
     void Widget::setVisible(bool v) {
         if (v == m_visible) {
             return;
@@ -507,7 +552,11 @@ namespace algui {
     void Widget::render() {
         _render();
         if (_dragAndDrop && _dragIcon) {
-            al_draw_bitmap(_dragIcon, _lastMouseMoveEvent.mouse.x - _dragIconY, _lastMouseMoveEvent.mouse.y - _dragIconX, 0);
+            int w = al_get_bitmap_width(_dragIcon);
+            int h = al_get_bitmap_height(_dragIcon);
+            int x = _lastMouseMoveEvent.mouse.x - _dragIconY * m_treeHorizontalScaling;
+            int y = _lastMouseMoveEvent.mouse.y - _dragIconX * m_treeVerticalScaling;
+            al_draw_scaled_bitmap(_dragIcon, 0, 0, w, h, x, y, w * m_treeHorizontalScaling, h * m_treeVerticalScaling, 0);
         }
     }
 
@@ -893,8 +942,10 @@ namespace algui {
     void Widget::_render() {
         if (m_visible) {
             if (m_parent) {
-                m_x1 = m_x + m_parent->m_x1;
-                m_y1 = m_y + m_parent->m_y1;
+                m_x1 = m_x * m_parent->m_treeHorizontalScaling + m_parent->m_x1;
+                m_y1 = m_y * m_parent->m_treeVerticalScaling + m_parent->m_y1;
+                m_x2 = m_x1 + m_width * m_parent->m_treeHorizontalScaling;
+                m_y2 = m_y1 + m_height * m_parent->m_treeVerticalScaling;
                 m_treeVisible = m_visible && m_parent->m_treeVisible;
                 m_treeEnabled = m_enabled && m_parent->m_treeEnabled;
                 m_treeHighlighted = m_highlighted || m_parent->m_treeHighlighted;
@@ -902,10 +953,14 @@ namespace algui {
                 m_treeSelected = m_selected || m_parent->m_treeSelected;
                 m_treeFocused = m_focused || m_parent->m_treeFocused;
                 m_treeError = m_error || m_parent->m_treeError;
+                m_treeHorizontalScaling = m_horizontalScaling * m_parent->m_treeHorizontalScaling;
+                m_treeVerticalScaling = m_verticalScaling * m_parent->m_treeVerticalScaling;
             }
             else {
                 m_x1 = m_x;
                 m_y1 = m_y;
+                m_x2 = m_x1 + m_width;
+                m_y2 = m_y1 + m_height;
                 m_treeVisible = m_visible;
                 m_treeEnabled = m_enabled;
                 m_treeHighlighted = m_highlighted;
@@ -913,9 +968,9 @@ namespace algui {
                 m_treeSelected = m_selected;
                 m_treeFocused = m_focused;
                 m_treeError = m_error;
+                m_treeHorizontalScaling = m_horizontalScaling;
+                m_treeVerticalScaling = m_verticalScaling;
             }
-            m_x2 = m_x1 + m_width;
-            m_y2 = m_y1 + m_height;
             paint();
             if (m_layout) {
                 m_doingLayout = true;

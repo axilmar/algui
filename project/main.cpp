@@ -164,7 +164,8 @@ int main(int argc, char** argv) {
     al_install_joystick();
     al_install_audio();
 
-    ALLEGRO_DISPLAY* display = al_create_display(800, 600);
+    al_set_new_display_flags(ALLEGRO_FULLSCREEN | ALLEGRO_OPENGL);
+    ALLEGRO_DISPLAY* display = al_create_display(640, 480);
     ALLEGRO_EVENT_QUEUE* eventQueue = al_create_event_queue();
     ALLEGRO_TIMER* timer = al_create_timer(1.0/60.0);
     al_register_event_source(eventQueue, al_get_display_event_source(display));
@@ -179,6 +180,7 @@ int main(int argc, char** argv) {
     std::shared_ptr<Test> root = std::make_shared<Test>();
     root->setId("root");
     root->setSize(al_get_display_width(display), al_get_display_height(display));
+    root->setScaling(al_get_display_width(display) / 800.0f, al_get_display_height(display) / 600.0f);
 
     std::shared_ptr<Test> form1 = std::make_shared<Test>();
     form1->setId("form1");
@@ -229,6 +231,11 @@ int main(int argc, char** argv) {
                 root->render();
                 al_flip_display();
                 break;
+
+            case ALLEGRO_EVENT_KEY_DOWN:
+                if (event.keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
+                    goto END;
+                }
 
             default:
                 root->doEvent(event);

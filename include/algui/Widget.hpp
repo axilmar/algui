@@ -101,6 +101,30 @@ namespace algui {
         float getHeight() const;
 
         /**
+         * Returns the horizontal scaling factor.
+         * @return the horizontal scaling factor.
+         */
+        float getHorizontalScaling() const;
+
+        /**
+         * Returns the vertical scaling factor.
+         * @return the vertical scaling factor.
+         */
+        float getVerticalScaling() const;
+
+        /**
+         * Returns the horizontal scaling factor for this and all ancestor widgets.
+         * @return the horizontal scaling factor for this and all ancestor widgets.
+         */
+        float getTreeHorizontalScaling() const;
+
+        /**
+         * Returns the vertical scaling factor for this and all ancestor widgets.
+         * @return the vertical scaling factor for this and all ancestor widgets.
+         */
+        float getTreeVerticalScaling() const;
+
+        /**
          * Returns the left coordinate of the widget, relative to the screen.
          * @return the left coordinate of the widget.
          */
@@ -182,7 +206,7 @@ namespace algui {
          * Returns true if this or one if its ancestors are in highlighted state, false otherwise.
          * @return true if this or one if its ancestors are in highlighted state, false otherwise.
          */
-        bool getTreeHighlighed() const;
+        bool getTreeHighlighted() const;
 
         /**
          * Returns true if this or one if its ancestors are in pressed state, false otherwise.
@@ -344,6 +368,25 @@ namespace algui {
          * @param height the widget's height; clamped to 0.
          */
         void setGeometry(float x, float y, float width, float height);
+
+        /**
+         * Sets the horizontal scaling factor.
+         * @param f the horizontal scaling factor.
+         */
+        void setHorizontalScaling(float f);
+
+        /**
+         * Sets the vertical scaling factor.
+         * @param f the vertical scaling factor.
+         */
+        void setVerticalScaling(float f);
+
+        /**
+         * Sets the scaling factors.
+         * @param h the horizontal scaling factor.
+         * @param v the vertical scaling factor.
+         */
+        void setScaling(float h, float v);
 
         /**
          * Sets the visible state of a widget.
@@ -725,10 +768,14 @@ namespace algui {
         float m_y;
         float m_width;
         float m_height;
+        float m_horizontalScaling;
+        float m_verticalScaling;
         float m_x1;
         float m_y1;
         float m_x2;
         float m_y2;
+        float m_treeHorizontalScaling;
+        float m_treeVerticalScaling;
         bool m_visible:1;
         bool m_enabled:1;
         bool m_highlighted:1;
