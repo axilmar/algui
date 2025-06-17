@@ -759,7 +759,9 @@ namespace algui {
         virtual void theme(const std::shared_ptr<Theme>& theme) {}
 
         /**
-         * Invoked when the actual scaling of the widget changes.
+         * Invoked when the tree scaling of the widget changes.
+         * Subclasses can use this call to load the appropriate resources based on the tree scaling of the widget.
+         * The default implementation does nothing.
          */
         virtual void scaled() {}
 
