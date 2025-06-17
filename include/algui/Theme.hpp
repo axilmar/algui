@@ -97,7 +97,7 @@ namespace algui {
 
         /**
          * Returns a color from a config entry.
-         * The config entry value represents either an html color entry or an html color value (e.g. "#ff12ac").
+         * The config entry value represents either an html color name entry or an html color value (e.g. "#ff12ac").
          * Entries with alpha values are also supported (e.g. "#ff12ac05").
          * @param sections sections to search.
          * @param keys keys to search for.
