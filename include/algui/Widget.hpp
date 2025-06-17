@@ -201,7 +201,7 @@ namespace algui {
          * @return true if this and all its ancestors are enabled, false otherwise.
          */
         bool getTreeEnabled() const;
-        
+
         /**
          * Returns true if this or one if its ancestors are in highlighted state, false otherwise.
          * @return true if this or one if its ancestors are in highlighted state, false otherwise.
@@ -308,7 +308,7 @@ namespace algui {
         /**
          * Sets the left coordinate of the widget.
          * If this widget is in managed state, then the parent's layout is invalidated.
-         * @param x the left coordinate of the widget, relative to its parent, 
+         * @param x the left coordinate of the widget, relative to its parent,
          *  or to the screen if there is no parent.
          */
         void setX(float x);
@@ -757,6 +757,11 @@ namespace algui {
          * @param theme pointer to a theme; never null.
          */
         virtual void theme(const std::shared_ptr<Theme>& theme) {}
+
+        /**
+         * Invoked when the actual scaling of the widget changes.
+         */
+        virtual void scaled() {}
 
     private:
         std::string m_id;

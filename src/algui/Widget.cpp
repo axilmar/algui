@@ -941,6 +941,8 @@ namespace algui {
 
     void Widget::_render() {
         if (m_visible) {
+            const float prevTreeHorizontalScaling = m_treeHorizontalScaling;
+            const float prevTreeVerticalScaling = m_treeVerticalScaling;
             if (m_parent) {
                 m_x1 = m_x * m_parent->m_treeHorizontalScaling + m_parent->m_x1;
                 m_y1 = m_y * m_parent->m_treeVerticalScaling + m_parent->m_y1;
@@ -970,6 +972,9 @@ namespace algui {
                 m_treeError = m_error;
                 m_treeHorizontalScaling = m_horizontalScaling;
                 m_treeVerticalScaling = m_verticalScaling;
+            }
+            if (m_treeHorizontalScaling != prevTreeHorizontalScaling || m_treeVerticalScaling != prevTreeVerticalScaling) {
+                scaled();
             }
             paint();
             if (m_layout) {
