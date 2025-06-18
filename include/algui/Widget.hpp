@@ -280,7 +280,7 @@ namespace algui {
 
         /**
          * Adds a widget as a child of this.
-         * The child widget gets the theme of the parent, if the child does not have a theme attached to it.
+         * The child widget gets the theme and palette name of the parent.
          * @param child child to add.
          * @param nextSibling next sibling widget; if null, then the child is added on top of its siblings.
          * @return true if addition succeeded, false if the child pointer is null, or if the child already

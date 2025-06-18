@@ -1012,22 +1012,13 @@ namespace algui {
 
 
     void Widget::_initThemeAndPaletteName(const std::shared_ptr<Theme>& theme, const std::string& paletteName) {
-        if (theme || !paletteName.empty()) {
-            bool changed = false;
-            if (theme && !m_theme) {
-                m_theme = theme;
-                changed = true;
-            }
-            if (!paletteName.empty() && m_paletteName.empty()) {
-                m_paletteName = paletteName;
-                changed = true;
-            }
-            if (changed) {
-                themed();
-                for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
-                    child->_initThemeAndPaletteName(theme, paletteName);
-                }
-            }
+        if (theme != m_theme || paletteName != m_paletteName) {
+            m_theme = theme;
+            m_paletteName = paletteName;
+            _callThemed();
+        }
+        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+            child->_initThemeAndPaletteName(theme, paletteName);
         }
     }
 
