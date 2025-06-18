@@ -21,15 +21,15 @@ namespace algui {
     static std::shared_ptr<V> _loadResource(
         ALLEGRO_CONFIG* config,
         const std::string& configPath,
-        const char* section,
-        const char* key,
+        const std::string& section,
+        const std::string& key,
         std::map<K, std::weak_ptr<V>>& cache,
         const KF& keygen,
         const LF& loader,
         const DF& dtor)
     {
         //get path value from config file
-        const char* pathValue = al_get_config_value(config, section, key);
+        const char* pathValue = al_get_config_value(config, section.c_str(), key.c_str());
 
         //no path value
         if (!pathValue) {
@@ -182,13 +182,44 @@ namespace algui {
     }
 
 
+    template <class F>
+    static auto _getWidgetResource(
+        const std::string& widgetClassName,
+        const std::string& widgetId,
+        const std::string& paletteName,
+        const F& f)
+    {
+        std::vector<std::string> sections;
+
+        if (!widgetId.empty()) {
+            if (!paletteName.empty()) {
+                sections.push_back(widgetId + '.' + paletteName);
+            }
+            sections.push_back(widgetId);
+        }
+
+        if (!widgetClassName.empty()) {
+            if (!paletteName.empty()) {
+                sections.push_back(widgetClassName + '.' + paletteName);
+            }
+            sections.push_back(widgetClassName);
+        }
+
+        if (!paletteName.empty()) {
+            sections.push_back(paletteName);
+        }
+
+        return f(sections);
+    }
+
+
     Theme::Theme() 
         : m_config(nullptr)
     {
     }
 
 
-    Theme::Theme(const char* path)
+    Theme::Theme(const std::string& path)
         : m_config(nullptr)
     {
         load(path);
@@ -205,8 +236,8 @@ namespace algui {
     }
 
 
-    bool Theme::load(const char* path) {
-        ALLEGRO_CONFIG* config = al_load_config_file(path);
+    bool Theme::load(const std::string& path) {
+        ALLEGRO_CONFIG* config = al_load_config_file(path.c_str());
         if (!config) {
             return false;
         }
@@ -224,19 +255,19 @@ namespace algui {
 
 
     std::shared_ptr<ALLEGRO_BITMAP> Theme::getBitmap(
-        const std::initializer_list<const char*>& sections,
-        const std::initializer_list<const char*>& keys,
+        const std::vector<std::string>& sections,
+        const std::vector<std::string>& keys,
         const std::shared_ptr<ALLEGRO_BITMAP>& defaultValue) const
     {
         if (!m_config) {
             return defaultValue;
         }
-        for (const char* section : sections) {
-            if (!section || strlen(section) == 0) {
+        for (const std::string& section : sections) {
+            if (section.empty()) {
                 continue;
             }
-            for (const char* key : keys) {
-                if (!key || strlen(key) == 0) {
+            for (const std::string& key : keys) {
+                if (key.empty()) {
                     continue;
                 }
                 std::shared_ptr<ALLEGRO_BITMAP> resource = _loadResource(m_config, m_path, section, key, _bitmaps, 
@@ -260,8 +291,8 @@ namespace algui {
 
 
     std::shared_ptr<ALLEGRO_FONT> Theme::getFont(
-        const std::initializer_list<const char*>& sections,
-        const std::initializer_list<const char*>& keys,
+        const std::vector<std::string>& sections,
+        const std::vector<std::string>& keys,
         int size,
         int flags,
         const std::shared_ptr<ALLEGRO_FONT>& defaultValue) const
@@ -269,12 +300,12 @@ namespace algui {
         if (!m_config) {
             return defaultValue;
         }
-        for (const char* section : sections) {
-            if (!section || strlen(section) == 0) {
+        for (const std::string& section : sections) {
+            if (section.empty()) {
                 continue;
             }
-            for (const char* key : keys) {
-                if (!key || strlen(key) == 0) {
+            for (const std::string& key : keys) {
+                if (key.empty()) {
                     continue;
                 }
                 std::shared_ptr<ALLEGRO_FONT> resource = _loadResource(m_config, m_path, section, key, _fonts,
@@ -298,22 +329,22 @@ namespace algui {
 
 
     ALLEGRO_COLOR Theme::getColor(
-        const std::initializer_list<const char*>& sections,
-        const std::initializer_list<const char*>& keys,
+        const std::vector<std::string>& sections,
+        const std::vector<std::string>& keys,
         const ALLEGRO_COLOR& defaultValue) const
     {
         if (!m_config) {
             return defaultValue;
         }
-        for (const char* section : sections) {
-            if (!section || strlen(section) == 0) {
+        for (const std::string& section : sections) {
+            if (section.empty()) {
                 continue;
             }
-            for (const char* key : keys) {
-                if (!key || strlen(key) == 0) {
+            for (const std::string& key : keys) {
+                if (key.empty()) {
                     continue;
                 }
-                const char* value = al_get_config_value(m_config, section, key);
+                const char* value = al_get_config_value(m_config, section.c_str(), key.c_str());
                 if (!value) {
                     continue;
                 }
@@ -337,22 +368,22 @@ namespace algui {
 
 
     int Theme::getInt(
-        const std::initializer_list<const char*>& sections,
-        const std::initializer_list<const char*>& keys,
+        const std::vector<std::string>& sections,
+        const std::vector<std::string>& keys,
         int defaultValue) const
     {
         if (!m_config) {
             return defaultValue;
         }
-        for (const char* section : sections) {
-            if (!section || strlen(section) == 0) {
+        for (const std::string& section : sections) {
+            if (section.empty()) {
                 continue;
             }
-            for (const char* key : keys) {
-                if (!key || strlen(key) == 0) {
+            for (const std::string& key : keys) {
+                if (key.empty()) {
                     continue;
                 }
-                const char* value = al_get_config_value(m_config, section, key);
+                const char* value = al_get_config_value(m_config, section.c_str(), key.c_str());
                 if (!value) {
                     continue;
                 }
@@ -375,22 +406,22 @@ namespace algui {
 
 
     float Theme::getFloat(
-        const std::initializer_list<const char*>& sections,
-        const std::initializer_list<const char*>& keys,
+        const std::vector<std::string>& sections,
+        const std::vector<std::string>& keys,
         float defaultValue) const
     {
         if (!m_config) {
             return defaultValue;
         }
-        for (const char* section : sections) {
-            if (!section || strlen(section) == 0) {
+        for (const std::string& section : sections) {
+            if (section.empty()) {
                 continue;
             }
-            for (const char* key : keys) {
-                if (!key || strlen(key) == 0) {
+            for (const std::string& key : keys) {
+                if (key.empty()) {
                     continue;
                 }
-                const char* value = al_get_config_value(m_config, section, key);
+                const char* value = al_get_config_value(m_config, section.c_str(), key.c_str());
                 if (!value) {
                     continue;
                 }
@@ -413,22 +444,22 @@ namespace algui {
 
 
     bool Theme::getBool(
-        const std::initializer_list<const char*>& sections,
-        const std::initializer_list<const char*>& keys,
+        const std::vector<std::string>& sections,
+        const std::vector<std::string>& keys,
         bool defaultValue) const
     {
         if (!m_config) {
             return defaultValue;
         }
-        for (const char* section : sections) {
-            if (!section || strlen(section) == 0) {
+        for (const std::string& section : sections) {
+            if (section.empty()) {
                 continue;
             }
-            for (const char* key : keys) {
-                if (!key || strlen(key) == 0) {
+            for (const std::string& key : keys) {
+                if (key.empty()) {
                     continue;
                 }
-                const char* value = al_get_config_value(m_config, section, key);
+                const char* value = al_get_config_value(m_config, section.c_str(), key.c_str());
                 if (!value) {
                     continue;
                 }
@@ -444,23 +475,23 @@ namespace algui {
     }
 
 
-    const char* Theme::getString(
-        const std::initializer_list<const char*>& sections,
-        const std::initializer_list<const char*>& keys,
-        const char* defaultValue) const
+    std::string Theme::getString(
+        const std::vector<std::string>& sections,
+        const std::vector<std::string>& keys,
+        const std::string& defaultValue) const
     {
         if (!m_config) {
             return defaultValue;
         }
-        for (const char* section : sections) {
-            if (!section || strlen(section) == 0) {
+        for (const std::string& section : sections) {
+            if (section.empty()) {
                 continue;
             }
-            for (const char* key : keys) {
-                if (!key || strlen(key) == 0) {
+            for (const std::string& key : keys) {
+                if (key.empty()) {
                     continue;
                 }
-                const char* value = al_get_config_value(m_config, section, key);
+                const char* value = al_get_config_value(m_config, section.c_str(), key.c_str());
                 if (value) {
                     return value;
                 }
@@ -468,5 +499,99 @@ namespace algui {
         }
         return defaultValue;
     }
+
+
+    std::shared_ptr<ALLEGRO_BITMAP> Theme::getBitmap(
+        const std::string& widgetClassName,
+        const std::string& widgetId,
+        const std::string& paletteName,
+        const std::string& key,
+        const std::shared_ptr<ALLEGRO_BITMAP>& defaultValue) const
+    {
+        return _getWidgetResource(widgetClassName, widgetId, paletteName, [&](const std::vector<std::string>& sections) {
+            return this->getBitmap(sections, std::vector<std::string>{key}, defaultValue);
+        });
+    }
+
+
+    std::shared_ptr<ALLEGRO_FONT> Theme::getFont(
+        const std::string& widgetClassName,
+        const std::string& widgetId,
+        const std::string& paletteName,
+        const std::string& key,
+        int size,
+        int flags,
+        const std::shared_ptr<ALLEGRO_FONT>& defaultValue) const
+    {
+        return _getWidgetResource(widgetClassName, widgetId, paletteName, [&](const std::vector<std::string>& sections) {
+            return this->getFont(sections, std::vector<std::string>{key}, size, flags, defaultValue);
+        });
+    }
+
+
+    ALLEGRO_COLOR Theme::getColor(
+        const std::string& widgetClassName,
+        const std::string& widgetId,
+        const std::string& paletteName,
+        const std::string& key,
+        const ALLEGRO_COLOR& defaultValue) const
+    {
+        return _getWidgetResource(widgetClassName, widgetId, paletteName, [&](const std::vector<std::string>& sections) {
+            return this->getColor(sections, std::vector<std::string>{key}, defaultValue);
+        });
+    }
+
+
+    int Theme::getInt(
+        const std::string& widgetClassName,
+        const std::string& widgetId,
+        const std::string& paletteName,
+        const std::string& key,
+        int defaultValue) const
+    {
+        return _getWidgetResource(widgetClassName, widgetId, paletteName, [&](const std::vector<std::string>& sections) {
+            return this->getInt(sections, std::vector<std::string>{key}, defaultValue);
+        });
+    }
+
+
+    float Theme::getFloat(
+        const std::string& widgetClassName,
+        const std::string& widgetId,
+        const std::string& paletteName,
+        const std::string& key,
+        float defaultValue) const
+    {
+        return _getWidgetResource(widgetClassName, widgetId, paletteName, [&](const std::vector<std::string>& sections) {
+            return this->getFloat(sections, std::vector<std::string>{key}, defaultValue);
+        });
+    }
+
+
+    bool Theme::getBool(
+        const std::string& widgetClassName,
+        const std::string& widgetId,
+        const std::string& paletteName,
+        const std::string& key,
+        bool defaultValue) const
+    {
+        return _getWidgetResource(widgetClassName, widgetId, paletteName, [&](const std::vector<std::string>& sections) {
+            return this->getBool(sections, std::vector<std::string>{key}, defaultValue);
+        });
+    }
+
+
+    std::string Theme::getString(
+        const std::string& widgetClassName,
+        const std::string& widgetId,
+        const std::string& paletteName,
+        const std::string& key,
+        const std::string& defaultValue) const
+    {
+        return _getWidgetResource(widgetClassName, widgetId, paletteName, [&](const std::vector<std::string>& sections) {
+            return this->getString(sections, std::vector<std::string>{key}, defaultValue);
+        });
+    }
+
 
 } //namespace algui
