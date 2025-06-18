@@ -283,6 +283,11 @@ namespace algui {
     }
 
 
+    const std::string& Widget::getPaletteName() const {
+        return m_paletteName;
+    }
+
+
     bool Widget::contains(const Widget* wgt) const {
         for (; wgt; wgt = wgt->m_parent) {
             if (wgt == this) {
@@ -309,9 +314,7 @@ namespace algui {
         }
         child->m_parent = this;
         child->m_it = m_children.insert(nextSibling ? nextSibling->m_it : m_children.end(), child);
-        if (m_theme && !child->m_theme) {
-            child->_initTheme(m_theme);
-        }
+        child->_initThemeAndPaletteName(m_theme, m_paletteName);
         return true;
     }
 
@@ -597,9 +600,7 @@ namespace algui {
 
     void Widget::setTheme(const std::shared_ptr<Theme>& theme) {
         m_theme = theme;
-        if (theme) {
-            this->theme(theme);
-        }
+        _callThemed();
         for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
             child->setTheme(theme);
         }
@@ -608,6 +609,7 @@ namespace algui {
 
     void Widget::resetTheme() {
         m_theme.reset();
+        unthemed();
         for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
             child->resetTheme();
         }
@@ -615,11 +617,20 @@ namespace algui {
 
 
     void Widget::refreshTheme() {
-        if (m_theme) {
-            theme(m_theme);
-        }
+        _callThemed();
         for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
             child->refreshTheme();
+        }
+    }
+
+
+    void Widget::setPaletteName(const std::string& paletteName) {
+        if (paletteName != m_paletteName) {
+            m_paletteName = paletteName;
+            _callThemed();
+        }
+        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+            child->setPaletteName(paletteName);
         }
     }
 
@@ -990,12 +1001,32 @@ namespace algui {
     }
 
 
-    void Widget::_initTheme(const std::shared_ptr<Theme>& theme) {
-        if (!m_theme) {
-            m_theme = theme;
-            this->theme(theme);
-            for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
-                child->_initTheme(theme);
+    void Widget::_callThemed() {
+        if (m_theme) {
+            themed();
+        }
+        else {
+            unthemed();
+        }
+    }
+
+
+    void Widget::_initThemeAndPaletteName(const std::shared_ptr<Theme>& theme, const std::string& paletteName) {
+        if (theme || !paletteName.empty()) {
+            bool changed = false;
+            if (theme && !m_theme) {
+                m_theme = theme;
+                changed = true;
+            }
+            if (!paletteName.empty() && m_paletteName.empty()) {
+                m_paletteName = paletteName;
+                changed = true;
+            }
+            if (changed) {
+                themed();
+                for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+                    child->_initThemeAndPaletteName(theme, paletteName);
+                }
             }
         }
     }

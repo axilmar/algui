@@ -257,6 +257,12 @@ namespace algui {
         const std::shared_ptr<Theme>& getTheme() const;
 
         /**
+         * Returns the current palette name.
+         * @return the current palette name.
+         */
+        const std::string& getPaletteName() const;
+
+        /**
          * Checks if the given widget is within this widget tree.
          * @param wgt widget to check if within this tree.
          * @return true if the given widget is within this tree, false otherwise.
@@ -503,22 +509,35 @@ namespace algui {
 
         /**
          * Sets the widget's theme.
-         * It invokes the `theme()` virtual method for each widget in the tree, if the theme pointer is not null.
+         * It invokes the `themed()` virtual method for each widget in the tree that has a theme attached to it,
+         * or the 'unthemed()' method if the widget does not have a theme.
          * @param theme pointer to theme; it can be null, in order to detach the theme from the widget tree.
          */
         void setTheme(const std::shared_ptr<Theme>& theme);
 
         /**
          * Resets the theme pointer for each widget in the tree.
+         * It invokes the 'unthemed()' method.
          */
         void resetTheme();
 
         /**
          * Refreshes the widget's resources from its theme.
-         * It invokes the `theme()` virtual method for each widget in the tree that has a theme attached to it.
+         * It invokes the `themed()` virtual method for each widget in the tree that has a theme attached to it,
+         * or the 'unthemed()' method if the widget does not have a theme.
          */
         void refreshTheme();
 
+        /**
+         * Sets the palette name for this widget and its children.
+         * Widgets may use different palettes, depending on usage.
+         * By default, the palette name is empty, meaning 'default palette'.
+         * If the palette name changes, then the method `themed()` is called if the widget has a theme,
+         * or the 'unthemed()' method is called if the widget does not have a theme.
+         * to allow the widget to get its resources from the theme, according to the new palette.
+         * @param paletteName the new palette name.
+         */
+        void setPaletteName(const std::string& paletteName);
 
         /**
          * Processes an allegro event and invokes the relevant virtual methods of this widget.
@@ -751,12 +770,18 @@ namespace algui {
         virtual bool doubleClick(const ALLEGRO_EVENT& event);
 
         /**
-         * Invoked when the theme changes or it is refreshed.
+         * Invoked when the theme changes or it is refreshed and there is a theme.
          * Subclasses can use this call to customize their resources.
          * The default implementation does nothing.
-         * @param theme pointer to a theme; never null.
          */
-        virtual void theme(const std::shared_ptr<Theme>& theme) {}
+        virtual void themed() {}
+
+        /**
+         * Invoked when the theme changes or it is refreshed and there is no theme.
+         * Subclasses can use this call to customize their resources based on the lack of a theme.
+         * The default implementation does nothing.
+         */
+        virtual void unthemed() {}
 
         /**
          * Invoked when the tree scaling of the widget changes.
@@ -771,6 +796,7 @@ namespace algui {
         std::list<Widget*>::iterator m_it;
         std::list<Widget*> m_children;
         std::shared_ptr<Theme> m_theme;
+        std::string m_paletteName;
         float m_x;
         float m_y;
         float m_width;
@@ -803,7 +829,8 @@ namespace algui {
         bool m_flexible:1;
 
         void _render();
-        void _initTheme(const std::shared_ptr<Theme>& theme);
+        void _callThemed();
+        void _initThemeAndPaletteName(const std::shared_ptr<Theme>& theme, const std::string& paletteName);
     };
 
 

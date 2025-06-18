@@ -232,7 +232,13 @@ namespace algui {
             return defaultValue;
         }
         for (const char* section : sections) {
+            if (!section || strlen(section) == 0) {
+                continue;
+            }
             for (const char* key : keys) {
+                if (!key || strlen(key) == 0) {
+                    continue;
+                }
                 std::shared_ptr<ALLEGRO_BITMAP> resource = _loadResource(m_config, m_path, section, key, _bitmaps, 
                     [](const std::string& path) {
                         return path;
@@ -264,7 +270,13 @@ namespace algui {
             return defaultValue;
         }
         for (const char* section : sections) {
+            if (!section || strlen(section) == 0) {
+                continue;
+            }
             for (const char* key : keys) {
+                if (!key || strlen(key) == 0) {
+                    continue;
+                }
                 std::shared_ptr<ALLEGRO_FONT> resource = _loadResource(m_config, m_path, section, key, _fonts,
                     [&](const std::string& path) {
                         return std::make_tuple(path, size, flags);
@@ -294,7 +306,13 @@ namespace algui {
             return defaultValue;
         }
         for (const char* section : sections) {
+            if (!section || strlen(section) == 0) {
+                continue;
+            }
             for (const char* key : keys) {
+                if (!key || strlen(key) == 0) {
+                    continue;
+                }
                 const char* value = al_get_config_value(m_config, section, key);
                 if (!value) {
                     continue;
@@ -327,7 +345,13 @@ namespace algui {
             return defaultValue;
         }
         for (const char* section : sections) {
+            if (!section || strlen(section) == 0) {
+                continue;
+            }
             for (const char* key : keys) {
+                if (!key || strlen(key) == 0) {
+                    continue;
+                }
                 const char* value = al_get_config_value(m_config, section, key);
                 if (!value) {
                     continue;
@@ -359,7 +383,13 @@ namespace algui {
             return defaultValue;
         }
         for (const char* section : sections) {
+            if (!section || strlen(section) == 0) {
+                continue;
+            }
             for (const char* key : keys) {
+                if (!key || strlen(key) == 0) {
+                    continue;
+                }
                 const char* value = al_get_config_value(m_config, section, key);
                 if (!value) {
                     continue;
@@ -391,7 +421,13 @@ namespace algui {
             return defaultValue;
         }
         for (const char* section : sections) {
+            if (!section || strlen(section) == 0) {
+                continue;
+            }
             for (const char* key : keys) {
+                if (!key || strlen(key) == 0) {
+                    continue;
+                }
                 const char* value = al_get_config_value(m_config, section, key);
                 if (!value) {
                     continue;
@@ -417,7 +453,13 @@ namespace algui {
             return defaultValue;
         }
         for (const char* section : sections) {
+            if (!section || strlen(section) == 0) {
+                continue;
+            }
             for (const char* key : keys) {
+                if (!key || strlen(key) == 0) {
+                    continue;
+                }
                 const char* value = al_get_config_value(m_config, section, key);
                 if (value) {
                     return value;
