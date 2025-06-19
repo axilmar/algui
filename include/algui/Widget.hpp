@@ -245,6 +245,12 @@ namespace algui {
         bool getFlexible() const;
 
         /**
+         * Returns true if the widget is painted clipped, false otherwise.
+         * @return true if the widget is painted clipped, false otherwise.
+         */
+        bool getClipped() const;
+
+        /**
          * Returns the tree depth of this widget.
          * @return the tree depth of this widget; 0 if it is root, 1 if it is a child of root etc.
          */
@@ -459,6 +465,13 @@ namespace algui {
         void setFlexible(bool v);
 
         /**
+         * Sets the clipped flag.
+         * A widget that is clipped is painted with clipping set to the screen rectangle of the widget.
+         * @param v the clipped flag.
+         */
+        void setClipped(bool v);
+
+        /**
          * Invalidates the widget's layout.
          * The new layout will be computed before the next render.
          */
@@ -555,9 +568,15 @@ namespace algui {
 
         /**
          * Invoked to paint the widget.
-         * By default, it does nothing.
          */
         virtual void paint() const = 0;
+
+        /**
+         * Invoked to paint the widget's overlay.
+         * It is invoked after the children are painted.
+         * By default, it does nothing.
+         */
+        virtual void paintOverlay() const {}
 
         /**
          * Invoked when the widget gets the focus.
@@ -827,6 +846,7 @@ namespace algui {
         bool m_doingLayout:1;
         bool m_managed:1;
         bool m_flexible:1;
+        bool m_clipped:1;
 
         void _render();
         void _callThemed();

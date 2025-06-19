@@ -5,6 +5,12 @@
 #include "algui/Widget.hpp"
 
 
+#ifdef max
+#undef max
+#undef min
+#endif
+
+
 namespace algui {
 
 
@@ -50,6 +56,19 @@ namespace algui {
     }
 
 
+    static bool _intersect(
+        float ax1, float ay1, float ax2, float ay2, 
+        float bx1, float by1, float bx2, float by2,
+        float& rx1, float& ry1, float& rx2, float& ry2)
+    {
+        rx1 = std::max(ax1, bx1);
+        ry1 = std::max(ay1, by1);
+        rx2 = std::min(ax2, bx2);
+        ry2 = std::min(ay2, by2);
+        return rx1 > rx2 || ry1 > ry2;
+    }
+
+
     Widget::Widget() 
         : m_parent(nullptr)
         , m_x(0)
@@ -82,6 +101,7 @@ namespace algui {
         , m_doingLayout(false)
         , m_managed(true)
         , m_flexible(true)
+        , m_clipped(false)
     {
     }
 
@@ -268,6 +288,11 @@ namespace algui {
 
     bool Widget::getFlexible() const {
         return m_flexible;
+    }
+
+
+    bool Widget::getClipped() const {
+        return m_clipped;
     }
 
 
@@ -540,6 +565,11 @@ namespace algui {
     }
 
 
+    void Widget::setClipped(bool v) {
+        m_clipped = v;
+    }
+
+
     void Widget::invalidateLayout() {
         m_layout = true;
     }
@@ -767,6 +797,16 @@ namespace algui {
                     }
                     return result1 || result2;
                 }
+
+            case ALLEGRO_EVENT_DISPLAY_EXPOSE:
+            {
+                int cx, cy, cw, ch;
+                al_get_clipping_rectangle(&cx, &cy, &cw, &ch);
+                al_set_clipping_rectangle(event.display.x, event.display.y, event.display.width, event.display.height);
+                render();
+                al_set_clipping_rectangle(cx, cy, cw, ch);
+                return true;
+            }
         }
         return false;
     }
@@ -954,6 +994,8 @@ namespace algui {
         if (m_visible) {
             const float prevTreeHorizontalScaling = m_treeHorizontalScaling;
             const float prevTreeVerticalScaling = m_treeVerticalScaling;
+
+            //calculate screen state for child
             if (m_parent) {
                 m_x1 = m_x * m_parent->m_treeHorizontalScaling + m_parent->m_x1;
                 m_y1 = m_y * m_parent->m_treeVerticalScaling + m_parent->m_y1;
@@ -969,6 +1011,8 @@ namespace algui {
                 m_treeHorizontalScaling = m_horizontalScaling * m_parent->m_treeHorizontalScaling;
                 m_treeVerticalScaling = m_verticalScaling * m_parent->m_treeVerticalScaling;
             }
+
+            //else calculate screen state for parent
             else {
                 m_x1 = m_x;
                 m_y1 = m_y;
@@ -984,18 +1028,56 @@ namespace algui {
                 m_treeHorizontalScaling = m_horizontalScaling;
                 m_treeVerticalScaling = m_verticalScaling;
             }
+            
+            //if tree scaling changed, allow the widget to pick the correct resources
             if (m_treeHorizontalScaling != prevTreeHorizontalScaling || m_treeVerticalScaling != prevTreeVerticalScaling) {
                 scaled();
             }
+            
+            //paint clipped
+            int cx, cy, cw, ch;
+            if (m_clipped) {
+                al_get_clipping_rectangle(&cx, &cy, &cw, &ch);
+
+                //calculate intersection between widget rectangle and current clipping
+                float rx1, ry1, rx2, ry2;
+                const bool totallyClipped = _intersect(
+                    cx, cy, cx + cw, cy + ch, 
+                    m_x1, m_y1, m_x2, m_y2,
+                    rx1, ry1, rx2, ry2);
+
+                //if the widget is outside of the current clipping,
+                //then do not draw it
+                if (totallyClipped) {
+                    return;
+                }
+
+                //clip the output
+                al_set_clipping_rectangle(rx1, ry1, std::floor(rx2 - rx1), std::floor(ry2 - ry1));
+            }
+
+            //paint the widget
             paint();
+            
+            //before painting the children, do the layout
             if (m_layout) {
                 m_doingLayout = true;
                 layout();
                 m_doingLayout = false;
                 m_layout = false;
             }
+
+            //render the children
             for (Widget* child : m_children) {
                 child->_render();
+            }
+
+            //paint above the children
+            paintOverlay();
+
+            //restore clipping
+            if (m_clipped) {
+                al_set_clipping_rectangle(cx, cy, cw, ch);
             }
         }
     }
