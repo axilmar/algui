@@ -611,6 +611,11 @@ namespace algui {
     }
 
 
+    const std::any& getDraggedData() {
+        return _draggedData;
+    }
+
+
     void Widget::setDragIcon(ALLEGRO_BITMAP* bitmap, int hotPointX, int hotPointY) {
         _dragIcon = bitmap;
         _dragIconX = hotPointX;

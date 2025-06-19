@@ -22,9 +22,9 @@ namespace algui {
      * 
      * Resources for widgets can be fetched from sections with the following names, in the following order:
      * 
-     *  1) [<widget id> '.' <surface type>]
+     *  1) [<surface type> '.' <widget id>]
      *  2) [<widget id>]
-     *  3) [<widget class name> '.' <surface type>]
+     *  3) [<surface type> '.' <widget class name>]
      *  4) [<widget class name>]
      *  5) [<surface type>]
      *

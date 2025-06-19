@@ -180,14 +180,14 @@ namespace algui {
 
         if (!widgetId.empty()) {
             if (!surfaceType.empty()) {
-                sections.push_back(widgetId + '.' + surfaceType);
+                sections.push_back(surfaceType + '.' + widgetId);
             }
             sections.push_back(widgetId);
         }
 
         if (!widgetClassName.empty()) {
             if (!surfaceType.empty()) {
-                sections.push_back(widgetClassName + '.' + surfaceType);
+                sections.push_back(surfaceType + '.' + widgetClassName);
             }
             sections.push_back(widgetClassName);
         }

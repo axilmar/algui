@@ -499,6 +499,12 @@ namespace algui {
         bool beginDragAndDrop(const std::any& data);
 
         /**
+         * Returns the currently dragged data.
+         * @return the currently dragged data.
+         */
+        static const std::any& getDraggedData();
+
+        /**
          * Sets the drag icon.
          * Valid only while a drag-n-drop is in progress.
          * The drag icon is automatically reset on drop.
