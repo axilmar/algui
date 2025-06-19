@@ -540,11 +540,11 @@ namespace algui {
         const std::string& widgetClassName,
         const std::string& widgetId,
         const std::string& surfaceType,
-        const std::string& key,
+        const std::vector<std::string>& keys,
         const std::shared_ptr<ALLEGRO_BITMAP>& defaultValue) const
     {
         return _getWidgetResource(widgetClassName, widgetId, surfaceType, [&](const std::vector<std::string>& sections) {
-            return this->getBitmap(sections, std::vector<std::string>{key}, defaultValue);
+            return this->getBitmap(sections, keys, defaultValue);
         });
     }
 
@@ -553,13 +553,13 @@ namespace algui {
         const std::string& widgetClassName,
         const std::string& widgetId,
         const std::string& surfaceType,
-        const std::string& key,
+        const std::vector<std::string>& keys,
         int size,
         int flags,
         const std::shared_ptr<ALLEGRO_FONT>& defaultValue) const
     {
         return _getWidgetResource(widgetClassName, widgetId, surfaceType, [&](const std::vector<std::string>& sections) {
-            return this->getFont(sections, std::vector<std::string>{key}, size, flags, defaultValue);
+            return this->getFont(sections, keys, size, flags, defaultValue);
         });
     }
 
@@ -568,11 +568,11 @@ namespace algui {
         const std::string& widgetClassName,
         const std::string& widgetId,
         const std::string& surfaceType,
-        const std::string& key,
+        const std::vector<std::string>& keys,
         const ALLEGRO_COLOR& defaultValue) const
     {
         return _getWidgetResource(widgetClassName, widgetId, surfaceType, [&](const std::vector<std::string>& sections) {
-            return this->getColor(sections, std::vector<std::string>{key}, defaultValue);
+            return this->getColor(sections, keys, defaultValue);
         });
     }
 
@@ -581,11 +581,11 @@ namespace algui {
         const std::string& widgetClassName,
         const std::string& widgetId,
         const std::string& surfaceType,
-        const std::string& key,
+        const std::vector<std::string>& keys,
         int defaultValue) const
     {
         return _getWidgetResource(widgetClassName, widgetId, surfaceType, [&](const std::vector<std::string>& sections) {
-            return this->getInt(sections, std::vector<std::string>{key}, defaultValue);
+            return this->getInt(sections, keys, defaultValue);
         });
     }
 
@@ -594,11 +594,11 @@ namespace algui {
         const std::string& widgetClassName,
         const std::string& widgetId,
         const std::string& surfaceType,
-        const std::string& key,
+        const std::vector<std::string>& keys,
         float defaultValue) const
     {
         return _getWidgetResource(widgetClassName, widgetId, surfaceType, [&](const std::vector<std::string>& sections) {
-            return this->getFloat(sections, std::vector<std::string>{key}, defaultValue);
+            return this->getFloat(sections, keys, defaultValue);
         });
     }
 
@@ -607,11 +607,11 @@ namespace algui {
         const std::string& widgetClassName,
         const std::string& widgetId,
         const std::string& surfaceType,
-        const std::string& key,
+        const std::vector<std::string>& keys,
         bool defaultValue) const
     {
         return _getWidgetResource(widgetClassName, widgetId, surfaceType, [&](const std::vector<std::string>& sections) {
-            return this->getBool(sections, std::vector<std::string>{key}, defaultValue);
+            return this->getBool(sections, keys, defaultValue);
         });
     }
 
@@ -620,11 +620,11 @@ namespace algui {
         const std::string& widgetClassName,
         const std::string& widgetId,
         const std::string& surfaceType,
-        const std::string& key,
+        const std::vector<std::string>& keys,
         const std::string& defaultValue) const
     {
         return _getWidgetResource(widgetClassName, widgetId, surfaceType, [&](const std::vector<std::string>& sections) {
-            return this->getString(sections, std::vector<std::string>{key}, defaultValue);
+            return this->getString(sections, keys, defaultValue);
         });
     }
 
