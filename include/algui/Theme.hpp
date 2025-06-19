@@ -77,6 +77,7 @@ namespace algui {
          * Loads a config from a file.
          * The existing config is replaced only if the new config is successfully loaded.
          * @param path path to config.
+         * @return true on success, false on failure; in case of failure, the theme contents are not modified.
          */
         bool load(const std::string& path);
 
@@ -299,9 +300,94 @@ namespace algui {
             const std::string& key,
             const std::string& defaultValue = std::string()) const;
 
+        /**** mutating functions ****/
+
+        /**
+         * Adds a bitmap entry to the theme.
+         * The bitmap is added to the resource cache.
+         * @param section section.
+         * @param key key.
+         * @param path path to the bitmap, relative to the config file path.
+         * @param bitmap bitmap.
+         * @return true on success, false otherwise.
+         */
+        bool addBitmap(const std::string& section, const std::string& key, const std::string& path);
+
+        /**
+         * Adds a font entry to the theme.
+         * The font is added to the resource cache.
+         * @param section section.
+         * @param key key.
+         * @param path path to the font, relative to the config file path.
+         * @return true on success, false otherwise.
+         */
+        bool addFont(const std::string& section, const std::string& key, const std::string& path);
+
+        /**
+         * Adds a color entry to the theme.
+         * The color is saved as an html color (e.g. #f0125508).
+         * @param section section.
+         * @param key key.
+         * @param color color.
+         * @return true on success, false otherwise.
+         */
+        bool addColor(const std::string& section, const std::string& key, const ALLEGRO_COLOR& color);
+
+        /**
+         * Adds an integer entry to the theme.
+         * @param section section.
+         * @param key key.
+         * @param value value.
+         * @return true on success, false otherwise.
+         */
+        bool addInt(const std::string& section, const std::string& key, int value);
+
+        /**
+         * Adds an float entry to the theme.
+         * @param section section.
+         * @param key key.
+         * @param value value.
+         * @return true on success, false otherwise.
+         */
+        bool addFloat(const std::string& section, const std::string& key, float value);
+
+        /**
+         * Adds a boolean entry to the theme.
+         * @param section section.
+         * @param key key.
+         * @param value value.
+         * @return true on success, false otherwise.
+         */
+        bool addBool(const std::string& section, const std::string& key, bool value);
+
+        /**
+         * Adds a string entry to the theme.
+         * @param section section.
+         * @param key key.
+         * @param value value.
+         * @return true on success, false otherwise.
+         */
+        bool addString(const std::string& section, const std::string& key, const std::string& value);
+
+        /**
+         * Removes an entry.
+         * @param section section.
+         * @param key key.
+         * @return true on success, false if the entry is not found.
+         */
+        bool remove(const std::string& section, const std::string& key);
+
+        /**
+         * Saves this theme to the given file.
+         * @param path path and filename of the config file.
+         * @return true on success, false otherwise.
+         */
+        bool save(const std::string& path);
+
     private:
         ALLEGRO_CONFIG* m_config;
         std::string m_path;
+        ALLEGRO_CONFIG* _getConfig();
     };
 
 

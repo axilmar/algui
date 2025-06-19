@@ -5,6 +5,12 @@
 #include "algui/ResourceCache.hpp"
 
 
+#ifdef max
+#undef max
+#undef min
+#endif
+
+
 namespace algui {
 
 
@@ -191,6 +197,48 @@ namespace algui {
         }
 
         return f(sections);
+    }
+
+
+    static const char _hexDigits[] = "0123456789abcdef";
+
+
+    static void _writeColorComponent(std::stringstream& stream, float c) {
+        const int v = std::max(0, std::min((int)(255.0f * c), 255));
+        const int h = v / 16;
+        const int l = v % 16;
+        stream << _hexDigits[h];
+        stream << _hexDigits[l];
+    }
+
+
+    static std::string _getString(const ALLEGRO_COLOR& color) {
+        std::stringstream stream;
+        stream << '#';
+        _writeColorComponent(stream, color.r);
+        _writeColorComponent(stream, color.g);
+        _writeColorComponent(stream, color.b);
+        _writeColorComponent(stream, color.a);
+        return stream.str();
+    }
+
+
+    static std::string _getString(int value) {
+        std::stringstream stream;
+        stream << value;
+        return stream.str();
+    }
+
+
+    static std::string _getString(float value) {
+        std::stringstream stream;
+        stream << value;
+        return stream.str();
+    }
+
+
+    static std::string _getString(bool value) {
+        return value ? "true" : "false";
     }
 
 
@@ -578,6 +626,101 @@ namespace algui {
         return _getWidgetResource(widgetClassName, widgetId, surfaceType, [&](const std::vector<std::string>& sections) {
             return this->getString(sections, std::vector<std::string>{key}, defaultValue);
         });
+    }
+
+
+    bool Theme::addBitmap(const std::string& section, const std::string& key, const std::string& path) {
+        ALLEGRO_CONFIG* config = _getConfig();
+        if (config) {
+            al_set_config_value(config, section.c_str(), key.c_str(), path.c_str());
+            return true;
+        }
+        return false;
+    }
+
+
+    bool Theme::addFont(const std::string& section, const std::string& key, const std::string& path) {
+        ALLEGRO_CONFIG* config = _getConfig();
+        if (config) {
+            al_set_config_value(config, section.c_str(), key.c_str(), path.c_str());
+            return true;
+        }
+        return false;
+    }
+
+
+    bool Theme::addColor(const std::string& section, const std::string& key, const ALLEGRO_COLOR& color) {
+        ALLEGRO_CONFIG* config = _getConfig();
+        if (config) {
+            al_set_config_value(config, section.c_str(), key.c_str(), _getString(color).c_str());
+            return true;
+        }
+        return false;
+    }
+
+
+    bool Theme::addInt(const std::string& section, const std::string& key, int value) {
+        ALLEGRO_CONFIG* config = _getConfig();
+        if (config) {
+            al_set_config_value(config, section.c_str(), key.c_str(), _getString(value).c_str());
+            return true;
+        }
+        return false;
+    }
+
+
+    bool Theme::addFloat(const std::string& section, const std::string& key, float value) {
+        ALLEGRO_CONFIG* config = _getConfig();
+        if (config) {
+            al_set_config_value(config, section.c_str(), key.c_str(), _getString(value).c_str());
+            return true;
+        }
+        return false;
+    }
+
+
+    bool Theme::addBool(const std::string& section, const std::string& key, bool value) {
+        ALLEGRO_CONFIG* config = _getConfig();
+        if (config) {
+            al_set_config_value(config, section.c_str(), key.c_str(), _getString(value).c_str());
+            return true;
+        }
+        return false;
+    }
+
+
+    bool Theme::addString(const std::string& section, const std::string& key, const std::string& value) {
+        ALLEGRO_CONFIG* config = _getConfig();
+        if (config) {
+            al_set_config_value(config, section.c_str(), key.c_str(), value.c_str());
+            return true;
+        }
+        return false;
+    }
+
+
+    bool Theme::remove(const std::string& section, const std::string& key) {
+        if (m_config) {
+            al_set_config_value(m_config, section.c_str(), key.c_str(), nullptr);
+            return true;
+        }
+        return false;
+    }
+
+
+    bool Theme::save(const std::string& path) {
+        if (m_config) {
+            return al_save_config_file(path.c_str(), m_config);
+        }
+        return false;
+    }
+
+
+    ALLEGRO_CONFIG* Theme::_getConfig() {
+        if (!m_config) {
+            m_config = al_create_config();
+        }
+        return m_config;
     }
 
 
