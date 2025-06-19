@@ -1,32 +1,23 @@
-#include <tuple>
-#include <map>
 #include <filesystem>
 #include <sstream>
 #include <allegro5/allegro_color.h>
 #include "algui/Theme.hpp"
+#include "algui/ResourceCache.hpp"
 
 
 namespace algui {
 
 
-    using _BitmapKey = std::string;
-    using _FontKey = std::tuple<std::string, int, int>;
-
-
-    static std::map<_BitmapKey, std::weak_ptr<ALLEGRO_BITMAP>> _bitmaps;
-    static std::map<_FontKey, std::weak_ptr<ALLEGRO_FONT>> _fonts;
-
-
-    template <class K, class V, class KF, class LF, class DF> 
+    template <class V, class GetKey, class Get, class Load, class Put> 
     static std::shared_ptr<V> _loadResource(
-        ALLEGRO_CONFIG* config,
+        const ALLEGRO_CONFIG* config,
         const std::string& configPath,
         const std::string& section,
         const std::string& key,
-        std::map<K, std::weak_ptr<V>>& cache,
-        const KF& keygen,
-        const LF& loader,
-        const DF& dtor)
+        const GetKey& getKey,
+        const Get& get,
+        const Load& load,
+        const Put& put)
     {
         //get path value from config file
         const char* pathValue = al_get_config_value(config, section.c_str(), key.c_str());
@@ -40,35 +31,25 @@ namespace algui {
             //get the actual path relative to the config path
             const std::string path = std::filesystem::canonical((std::filesystem::path(configPath) / std::filesystem::path(pathValue))).string();
 
-            //get the key
-            const K key = keygen(path);
-
             //find the cached resource
-            auto it = cache.find(key);
+            const auto resourceKey = getKey(path);
+            std::shared_ptr<V> ptr = get(resourceKey);
 
             //if found, return it
-            if (it != cache.end()) {
-                return it->second.lock();
+            if (ptr) {
+                return ptr;
             }
 
             //load the resource
-            V* resource = loader(path);
+            V* resource = load(path);
 
             //if the resource could not be loaded
             if (!resource) {
                 return nullptr;
             }
 
-            //the result; when destroyed, not only the resource is destroyed, but the cache entry is removed as well
-            std::shared_ptr<V> result{ resource, [dtor, key, &cache](V* resource)
-                {
-                    dtor(resource);
-                    cache.erase(key);
-                }
-            };
-
             //cache the result
-            cache[key] = result;
+            std::shared_ptr<V> result = put(resourceKey, resource);
 
             return result;
         }
@@ -270,15 +251,18 @@ namespace algui {
                 if (key.empty()) {
                     continue;
                 }
-                std::shared_ptr<ALLEGRO_BITMAP> resource = _loadResource(m_config, m_path, section, key, _bitmaps, 
+                std::shared_ptr<ALLEGRO_BITMAP> resource = _loadResource<ALLEGRO_BITMAP>(m_config, m_path, section, key, 
                     [](const std::string& path) {
                         return path;
                     },
                     [](const std::string& path) {
+                        return ResourceCache::getBitmap(path);
+                    },
+                    [](const std::string& path) {
                         return al_load_bitmap(path.c_str());
                     },
-                    [](ALLEGRO_BITMAP* bmp) {
-                        al_destroy_bitmap(bmp);
+                    [](const std::string& key, ALLEGRO_BITMAP* bmp) {
+                        return ResourceCache::putBitmap(key, bmp);
                     }
                 );
                 if (resource) {
@@ -308,15 +292,18 @@ namespace algui {
                 if (key.empty()) {
                     continue;
                 }
-                std::shared_ptr<ALLEGRO_FONT> resource = _loadResource(m_config, m_path, section, key, _fonts,
-                    [&](const std::string& path) {
+                std::shared_ptr<ALLEGRO_FONT> resource = _loadResource<ALLEGRO_FONT>(m_config, m_path, section, key,
+                    [=](const std::string& path) {
                         return std::make_tuple(path, size, flags);
                     },
-                    [&](const std::string& path) {
+                    [](const std::tuple<std::string, int, int>& key) {
+                        return ResourceCache::getFont(key);
+                    },
+                    [=](const std::string& path) {
                         return al_load_font(path.c_str(), size, flags);
                     },
-                    [](ALLEGRO_FONT* font) {
-                        al_destroy_font(font);
+                    [](const std::tuple<std::string, int, int>& key, ALLEGRO_FONT* font) {
+                        return ResourceCache::putFont(key, font);
                     }
                 );
                 if (resource) {
