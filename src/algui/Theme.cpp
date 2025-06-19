@@ -186,27 +186,27 @@ namespace algui {
     static auto _getWidgetResource(
         const std::string& widgetClassName,
         const std::string& widgetId,
-        const std::string& paletteName,
+        const std::string& surfaceType,
         const F& f)
     {
         std::vector<std::string> sections;
 
         if (!widgetId.empty()) {
-            if (!paletteName.empty()) {
-                sections.push_back(widgetId + '.' + paletteName);
+            if (!surfaceType.empty()) {
+                sections.push_back(widgetId + '.' + surfaceType);
             }
             sections.push_back(widgetId);
         }
 
         if (!widgetClassName.empty()) {
-            if (!paletteName.empty()) {
-                sections.push_back(widgetClassName + '.' + paletteName);
+            if (!surfaceType.empty()) {
+                sections.push_back(widgetClassName + '.' + surfaceType);
             }
             sections.push_back(widgetClassName);
         }
 
-        if (!paletteName.empty()) {
-            sections.push_back(paletteName);
+        if (!surfaceType.empty()) {
+            sections.push_back(surfaceType);
         }
 
         return f(sections);
@@ -504,11 +504,11 @@ namespace algui {
     std::shared_ptr<ALLEGRO_BITMAP> Theme::getBitmap(
         const std::string& widgetClassName,
         const std::string& widgetId,
-        const std::string& paletteName,
+        const std::string& surfaceType,
         const std::string& key,
         const std::shared_ptr<ALLEGRO_BITMAP>& defaultValue) const
     {
-        return _getWidgetResource(widgetClassName, widgetId, paletteName, [&](const std::vector<std::string>& sections) {
+        return _getWidgetResource(widgetClassName, widgetId, surfaceType, [&](const std::vector<std::string>& sections) {
             return this->getBitmap(sections, std::vector<std::string>{key}, defaultValue);
         });
     }
@@ -517,13 +517,13 @@ namespace algui {
     std::shared_ptr<ALLEGRO_FONT> Theme::getFont(
         const std::string& widgetClassName,
         const std::string& widgetId,
-        const std::string& paletteName,
+        const std::string& surfaceType,
         const std::string& key,
         int size,
         int flags,
         const std::shared_ptr<ALLEGRO_FONT>& defaultValue) const
     {
-        return _getWidgetResource(widgetClassName, widgetId, paletteName, [&](const std::vector<std::string>& sections) {
+        return _getWidgetResource(widgetClassName, widgetId, surfaceType, [&](const std::vector<std::string>& sections) {
             return this->getFont(sections, std::vector<std::string>{key}, size, flags, defaultValue);
         });
     }
@@ -532,11 +532,11 @@ namespace algui {
     ALLEGRO_COLOR Theme::getColor(
         const std::string& widgetClassName,
         const std::string& widgetId,
-        const std::string& paletteName,
+        const std::string& surfaceType,
         const std::string& key,
         const ALLEGRO_COLOR& defaultValue) const
     {
-        return _getWidgetResource(widgetClassName, widgetId, paletteName, [&](const std::vector<std::string>& sections) {
+        return _getWidgetResource(widgetClassName, widgetId, surfaceType, [&](const std::vector<std::string>& sections) {
             return this->getColor(sections, std::vector<std::string>{key}, defaultValue);
         });
     }
@@ -545,11 +545,11 @@ namespace algui {
     int Theme::getInt(
         const std::string& widgetClassName,
         const std::string& widgetId,
-        const std::string& paletteName,
+        const std::string& surfaceType,
         const std::string& key,
         int defaultValue) const
     {
-        return _getWidgetResource(widgetClassName, widgetId, paletteName, [&](const std::vector<std::string>& sections) {
+        return _getWidgetResource(widgetClassName, widgetId, surfaceType, [&](const std::vector<std::string>& sections) {
             return this->getInt(sections, std::vector<std::string>{key}, defaultValue);
         });
     }
@@ -558,11 +558,11 @@ namespace algui {
     float Theme::getFloat(
         const std::string& widgetClassName,
         const std::string& widgetId,
-        const std::string& paletteName,
+        const std::string& surfaceType,
         const std::string& key,
         float defaultValue) const
     {
-        return _getWidgetResource(widgetClassName, widgetId, paletteName, [&](const std::vector<std::string>& sections) {
+        return _getWidgetResource(widgetClassName, widgetId, surfaceType, [&](const std::vector<std::string>& sections) {
             return this->getFloat(sections, std::vector<std::string>{key}, defaultValue);
         });
     }
@@ -571,11 +571,11 @@ namespace algui {
     bool Theme::getBool(
         const std::string& widgetClassName,
         const std::string& widgetId,
-        const std::string& paletteName,
+        const std::string& surfaceType,
         const std::string& key,
         bool defaultValue) const
     {
-        return _getWidgetResource(widgetClassName, widgetId, paletteName, [&](const std::vector<std::string>& sections) {
+        return _getWidgetResource(widgetClassName, widgetId, surfaceType, [&](const std::vector<std::string>& sections) {
             return this->getBool(sections, std::vector<std::string>{key}, defaultValue);
         });
     }
@@ -584,11 +584,11 @@ namespace algui {
     std::string Theme::getString(
         const std::string& widgetClassName,
         const std::string& widgetId,
-        const std::string& paletteName,
+        const std::string& surfaceType,
         const std::string& key,
         const std::string& defaultValue) const
     {
-        return _getWidgetResource(widgetClassName, widgetId, paletteName, [&](const std::vector<std::string>& sections) {
+        return _getWidgetResource(widgetClassName, widgetId, surfaceType, [&](const std::vector<std::string>& sections) {
             return this->getString(sections, std::vector<std::string>{key}, defaultValue);
         });
     }

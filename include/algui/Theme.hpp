@@ -22,25 +22,25 @@ namespace algui {
      * 
      * Resources for widgets can be fetched from sections with the following names, in the following order:
      * 
-     *  1) [<widget id> '.' <palette name>]
+     *  1) [<widget id> '.' <surface type>]
      *  2) [<widget id>]
-     *  3) [<widget class name> '.' <palette name>]
+     *  3) [<widget class name> '.' <surface type>]
      *  4) [<widget class name>]
-     *  5) [<palette name>]
+     *  5) [<surface type>]
      *
-     * If the palette name is empty, then (1), (3) and (5) are skipped.
+     * If the surface type is empty, then (1), (3) and (5) are skipped.
      * If the widget id is empty, then (1) and (2) are skipped.
      * If the widget class name is empty, then (3) and (4) are skipped.
      *
      * This organization allows specifying resources for
      * 
-     *  1) a specific widget's palette,
+     *  1) a specific widget's surface type,
      *  2) a specific widget,
-     *  3) a specific widget class' palette,
+     *  3) a specific widget class' surface type,
      *  4) a specific widget class,
-     *  5) a generic palette,
+     *  5) a generic surface type,
      * 
-     * in that specific order, allowing customization per widget, or per class, or per palette.
+     * in that specific order, allowing customization per widget, or per class, or per surface type.
      */
     class Theme {
     public:
@@ -187,7 +187,7 @@ namespace algui {
          * Returns a bitmap from widget information.
          * @param widgetClassName name of the widget class requesting the resource.
          * @param widgetId id of the widget instance requesting the resource.
-         * @param paletteName name of the palette that represents the current palette used by the widget.
+         * @param surfaceType name of the surface type that represents the current surface type used by the widget.
          * @param key name of the property.
          * @param defaultValue the default value.
          * @return either the bitmap loaded from disk or cache, or the default value if not found.
@@ -195,7 +195,7 @@ namespace algui {
         std::shared_ptr<ALLEGRO_BITMAP> getBitmap(
             const std::string& widgetClassName,
             const std::string& widgetId,
-            const std::string& paletteName,
+            const std::string& surfaceType,
             const std::string& key,
             const std::shared_ptr<ALLEGRO_BITMAP>& defaultValue = std::shared_ptr<ALLEGRO_BITMAP>()) const;
 
@@ -203,7 +203,7 @@ namespace algui {
          * Returns a font from widget information.
          * @param widgetClassName name of the widget class requesting the resource.
          * @param widgetId id of the widget instance requesting the resource.
-         * @param paletteName name of the palette that represents the current palette used by the widget.
+         * @param surfaceType name of the surface type that represents the current surface type used by the widget.
          * @param key name of the property.
          * @param size font size.
          * @param flags font flags.
@@ -213,7 +213,7 @@ namespace algui {
         std::shared_ptr<ALLEGRO_FONT> getFont(
             const std::string& widgetClassName,
             const std::string& widgetId,
-            const std::string& paletteName,
+            const std::string& surfaceType,
             const std::string& key,
             int size,
             int flags,
@@ -223,7 +223,7 @@ namespace algui {
          * Returns a color from widget information.
          * @param widgetClassName name of the widget class requesting the resource.
          * @param widgetId id of the widget instance requesting the resource.
-         * @param paletteName name of the palette that represents the current palette used by the widget.
+         * @param surfaceType name of the surface type that represents the current surface type used by the widget.
          * @param key name of the property.
          * @param defaultValue the default value.
          * @return either the bitmap loaded from disk or cache, or the default value if not found.
@@ -231,7 +231,7 @@ namespace algui {
         ALLEGRO_COLOR getColor(
             const std::string& widgetClassName,
             const std::string& widgetId,
-            const std::string& paletteName,
+            const std::string& surfaceType,
             const std::string& key,
             const ALLEGRO_COLOR& defaultValue = al_map_rgb(0, 0, 0)) const;
 
@@ -239,7 +239,7 @@ namespace algui {
          * Returns an int from widget information.
          * @param widgetClassName name of the widget class requesting the resource.
          * @param widgetId id of the widget instance requesting the resource.
-         * @param paletteName name of the palette that represents the current palette used by the widget.
+         * @param surfaceType name of the surface type that represents the current surface type used by the widget.
          * @param key name of the property.
          * @param defaultValue the default value.
          * @return either the bitmap loaded from disk or cache, or the default value if not found.
@@ -247,7 +247,7 @@ namespace algui {
         int getInt(
             const std::string& widgetClassName,
             const std::string& widgetId,
-            const std::string& paletteName,
+            const std::string& surfaceType,
             const std::string& key,
             int defaultValue = 0) const;
 
@@ -255,7 +255,7 @@ namespace algui {
          * Returns a float from widget information.
          * @param widgetClassName name of the widget class requesting the resource.
          * @param widgetId id of the widget instance requesting the resource.
-         * @param paletteName name of the palette that represents the current palette used by the widget.
+         * @param surfaceType name of the surface type that represents the current surface type used by the widget.
          * @param key name of the property.
          * @param defaultValue the default value.
          * @return either the bitmap loaded from disk or cache, or the default value if not found.
@@ -263,7 +263,7 @@ namespace algui {
         float getFloat(
             const std::string& widgetClassName,
             const std::string& widgetId,
-            const std::string& paletteName,
+            const std::string& surfaceType,
             const std::string& key,
             float defaultValue = 0) const;
 
@@ -271,7 +271,7 @@ namespace algui {
          * Returns a boolean from widget information.
          * @param widgetClassName name of the widget class requesting the resource.
          * @param widgetId id of the widget instance requesting the resource.
-         * @param paletteName name of the palette that represents the current palette used by the widget.
+         * @param surfaceType name of the surface type that represents the current surface type used by the widget.
          * @param key name of the property.
          * @param defaultValue the default value.
          * @return either the bitmap loaded from disk or cache, or the default value if not found.
@@ -279,7 +279,7 @@ namespace algui {
         bool getBool(
             const std::string& widgetClassName,
             const std::string& widgetId,
-            const std::string& paletteName,
+            const std::string& surfaceType,
             const std::string& key,
             bool defaultValue = 0) const;
 
@@ -287,7 +287,7 @@ namespace algui {
          * Returns a string from widget information.
          * @param widgetClassName name of the widget class requesting the resource.
          * @param widgetId id of the widget instance requesting the resource.
-         * @param paletteName name of the palette that represents the current palette used by the widget.
+         * @param surfaceType name of the surface type that represents the current surface type used by the widget.
          * @param key name of the property.
          * @param defaultValue the default value.
          * @return either the bitmap loaded from disk or cache, or the default value if not found.
@@ -295,7 +295,7 @@ namespace algui {
         std::string getString(
             const std::string& widgetClassName,
             const std::string& widgetId,
-            const std::string& paletteName,
+            const std::string& surfaceType,
             const std::string& key,
             const std::string& defaultValue = std::string()) const;
 

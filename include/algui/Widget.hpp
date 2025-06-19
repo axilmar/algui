@@ -257,10 +257,10 @@ namespace algui {
         const std::shared_ptr<Theme>& getTheme() const;
 
         /**
-         * Returns the current palette name.
-         * @return the current palette name.
+         * Returns the current surface type.
+         * @return the current surface type.
          */
-        const std::string& getPaletteName() const;
+        const std::string& getSurfaceType() const;
 
         /**
          * Checks if the given widget is within this widget tree.
@@ -280,7 +280,7 @@ namespace algui {
 
         /**
          * Adds a widget as a child of this.
-         * The child widget gets the theme and palette name of the parent.
+         * The child widget gets the theme and surface type of the parent.
          * @param child child to add.
          * @param nextSibling next sibling widget; if null, then the child is added on top of its siblings.
          * @return true if addition succeeded, false if the child pointer is null, or if the child already
@@ -529,15 +529,15 @@ namespace algui {
         void refreshTheme();
 
         /**
-         * Sets the palette name for this widget and its children.
-         * Widgets may use different palettes, depending on usage.
-         * By default, the palette name is empty, meaning 'default palette'.
-         * If the palette name changes, then the method `themed()` is called if the widget has a theme,
+         * Sets the surface type for this widget and its children.
+         * Widgets may use different surface types, depending on usage.
+         * By default, the surface type is empty, meaning 'default surface type'.
+         * If the surface type changes, then the method `themed()` is called if the widget has a theme,
          * or the 'unthemed()' method is called if the widget does not have a theme.
-         * to allow the widget to get its resources from the theme, according to the new palette.
-         * @param paletteName the new palette name.
+         * to allow the widget to get its resources from the theme, according to the new surface type.
+         * @param surfaceType the new surface type.
          */
-        void setPaletteName(const std::string& paletteName);
+        void setSurfaceType(const std::string& surfaceType);
 
         /**
          * Processes an allegro event and invokes the relevant virtual methods of this widget.
@@ -796,7 +796,7 @@ namespace algui {
         std::list<Widget*>::iterator m_it;
         std::list<Widget*> m_children;
         std::shared_ptr<Theme> m_theme;
-        std::string m_paletteName;
+        std::string m_surfaceType;
         float m_x;
         float m_y;
         float m_width;
@@ -830,7 +830,7 @@ namespace algui {
 
         void _render();
         void _callThemed();
-        void _initThemeAndPaletteName(const std::shared_ptr<Theme>& theme, const std::string& paletteName);
+        void _initThemeAndSurfaceType(const std::shared_ptr<Theme>& theme, const std::string& surfaceType);
     };
 
 

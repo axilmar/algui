@@ -283,8 +283,8 @@ namespace algui {
     }
 
 
-    const std::string& Widget::getPaletteName() const {
-        return m_paletteName;
+    const std::string& Widget::getSurfaceType() const {
+        return m_surfaceType;
     }
 
 
@@ -314,7 +314,7 @@ namespace algui {
         }
         child->m_parent = this;
         child->m_it = m_children.insert(nextSibling ? nextSibling->m_it : m_children.end(), child);
-        child->_initThemeAndPaletteName(m_theme, m_paletteName);
+        child->_initThemeAndSurfaceType(m_theme, m_surfaceType);
         return true;
     }
 
@@ -624,13 +624,13 @@ namespace algui {
     }
 
 
-    void Widget::setPaletteName(const std::string& paletteName) {
-        if (paletteName != m_paletteName) {
-            m_paletteName = paletteName;
+    void Widget::setSurfaceType(const std::string& surfaceType) {
+        if (surfaceType != m_surfaceType) {
+            m_surfaceType = surfaceType;
             _callThemed();
         }
         for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
-            child->setPaletteName(paletteName);
+            child->setSurfaceType(surfaceType);
         }
     }
 
@@ -1011,14 +1011,14 @@ namespace algui {
     }
 
 
-    void Widget::_initThemeAndPaletteName(const std::shared_ptr<Theme>& theme, const std::string& paletteName) {
-        if (theme != m_theme || paletteName != m_paletteName) {
+    void Widget::_initThemeAndSurfaceType(const std::shared_ptr<Theme>& theme, const std::string& surfaceType) {
+        if (theme != m_theme || surfaceType != m_surfaceType) {
             m_theme = theme;
-            m_paletteName = paletteName;
+            m_surfaceType = surfaceType;
             _callThemed();
         }
         for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
-            child->_initThemeAndPaletteName(theme, paletteName);
+            child->_initThemeAndSurfaceType(theme, surfaceType);
         }
     }
 
