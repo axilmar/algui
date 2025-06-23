@@ -5,6 +5,8 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <map>
+#include <stdexcept>
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_font.h>
 
@@ -182,6 +184,28 @@ namespace algui {
             const std::vector<std::string>& keys,
             const std::string& defaultValue = std::string()) const;
 
+        /**
+         * Returns an enumerated value.
+         * @param sections sections to search.
+         * @param keys keys to search for.
+         * @param defaultValue the default value.
+         * @return either the value found, or the default value if not found.
+         */
+        template <class E, std::enable_if_t<std::is_enum_v<E>, bool> = true>
+        E getEnum(
+            const std::vector<std::string>& sections,
+            const std::vector<std::string>& keys,
+            const E defaultValue,
+            const std::map<std::string, E>& values)
+        {
+            std::string str = getString(sections, keys, _getDefaultValueString(values, defaultValue));
+            const auto it = values.find(str);
+            if (it != values.end()) {
+                return it->second;
+            }
+            return defaultValue;
+        }
+
         /**** widget-specific functions ****/
 
         /**
@@ -300,6 +324,29 @@ namespace algui {
             const std::vector<std::string>& keys,
             const std::string& defaultValue = std::string()) const;
 
+        /**
+         * Returns an enumerated value.
+         * @param sections sections to search.
+         * @param keys keys to search for.
+         * @param defaultValue the default value.
+         * @return either the value found, or the default value if not found.
+         */
+        template <class E, std::enable_if_t<std::is_enum_v<E>, bool> = true>
+        E getEnum(
+            const std::string& widgetClassName,
+            const std::string& widgetId,
+            const std::string& surfaceType,
+            const E defaultValue,
+            const std::map<std::string, E>& values)
+        {
+            std::string str = getString(widgetClassName, widgetId, surfaceType, _getDefaultValueString(values, defaultValue));
+            const auto it = values.find(str);
+            if (it != values.end()) {
+                return it->second;
+            }
+            return defaultValue;
+        }
+
         /**** mutating functions ****/
 
         /**
@@ -370,6 +417,23 @@ namespace algui {
         bool addString(const std::string& section, const std::string& key, const std::string& value);
 
         /**
+         * Adds an enum entry to the theme.
+         * @param section section.
+         * @param key key.
+         * @param value value.
+         * @param valueStrings map of values to string.
+         * @return true on success, false otherwise.
+         */
+        template <class E, std::enable_if_t<std::is_enum_v<E>, bool> = true>
+        bool addEnum(const std::string& section, const std::string& key, E value, const std::map<E, std::string> valueStrings) {
+            const auto it = valueStrings.find(value);
+            if (it != valueStrings.end()) {
+                return addString(section, key, value, it->second);
+            }
+            return false;
+        }
+
+        /**
          * Removes an entry.
          * @param section section.
          * @param key key.
@@ -388,6 +452,16 @@ namespace algui {
         ALLEGRO_CONFIG* m_config;
         std::string m_path;
         ALLEGRO_CONFIG* _getConfig();
+
+        template <class E>
+        static std::string _getDefaultValueString(const std::map<std::string, E>& values, E defaultValue) {
+            for (const auto p : values) {
+                if (p.second == defaultValue) {
+                    return p.first;
+                }
+            }
+            throw std::invalid_argument("Theme: Invalid default value string.");
+        }
     };
 
 
