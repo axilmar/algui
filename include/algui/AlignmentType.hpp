@@ -28,14 +28,14 @@ namespace algui {
      * Returns a map of values of type AlignmentType to their respective strings.
      * @return a map of values of type AlignmentType to their respective strings.
      */
-    std::map<AlignmentType, std::string> getAlignmentToStringMap();
+    std::map<AlignmentType, std::string> getAlignmentTypeToStringMap();
 
 
     /**
      * Returns a map of string to value of type AlignmentType.
      * @return a map of string to value of type AlignmentType.
      */
-    std::map<std::string, AlignmentType> getStringToAlignmentMap();
+    std::map<std::string, AlignmentType> getStringToAlignmentTypeMap();
 
 
 } //namespace algui

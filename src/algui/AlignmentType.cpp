@@ -4,7 +4,7 @@
 namespace algui {
 
 
-    std::map<AlignmentType, std::string> getAlignmentToStringMap() {
+    std::map<AlignmentType, std::string> getAlignmentTypeToStringMap() {
         std::map<AlignmentType, std::string> map;
         map[AlignmentType::Start] = "Start";
         map[AlignmentType::Middle] = "Middle";
@@ -13,7 +13,7 @@ namespace algui {
     }
 
 
-    std::map<std::string, AlignmentType> getStringToAlignmentMap() {
+    std::map<std::string, AlignmentType> getStringToAlignmentTypeMap() {
         std::map<std::string, AlignmentType> map;
         map["Start"] = AlignmentType::Start;
         map["Middle"] = AlignmentType::Middle;
