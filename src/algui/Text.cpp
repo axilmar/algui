@@ -21,8 +21,8 @@ namespace algui {
 
 
     Text::Text()
-        : m_horizontalAlignment(Alignment::Start)
-        , m_verticalAlignment(Alignment::Start)
+        : m_horizontalAlignment(AlignmentType::Start)
+        , m_verticalAlignment(AlignmentType::Start)
         , m_disabledStyle(al_map_rgb(192, 192, 192))
         , m_disabledErrorStyle(al_map_rgb(128, 80, 80))
         , m_selectedStyle(al_map_rgb(255, 255, 255))
@@ -176,24 +176,24 @@ namespace algui {
             al_get_ustr_dimensions(activeStyle.font.get(), m_text, &x, &y, &w, &h);
             float tx, ty;
             switch (m_horizontalAlignment) {
-                case Alignment::Start:
+                case AlignmentType::Start:
                     tx = getX1();
                     break;
-                case Alignment::Middle:
+                case AlignmentType::Middle:
                     tx = getX1() + ((this->getX2() - this->getX1()) - w) / 2;
                     break;
-                case Alignment::End:
+                case AlignmentType::End:
                     tx = getX2() - w;
                     break;
                 }
             switch (m_verticalAlignment) {
-                case Alignment::Start:
+                case AlignmentType::Start:
                     ty = getY1();
                     break;
-                case Alignment::Middle:
+                case AlignmentType::Middle:
                     ty = getY1() + ((this->getY2() - this->getY1()) - h) / 2;
                     break;
-                case Alignment::End:
+                case AlignmentType::End:
                     ty = getY2() - h;
                     break;
             }

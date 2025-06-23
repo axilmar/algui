@@ -4,7 +4,7 @@
 
 #include "Widget.hpp"
 #include "UString.hpp"
-#include "Alignment.hpp"
+#include "AlignmentType.hpp"
 
 
 namespace algui {
@@ -91,8 +91,8 @@ namespace algui {
         Style m_errorStyle;
         Style m_selectedHighlightedStyle;
         Style m_selectedPressedStyle;
-        Alignment m_horizontalAlignment;
-        Alignment m_verticalAlignment;
+        AlignmentType m_horizontalAlignment;
+        AlignmentType m_verticalAlignment;
 
         const Style& _getActiveStyle() const;
         void _readFont(const std::shared_ptr<Theme>& theme, const std::string& name, Style& style);
