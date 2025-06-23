@@ -14,6 +14,12 @@
 namespace algui {
 
 
+    static std::filesystem::path _removeFilename(std::filesystem::path path) {
+        path.remove_filename();
+        return path;
+    }
+
+
     template <class V, class GetKey, class Get, class Load, class Put> 
     static std::shared_ptr<V> _loadResource(
         const ALLEGRO_CONFIG* config,
@@ -35,7 +41,7 @@ namespace algui {
 
         try {
             //get the actual path relative to the config path
-            const std::string path = std::filesystem::canonical((std::filesystem::path(configPath) / std::filesystem::path(pathValue))).string();
+            const std::string path = std::filesystem::canonical((_removeFilename(std::filesystem::path(configPath)) / std::filesystem::path(pathValue))).string();
 
             //find the cached resource
             const auto resourceKey = getKey(path);

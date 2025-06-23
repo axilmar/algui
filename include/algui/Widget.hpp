@@ -18,6 +18,42 @@ namespace algui {
     class Widget {
     public:
         /**
+         * Visual states.
+         * The higher the number of the state, the higher the priority.
+         */
+        enum VisualState {
+            /** disabled state. */
+            Disabled,
+
+            /** Enabled and in error. */
+            Error,
+
+            /** disabled and in error state. */
+            DisabledError,
+
+            /** Enabled. */
+            Enabled,
+
+            /** Enabled and focused. */
+            Focused,
+
+            /** Enabled and selected. */
+            Selected,
+
+            /** Enabled and highlighted. */
+            Highlighted,
+
+            /** Enabled and pressed. */
+            Pressed,
+
+            /** Enabled, selected and highlighted. */
+            SelectedHighlighted,
+
+            /** Enabled, selected and pressed. */
+            SelectedPressed
+        };
+
+        /**
          * The default constructor.
          */
         Widget();
@@ -231,6 +267,12 @@ namespace algui {
          * @return true if this or one if its ancestors are in error state, false otherwise.
          */
         bool getTreeError() const;
+
+        /**
+         * Returns a single visual state value, depending on the state flags of this and ancestor widgets.
+         * @return the tree visual state of the widget.
+         */
+        VisualState getTreeVisualState() const;
 
         /**
          * Returns true if this widget participates in layout management of the parent, false otherwise.
@@ -472,20 +514,42 @@ namespace algui {
         void setClipped(bool v);
 
         /**
+         * Sets the widget's theme.
+         * It invokes the `themed()` virtual method for each widget in the tree that has a theme attached to it,
+         * or the 'unthemed()' method if the widget does not have a theme.
+         * @param theme pointer to theme; it can be null, in order to detach the theme from the widget tree.
+         */
+        void setTheme(const std::shared_ptr<Theme>& theme);
+
+        /**
+         * Sets the surface type for this widget and its children.
+         * Widgets may use different surface types, depending on usage.
+         * By default, the surface type is empty, meaning 'default surface type'.
+         * If the surface type changes, then the method `themed()` is called if the widget has a theme,
+         * or the 'unthemed()' method is called if the widget does not have a theme.
+         * to allow the widget to get its resources from the theme, according to the new surface type.
+         * @param surfaceType the new surface type.
+         */
+        void setSurfaceType(const std::string& surfaceType);
+
+        /**
+         * Invalidates the widget's visual state.
+         * The new visual state will be computed at the next render() call.
+         */
+        void invalidateVisualState();
+
+        /**
          * Invalidates the widget's layout.
-         * The new layout will be computed before the next render.
+         * A new layout will be computed at the next render() call.
          */
-        virtual void invalidateLayout();
+        void invalidateLayout();
 
         /**
-         * Invalidates the parent's layout, if there is one.
-         */
-        void invalidateParentLayout() const;
-
-        /**
-         * Calculates a widget's layout and screen coordinates,
+         * Updates the widgets' visual state and/or layout, if needed,
          * then invokes the `paint()` function to allow the widget to paint itself with ALLEGRO,
          * then invokes the render method on its children.
+         * Finally, it invokes the paintOverlay() method.
+         * If a widget is outside of the current clipping, it is not drawn at all.
          */
         void render();
 
@@ -527,38 +591,6 @@ namespace algui {
         static void setClickTimeout(size_t milliseconds);
 
         /**
-         * Sets the widget's theme.
-         * It invokes the `themed()` virtual method for each widget in the tree that has a theme attached to it,
-         * or the 'unthemed()' method if the widget does not have a theme.
-         * @param theme pointer to theme; it can be null, in order to detach the theme from the widget tree.
-         */
-        void setTheme(const std::shared_ptr<Theme>& theme);
-
-        /**
-         * Resets the theme pointer for each widget in the tree.
-         * It invokes the 'unthemed()' method.
-         */
-        void resetTheme();
-
-        /**
-         * Refreshes the widget's resources from its theme.
-         * It invokes the `themed()` virtual method for each widget in the tree that has a theme attached to it,
-         * or the 'unthemed()' method if the widget does not have a theme.
-         */
-        void refreshTheme();
-
-        /**
-         * Sets the surface type for this widget and its children.
-         * Widgets may use different surface types, depending on usage.
-         * By default, the surface type is empty, meaning 'default surface type'.
-         * If the surface type changes, then the method `themed()` is called if the widget has a theme,
-         * or the 'unthemed()' method is called if the widget does not have a theme.
-         * to allow the widget to get its resources from the theme, according to the new surface type.
-         * @param surfaceType the new surface type.
-         */
-        void setSurfaceType(const std::string& surfaceType);
-
-        /**
          * Processes an allegro event and invokes the relevant virtual methods of this widget.
          * @param event allegro event to process.
          * @return true if the event was successfully processed, false otherwise.
@@ -566,6 +598,13 @@ namespace algui {
         virtual bool doEvent(const ALLEGRO_EVENT& event);
 
     protected:
+        /**
+         * Invoked to manage properties that depend on visual state.
+         * For example, resizing the widget when its font changes.
+         * By default, it does nothing.
+         */
+        virtual void visualState() {}
+
         /**
          * Invoked to position the children to appropriate places.
          * By default, it does nothing.
@@ -848,13 +887,20 @@ namespace algui {
         bool m_treeSelected:1;
         bool m_treeFocused:1;
         bool m_treeError:1;
-        bool m_layout:1;
-        bool m_doingLayout:1;
         bool m_managed:1;
         bool m_flexible:1;
         bool m_clipped:1;
+        bool m_visualStateDirty:1;
+        bool m_treeVisualStateDirty:1;
+        bool m_layoutDirty:1;
+        bool m_screenStateDirty:1;
 
-        void _render();
+        void _invalidateParentVisualState();
+        void _invalidateParentLayout();
+        void _invalidateTreeVisualState();
+        void _invalidateScreenState();
+        void _updateVisualState();
+        void _render(bool screenStateDirty);
         void _callThemed();
         void _initThemeAndSurfaceType(const std::shared_ptr<Theme>& theme, const std::string& surfaceType);
     };

@@ -38,7 +38,7 @@ namespace algui {
          * Constructor from null-terminated string.
          * @param s null-terminated string; can be null.
          */
-        UString(const char* s);
+        explicit UString(const char* s);
 
         /**
          * Constructor from string buffer.

@@ -12,6 +12,7 @@
 #include "allegro5/allegro_audio.h"
 
 #include "algui/Widget.hpp"
+#include "algui/Text.hpp"
 using namespace algui;
 
 class Test : public Widget {
@@ -217,6 +218,23 @@ int main(int argc, char** argv) {
     al_draw_filled_rectangle(0, 0, 16, 16, al_map_rgb(0, 255, 0));
     al_set_target_bitmap(orgTarget);
     form2->add(button3.get());
+
+    std::shared_ptr<Text> text1 = std::make_shared<Text>();
+    text1->setId("text1");
+    text1->setText("The quick brown fox");
+    text1->setGeometry(30, 20, 200, 32);
+    root->add(text1.get());
+
+    std::shared_ptr<Text> text2 = std::make_shared<Text>();
+    text2->setId("text2");
+    text2->setText("jumps over the lazy dog.");
+    text2->setGeometry(230, 20, 200, 32);
+    root->add(text2.get());
+
+    std::shared_ptr<Theme> theme1 = std::make_shared<Theme>("theme1/theme.txt");
+    //theme1->addColor("Text", "Highlighted.Color", al_map_rgb(255, 0, 255));
+    root->setTheme(theme1);
+    root->setEnabled(false);
 
     for (;;) {
         ALLEGRO_EVENT event;

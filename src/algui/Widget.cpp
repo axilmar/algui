@@ -97,11 +97,13 @@ namespace algui {
         , m_treeSelected(false)
         , m_treeFocused(false)
         , m_treeError(false)
-        , m_layout(true)
-        , m_doingLayout(false)
         , m_managed(true)
         , m_flexible(true)
         , m_clipped(false)
+        , m_visualStateDirty(false)
+        , m_treeVisualStateDirty(false)
+        , m_layoutDirty(false)
+        , m_screenStateDirty(false)
     {
     }
 
@@ -281,6 +283,59 @@ namespace algui {
     }
 
 
+    Widget::VisualState Widget::getTreeVisualState() const {
+        //disabled
+        if (!m_treeEnabled) {
+            //disabled and in error
+            if (m_treeError) {
+                return VisualState::DisabledError;
+            }
+
+            //disabled
+            return VisualState::Disabled;
+        }
+
+        //error
+        if (m_treeError) {
+            return VisualState::Error;
+        }
+
+        //selected
+        if (m_treeSelected) {
+            //selected and pressed
+            if (m_treePressed) {
+                return VisualState::SelectedPressed;
+            }
+
+            //selected and highlighted 
+            if (m_treeHighlighted) {
+                return VisualState::SelectedHighlighted;
+            }
+
+            //selected
+            return VisualState::Selected;
+        }
+
+        //enabled and pressed
+        if (m_treePressed) {
+            return VisualState::Pressed;
+        }
+
+        //enabled and highlighted
+        if (m_treeHighlighted) {
+            return VisualState::Highlighted;
+        }
+
+        //enabled and focused
+        if (m_treeFocused) {
+            return VisualState::Focused;
+        }
+
+        //only enabled
+        return VisualState::Enabled;
+    }
+
+
     bool Widget::getManaged() const {
         return m_managed;
     }
@@ -339,6 +394,9 @@ namespace algui {
         }
         child->m_parent = this;
         child->m_it = m_children.insert(nextSibling ? nextSibling->m_it : m_children.end(), child);
+        if (child->m_visualStateDirty || child->m_treeVisualStateDirty) {
+            _invalidateTreeVisualState();
+        }
         child->_initThemeAndSurfaceType(m_theme, m_surfaceType);
         return true;
     }
@@ -380,7 +438,9 @@ namespace algui {
             return;
         }
         m_x = x;
-        invalidateParentLayout();
+        _invalidateParentVisualState();
+        _invalidateParentLayout();
+        _invalidateScreenState();
     }
 
 
@@ -389,7 +449,9 @@ namespace algui {
             return;
         }
         m_y = y;
-        invalidateParentLayout();
+        _invalidateParentVisualState();
+        _invalidateParentLayout();
+        _invalidateScreenState();
     }
 
 
@@ -401,8 +463,10 @@ namespace algui {
             return;
         }
         m_width = w;
-        Widget::invalidateLayout();
-        invalidateParentLayout();
+        invalidateLayout();
+        _invalidateParentVisualState();
+        _invalidateParentLayout();
+        _invalidateScreenState();
     }
 
 
@@ -414,8 +478,10 @@ namespace algui {
             return;
         }
         m_height = h;
-        Widget::invalidateLayout();
-        invalidateParentLayout();
+        invalidateLayout();
+        _invalidateParentVisualState();
+        _invalidateParentLayout();
+        _invalidateScreenState();
     }
 
 
@@ -425,7 +491,9 @@ namespace algui {
         }
         m_x = x;
         m_y = y;
-        invalidateParentLayout();
+        _invalidateParentVisualState();
+        _invalidateParentLayout();
+        _invalidateScreenState();
     }
 
 
@@ -435,8 +503,10 @@ namespace algui {
         }
         m_width = width;
         m_height = height;
-        Widget::invalidateLayout();
-        invalidateParentLayout();
+        invalidateLayout();
+        _invalidateParentVisualState();
+        _invalidateParentLayout();
+        _invalidateScreenState();
     }
 
 
@@ -449,29 +519,46 @@ namespace algui {
         if (!samePosition) {
             m_x = x;
             m_y = y;
+            _invalidateParentVisualState();
+            _invalidateParentLayout();
+            _invalidateScreenState();
         }
         if (!sameSize) {
             m_width = width;
             m_height = height;
-            Widget::invalidateLayout();
+            invalidateLayout();
+            _invalidateParentVisualState();
+            _invalidateParentLayout();
+            _invalidateScreenState();
         }
-        invalidateParentLayout();
     }
 
 
     void Widget::setHorizontalScaling(float f) {
+        if (f == m_horizontalScaling) {
+            return;
+        }
         m_horizontalScaling = f;
+        _invalidateScreenState();
     }
 
 
     void Widget::setVerticalScaling(float f) {
+        if (f == m_verticalScaling) {
+            return;
+        }
         m_verticalScaling = f;
+        _invalidateScreenState();
     }
 
 
     void Widget::setScaling(float h, float v) {
+        if (h == m_horizontalScaling && v == m_verticalScaling) {
+            return;
+        }
         m_horizontalScaling = h;
         m_verticalScaling = v;
+        _invalidateScreenState();
     }
 
 
@@ -480,7 +567,9 @@ namespace algui {
             return;
         }
         m_visible = v;
-        invalidateParentLayout();
+        _invalidateParentVisualState();
+        _invalidateParentLayout();
+        _invalidateScreenState();
     }
 
 
@@ -492,21 +581,38 @@ namespace algui {
             _focusedWidget->setFocused(false);
         }
         m_enabled = v;
+        invalidateVisualState();
+        _invalidateScreenState();
     }
 
 
     void Widget::setHighlighted(bool v) {
+        if (v == m_highlighted) {
+            return;
+        }
         m_highlighted = v;
+        invalidateVisualState();
+        _invalidateScreenState();
     }
 
 
     void Widget::setPressed(bool v) {
+        if (v == m_pressed) {
+            return;
+        }
         m_pressed = v;
+        invalidateVisualState();
+        _invalidateScreenState();
     }
 
 
     void Widget::setSelected(bool v) {
+        if (v == m_selected) {
+            return;
+        }
         m_selected = v;
+        invalidateVisualState();
+        _invalidateScreenState();
     }
 
 
@@ -523,11 +629,15 @@ namespace algui {
             }
             m_focused = true;
             _focusedWidget = this;
+            invalidateVisualState();
+            _invalidateScreenState();
             gotFocus();
         }
         else {
             m_focused = false;
             _focusedWidget = nullptr;
+            invalidateVisualState();
+            _invalidateScreenState();
             lostFocus();
         }
     }
@@ -539,7 +649,12 @@ namespace algui {
    
     
     void Widget::setError(bool v) {
+        if (v == m_error) {
+            return;
+        }
         m_error = v;
+        invalidateVisualState();
+        _invalidateScreenState();
     }
 
 
@@ -548,9 +663,8 @@ namespace algui {
             return;
         }
         m_managed = v;
-        if (m_parent && !m_parent->m_doingLayout) {
-            m_parent->invalidateLayout();
-        }
+        _invalidateParentVisualState();
+        _invalidateParentLayout();
     }
         
         
@@ -559,9 +673,9 @@ namespace algui {
             return;
         }
         m_flexible = v;
-        if (m_parent && !m_parent->m_doingLayout) {
-            m_parent->invalidateLayout();
-        }
+        invalidateVisualState();
+        _invalidateParentVisualState();
+        _invalidateParentLayout();
     }
 
 
@@ -570,20 +684,45 @@ namespace algui {
     }
 
 
-    void Widget::invalidateLayout() {
-        m_layout = true;
-    }
-
-
-    void Widget::invalidateParentLayout() const {
-        if (m_parent && m_managed && !m_parent->m_doingLayout) {
-            m_parent->invalidateLayout();
+    void Widget::setTheme(const std::shared_ptr<Theme>& theme) {
+        m_theme = theme;
+        _callThemed();
+        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+            child->setTheme(theme);
         }
     }
 
 
+    void Widget::setSurfaceType(const std::string& surfaceType) {
+        if (surfaceType != m_surfaceType) {
+            m_surfaceType = surfaceType;
+            _callThemed();
+        }
+        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+            child->setSurfaceType(surfaceType);
+        }
+    }
+
+
+    void Widget::invalidateVisualState() {
+        if (m_visualStateDirty) {
+            return;
+        }
+        m_visualStateDirty = true;
+        if (m_parent) {
+            m_parent->_invalidateTreeVisualState();
+        }
+    }
+
+
+    void Widget::invalidateLayout() {
+        m_layoutDirty = true;
+    }
+
+
     void Widget::render() {
-        _render();
+        _updateVisualState();
+        _render(false);
         if (_dragAndDrop && _dragIcon) {
             int w = al_get_bitmap_width(_dragIcon);
             int h = al_get_bitmap_height(_dragIcon);
@@ -630,43 +769,6 @@ namespace algui {
 
     void Widget::setClickTimeout(size_t milliseconds) {
         _clickDuration = std::chrono::milliseconds(milliseconds);
-    }
-
-
-    void Widget::setTheme(const std::shared_ptr<Theme>& theme) {
-        m_theme = theme;
-        _callThemed();
-        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
-            child->setTheme(theme);
-        }
-    }
-
-
-    void Widget::resetTheme() {
-        m_theme.reset();
-        unthemed();
-        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
-            child->resetTheme();
-        }
-    }
-
-
-    void Widget::refreshTheme() {
-        _callThemed();
-        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
-            child->refreshTheme();
-        }
-    }
-
-
-    void Widget::setSurfaceType(const std::string& surfaceType) {
-        if (surfaceType != m_surfaceType) {
-            m_surfaceType = surfaceType;
-            _callThemed();
-        }
-        for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
-            child->setSurfaceType(surfaceType);
-        }
     }
 
 
@@ -995,92 +1097,132 @@ namespace algui {
     }
 
 
-    void Widget::_render() {
+    void Widget::_invalidateParentVisualState() {
+        if (m_parent) {
+            m_parent->invalidateVisualState();
+        }
+    }
+    
+    
+    void Widget::_invalidateParentLayout() {
+        if (m_parent) {
+            m_parent->invalidateLayout();
+        }
+    }
+
+
+    void Widget::_invalidateTreeVisualState() {
+        for (Widget* wgt = this; wgt; wgt = wgt->m_parent) {
+            if (wgt->m_treeVisualStateDirty) {
+                return;
+            }
+            wgt->m_treeVisualStateDirty = true;
+        }
+    }
+
+
+    void Widget::_invalidateScreenState() {
+        m_screenStateDirty = true;
+    }
+
+
+    void Widget::_updateVisualState() {
+        if (m_treeVisualStateDirty) {
+            for (Widget* child = getFirstChild(); child; child = child->getNextSibling()) {
+                child->_updateVisualState();
+            }
+            m_treeVisualStateDirty = false;
+        }
+        if (m_visualStateDirty) {
+            visualState();
+            m_visualStateDirty = false;
+        }
+    }
+
+
+    void Widget::_render(bool screenStateDirty) {
         if (m_visible) {
-            const float prevTreeHorizontalScaling = m_treeHorizontalScaling;
-            const float prevTreeVerticalScaling = m_treeVerticalScaling;
+            //if layout is dirty, calculate its layout
+            if (m_layoutDirty) {
+                layout();
+                m_layoutDirty = false;
+            }
+
+            const bool finalScreenStateDirty = screenStateDirty || m_screenStateDirty;
 
             //calculate screen state for child
-            if (m_parent) {
-                m_x1 = m_x * m_parent->m_treeHorizontalScaling + m_parent->m_x1;
-                m_y1 = m_y * m_parent->m_treeVerticalScaling + m_parent->m_y1;
-                m_x2 = m_x1 + m_width * m_parent->m_treeHorizontalScaling;
-                m_y2 = m_y1 + m_height * m_parent->m_treeVerticalScaling;
-                m_treeVisible = m_visible && m_parent->m_treeVisible;
-                m_treeEnabled = m_enabled && m_parent->m_treeEnabled;
-                m_treeHighlighted = m_highlighted || m_parent->m_treeHighlighted;
-                m_treePressed = m_pressed || m_parent->m_treePressed;
-                m_treeSelected = m_selected || m_parent->m_treeSelected;
-                m_treeFocused = m_focused || m_parent->m_treeFocused;
-                m_treeError = m_error || m_parent->m_treeError;
-                m_treeHorizontalScaling = m_horizontalScaling * m_parent->m_treeHorizontalScaling;
-                m_treeVerticalScaling = m_verticalScaling * m_parent->m_treeVerticalScaling;
-            }
+            if (finalScreenStateDirty) {
+                const float prevTreeHorizontalScaling = m_treeHorizontalScaling;
+                const float prevTreeVerticalScaling = m_treeVerticalScaling;
 
-            //else calculate screen state for parent
-            else {
-                m_x1 = m_x;
-                m_y1 = m_y;
-                m_x2 = m_x1 + m_width;
-                m_y2 = m_y1 + m_height;
-                m_treeVisible = m_visible;
-                m_treeEnabled = m_enabled;
-                m_treeHighlighted = m_highlighted;
-                m_treePressed = m_pressed;
-                m_treeSelected = m_selected;
-                m_treeFocused = m_focused;
-                m_treeError = m_error;
-                m_treeHorizontalScaling = m_horizontalScaling;
-                m_treeVerticalScaling = m_verticalScaling;
-            }
-            
-            //if tree scaling changed, allow the widget to pick the correct resources
-            if (m_treeHorizontalScaling != prevTreeHorizontalScaling || m_treeVerticalScaling != prevTreeVerticalScaling) {
-                scaled();
-            }
-            
-            //paint clipped
-            int cx, cy, cw, ch;
-            if (m_clipped) {
-                al_get_clipping_rectangle(&cx, &cy, &cw, &ch);
-
-                //calculate intersection between widget rectangle and current clipping
-                float rx1, ry1, rx2, ry2;
-                const bool totallyClipped = _intersect(
-                    cx, cy, cx + cw, cy + ch, 
-                    m_x1, m_y1, m_x2, m_y2,
-                    rx1, ry1, rx2, ry2);
-
-                //if the widget is outside of the current clipping,
-                //then do not draw it
-                if (totallyClipped) {
-                    return;
+                if (m_parent) {
+                    m_x1 = m_x * m_parent->m_treeHorizontalScaling + m_parent->m_x1;
+                    m_y1 = m_y * m_parent->m_treeVerticalScaling + m_parent->m_y1;
+                    m_x2 = m_x1 + m_width * m_parent->m_treeHorizontalScaling;
+                    m_y2 = m_y1 + m_height * m_parent->m_treeVerticalScaling;
+                    m_treeVisible = m_visible && m_parent->m_treeVisible;
+                    m_treeEnabled = m_enabled && m_parent->m_treeEnabled;
+                    m_treeHighlighted = m_highlighted || m_parent->m_treeHighlighted;
+                    m_treePressed = m_pressed || m_parent->m_treePressed;
+                    m_treeSelected = m_selected || m_parent->m_treeSelected;
+                    m_treeFocused = m_focused || m_parent->m_treeFocused;
+                    m_treeError = m_error || m_parent->m_treeError;
+                    m_treeHorizontalScaling = m_horizontalScaling * m_parent->m_treeHorizontalScaling;
+                    m_treeVerticalScaling = m_verticalScaling * m_parent->m_treeVerticalScaling;
                 }
 
-                //clip the output
+                //else calculate screen state for parent
+                else {
+                    m_x1 = m_x;
+                    m_y1 = m_y;
+                    m_x2 = m_x1 + m_width;
+                    m_y2 = m_y1 + m_height;
+                    m_treeVisible = m_visible;
+                    m_treeEnabled = m_enabled;
+                    m_treeHighlighted = m_highlighted;
+                    m_treePressed = m_pressed;
+                    m_treeSelected = m_selected;
+                    m_treeFocused = m_focused;
+                    m_treeError = m_error;
+                    m_treeHorizontalScaling = m_horizontalScaling;
+                    m_treeVerticalScaling = m_verticalScaling;
+                }
+
+                //if tree scaling changed, allow the widget to pick the correct resources
+                if (m_treeHorizontalScaling != prevTreeHorizontalScaling || m_treeVerticalScaling != prevTreeVerticalScaling) {
+                    scaled();
+                }
+            }
+            
+            int cx, cy, cw, ch;
+            al_get_clipping_rectangle(&cx, &cy, &cw, &ch);
+
+            //calculate clipping and check if widget intersects current clipping
+            float rx1, ry1, rx2, ry2;
+            const bool totallyClipped = _intersect(cx, cy, cx + cw, cy + ch, m_x1, m_y1, m_x2, m_y2, rx1, ry1, rx2, ry2);
+
+            //if the widget is outside of the current clipping, then do not draw the tree
+            if (totallyClipped) {
+                return;
+            }
+
+            //paint clipped
+            if (m_clipped) {
                 al_set_clipping_rectangle(rx1, ry1, std::floor(rx2 - rx1), std::floor(ry2 - ry1));
             }
 
             //paint the widget
             paint();
             
-            //before painting the children, do the layout
-            if (m_layout) {
-                m_doingLayout = true;
-                layout();
-                m_doingLayout = false;
-                m_layout = false;
-            }
-
             //render the children
             for (Widget* child : m_children) {
-                child->_render();
+                child->_render(finalScreenStateDirty);
             }
 
             //paint above the children
             paintOverlay();
 
-            //restore clipping
+            //restore the previous clipping
             if (m_clipped) {
                 al_set_clipping_rectangle(cx, cy, cw, ch);
             }
