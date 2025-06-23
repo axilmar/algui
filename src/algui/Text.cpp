@@ -278,13 +278,13 @@ namespace algui {
 
 
     void Text::_readStyle(const std::shared_ptr<Theme>& theme, const std::string& name, Style& style) {
-        style.fontSize = theme->getInt("Text", getId(), {}, { name + ".Font.Size" }, 12);
-        style.fontFlags = theme->getInt("Text", getId(), {}, { name + ".Font.Flags" }, 0);
-        style.font = theme->getFont("Text", getId(), {}, { name + ".Font" }, style.fontSize, style.fontFlags);
-        style.color = theme->getColor("Text", getId(), {}, { name + ".Color" }, style.color);
-        style.embossedOffsetX = theme->getFloat("Text", getId(), {}, { name + ".Embossed.OffsetX" }, 0.0f);
-        style.embossedOffsetY = theme->getFloat("Text", getId(), {}, { name + ".Embossed.OffsetY" }, 0.0f);
-        style.embossedColor = theme->getColor("Text", getId(), {}, { name + ".Embossed.Color" }, al_map_rgb(255, 255, 255));
+        style.fontSize = theme->getInt("Text", getId(), getSurfaceType(), {name + ".Font.Size"}, 12);
+        style.fontFlags = theme->getInt("Text", getId(), getSurfaceType(), { name + ".Font.Flags" }, 0);
+        style.font = theme->getFont("Text", getId(), getSurfaceType(), { name + ".Font" }, style.fontSize, style.fontFlags);
+        style.color = theme->getColor("Text", getId(), getSurfaceType(), { name + ".Color" }, style.color);
+        style.embossedOffsetX = theme->getFloat("Text", getId(), getSurfaceType(), { name + ".Embossed.OffsetX" }, 0.0f);
+        style.embossedOffsetY = theme->getFloat("Text", getId(), getSurfaceType(), { name + ".Embossed.OffsetY" }, 0.0f);
+        style.embossedColor = theme->getColor("Text", getId(), getSurfaceType(), { name + ".Embossed.Color" }, al_map_rgb(255, 255, 255));
     }
 
 
