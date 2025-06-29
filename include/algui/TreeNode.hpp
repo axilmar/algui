@@ -4,6 +4,10 @@
 
 #include <stdexcept>
 #include <memory>
+#include "EventTarget.hpp"
+#include "TreeNodeChildAddedEvent.hpp"
+#include "TreeNodeChildRemovedEvent.hpp"
+#include "TreeNodeChildrenREmovedEvent.hpp"
 
 
 namespace algui {
@@ -13,45 +17,8 @@ namespace algui {
      * Base class for tree nodes.
      * @param T type of derived class.
      */
-    template <class T> class TreeNode : public std::enable_shared_from_this<T> {
+    template <class T> class TreeNode : public EventTarget {
     public:
-        /**
-         * The default constructor.
-         */
-        TreeNode() {
-        }
-
-        /**
-         * The copy constructor.
-         * Deleted due to a tree node having pointers to other members of the tree.
-         */
-        TreeNode(const TreeNode&) = delete;
-        
-        /**
-         * The move constructor.
-         * Deleted due to a tree node having pointers to other members of the tree.
-         */
-        TreeNode(TreeNode&&) = delete;
-
-        /**
-         * The destructor.
-         * Virtual due to polymorphism.
-         */
-        virtual ~TreeNode() {
-        }
-
-        /**
-         * The copy assignment constructor.
-         * Deleted due to a tree node having pointers to other members of the tree.
-         */
-        TreeNode& operator =(const TreeNode&) = delete;
-
-        /**
-         * The move assignment operator.
-         * Deleted due to a tree node having pointers to other members of the tree.
-         */
-        TreeNode& operator =(TreeNode&&) = delete;
-
         /**
          * Returns a pointer to the parent node.
          * @return a pointer to the parent node.
@@ -99,7 +66,7 @@ namespace algui {
         std::shared_ptr<T> getRoot() const {
             T* root = const_cast<T*>(static_cast<const T*>(this));
             for (; root->m_parent; root = root->m_parent) {}
-            return root->shared_from_this();
+            return root->sharedFromThis<T>();
         }
 
         /**
@@ -125,6 +92,7 @@ namespace algui {
 
         /**
          * Adds a child node.
+         * Emits a `TreeNodeChildAddedEvent`.
          * @param child child to add; must not be null, must not already be a child, must not be an ancestor of this.
          * @param nextSibling optional; if not given, then the child is added as last child, otherwise it is added before this; must be a child of this.
          * @exception std::invalid_argument thrown if the constraints mentioned above are violated.
@@ -154,10 +122,13 @@ namespace algui {
 
             (prevSibling ? prevSibling->m_nextSibling : m_firstChild) = child;
             (nextSibling ? nextSibling->m_prevSibling : m_lastChild) = child;
+
+            dispatchEvent(TreeNodeChildAddedEvent(sharedFromThis<T>(), child));
         }
 
         /**
          * Removes a child node.
+         * Emits a `TreeNodeChildRemovedEvent`.
          * @param child child to remove; must not be null, must be a child of this.
          * @exception std::invalid_argument thrown if the constraints mentioned above are violated.
          */
@@ -170,22 +141,20 @@ namespace algui {
                 throw std::invalid_argument("TreeNode: removeChild: not a child.");
             }
 
-            (child->m_prevSibling ? child->m_prevSibling->m_nextSibling : m_firstChild) = child->m_nextSibling;
-            (child->m_nextSibling ? child->m_nextSibling->m_prevSibling : m_lastChild) = child->m_prevSibling;
+            remove(child);
 
-            child->m_parent = nullptr;
-            child->m_prevSibling.reset();
-            child->m_nextSibling.reset();
+            dispatchEvent(TreeNodeChildRemovedEvent(sharedFromThis<T>(), child));
         }
 
         /**
          * Removes all children.
-         * It invokes the method `removeChild(getLastChild())` until there are no more children.
+         * Emits a `TreeNodeChildrenRemovedEvent`.
          */
         virtual void removeChildren() {
             while (m_lastChild) {
-                removeChild(m_lastChild);
+                remove(m_lastChild);
             }
+            dispatchEvent(TreeNodeChildrenRemovedEvent(sharedFromThis<T>()));
         }
 
     private:
@@ -194,6 +163,15 @@ namespace algui {
         std::shared_ptr<T> m_nextSibling;
         std::shared_ptr<T> m_firstChild;
         std::shared_ptr<T> m_lastChild;
+
+        void remove(const std::shared_ptr<T>& child) {
+            (child->m_prevSibling ? child->m_prevSibling->m_nextSibling : m_firstChild) = child->m_nextSibling;
+            (child->m_nextSibling ? child->m_nextSibling->m_prevSibling : m_lastChild) = child->m_prevSibling;
+
+            child->m_parent = nullptr;
+            child->m_prevSibling.reset();
+            child->m_nextSibling.reset();
+        }
     };
 
 

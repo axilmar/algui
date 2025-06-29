@@ -14,8 +14,8 @@
 extern void run_tests();
 
 int main(int argc, char** argv) {
-    //run_tests();
-    //return 0;
+    run_tests();
+    return 0;
 
     al_init();
     al_init_image_addon();
