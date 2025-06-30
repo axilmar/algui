@@ -21,7 +21,7 @@ namespace algui {
     }
 
 
-    EventTarget::EventListenerId& EventTarget::EventListenerId::operator = (EventListenerId&& id) {
+    EventTarget::EventListenerId& EventTarget::EventListenerId::operator = (EventListenerId&& id) noexcept {
         EventTarget* eventTarget = id.m_eventTarget;
         m_eventType = std::move(id.m_eventType);
         m_it = std::move(id.m_it);

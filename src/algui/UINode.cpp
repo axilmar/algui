@@ -170,7 +170,7 @@ namespace algui {
     }
 
 
-    void UINode::_updateScreenProps(int flags) {
+    void UINode::_updateScreenProps(int& flags) {
         flags = m_flags |= flags;
         updateScreenProps();
     }

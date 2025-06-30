@@ -13,9 +13,24 @@
 
 extern void run_tests();
 
+#include "algui/UINode.hpp"
+
+using namespace algui;
+
+class Test : public UINode {
+public:
+
+protected:
+    void paint() const override {
+        const Rect& r = getScreenRect();
+        al_draw_filled_rectangle(r.left, r.top, r.right, r.bottom, al_map_rgb(255, 255, 255));
+        al_draw_rectangle(r.left + 0.5f, r.top + 0.5f, r.right, r.bottom, al_map_rgb(0, 0, 0), 0);
+    }
+};
+
 int main(int argc, char** argv) {
-    run_tests();
-    return 0;
+    //run_tests();
+    //return 0;
 
     al_init();
     al_init_image_addon();
@@ -41,6 +56,33 @@ int main(int argc, char** argv) {
 
     al_start_timer(timer);
 
+    std::shared_ptr<Test> root = std::make_shared<Test>();
+    root->setRect(Rect::rect(0, 0, 800, 600));
+
+    std::shared_ptr<Test> form1 = std::make_shared<Test>();
+    form1->setRect(Rect::rect(100, 50, 250, 200));
+    root->addChild(form1);
+
+    std::shared_ptr<Test> form2 = std::make_shared<Test>();
+    form2->setRect(Rect::rect(200, 150, 250, 200));
+    root->addChild(form2);
+
+    std::shared_ptr<Test> form3 = std::make_shared<Test>();
+    form3->setRect(Rect::rect(300, 250, 250, 200));
+    root->addChild(form3);
+
+    std::shared_ptr<Test> button1 = std::make_shared<Test>();
+    button1->setRect(Rect::rect(50, 40, 50, 40));
+    form2->addChild(button1);
+
+    std::shared_ptr<Test> button2 = std::make_shared<Test>();
+    button2->setRect(Rect::rect(70, 60, 50, 40));
+    form2->addChild(button2);
+
+    std::shared_ptr<Test> button3 = std::make_shared<Test>();
+    button3->setRect(Rect::rect(90, 80, 50, 40));
+    form2->addChild(button3);
+
     for (;;) {
         ALLEGRO_EVENT event;
         al_wait_for_event(eventQueue, &event);
@@ -50,12 +92,19 @@ int main(int argc, char** argv) {
                 goto END;
 
             case ALLEGRO_EVENT_TIMER:
+                root->render();
                 al_flip_display();
                 break;
 
             case ALLEGRO_EVENT_KEY_DOWN:
                 if (event.keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
                     goto END;
+                }
+                if (event.keyboard.keycode == ALLEGRO_KEY_SPACE) {
+                    Rect r = form2->getRect();
+                    r.setPosition(r.left + 8, r.top);
+                    form2->setRect(r);
+                    break;
                 }
                 [[fallthrough]];
 

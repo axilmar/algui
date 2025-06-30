@@ -15,10 +15,10 @@ namespace algui {
      */
     struct Scaling {
         ///horizontal.
-        float horizontal{ 0 };
+        float horizontal{ 1.0f };
 
         ///vertical.
-        float vertical{ 0 };
+        float vertical{ 1.0f };
 
         /**
          * Clamps the values to 0.
@@ -201,14 +201,14 @@ namespace algui {
          * The default implementation is empty.
          * This is called after all screen props are updated, but before the children.
          */
-        virtual void paint() {}
+        virtual void paint() const {}
 
         /**
          * Interface for painting above a node's children, using Allegro functions.
          * The default implementation is empty.
          * This is called after all children have been painted.
          */
-        virtual void paintOverlay() {}
+        virtual void paintOverlay() const {}
 
     private:
         Rect m_rect;
@@ -218,7 +218,7 @@ namespace algui {
         int m_flags{1};
 
         void _updateRect();
-        void _updateScreenProps(int flags);
+        void _updateScreenProps(int& flags);
         void _render(int flags);
         void _render(int flags, const Rect& clipping);
         void _render1(int flags, const Rect& clipping);

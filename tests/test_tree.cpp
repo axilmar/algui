@@ -10,25 +10,32 @@
 using namespace algui;
 
 
-class Test : public TreeNode<Test> {
-public:
-    std::string id;
-
-    Test(const std::string& id = {}) : id(id) {
-    }
-};
+namespace test {
 
 
-template <class T>
-static void print_tree(const std::shared_ptr<T>& node, size_t depth = 0) {
-    std::cout << std::string(depth * 4, ' ') << node->id << std::endl;
-    Test* parent = dynamic_cast<Test*>(node.get());
-    if (parent) {
-        for (auto child = parent->getFirstChild(); child; child = child->getNextSibling()) {
-            print_tree(child, depth + 1);
+    class Test : public TreeNode<Test> {
+    public:
+        std::string id;
+
+        Test(const std::string& id = {}) : id(id) {
+        }
+    };
+
+
+    template <class T>
+    static void print_tree(const std::shared_ptr<T>& node, size_t depth = 0) {
+        std::cout << std::string(depth * 4, ' ') << node->id << std::endl;
+        Test* parent = dynamic_cast<Test*>(node.get());
+        if (parent) {
+            for (auto child = parent->getFirstChild(); child; child = child->getNextSibling()) {
+                print_tree(child, depth + 1);
+            }
         }
     }
 }
+
+
+using namespace test;
 
 
 void test_tree() {

@@ -63,7 +63,7 @@ namespace algui {
              * @param id source object.
              * @return reference to this.
              */
-            EventListenerId& operator = (EventListenerId&& id);
+            EventListenerId& operator = (EventListenerId&& id) noexcept;
 
         private:
             mutable EventTarget* m_eventTarget{nullptr};
