@@ -14,6 +14,13 @@ namespace algui {
     }
 
 
+    EventTarget::EventListenerId::~EventListenerId() {
+        if (m_eventTarget) {
+            m_eventTarget->removeEventListener(*this);
+        }
+    }
+
+
     EventTarget::EventListenerId& EventTarget::EventListenerId::operator = (EventListenerId&& id) {
         EventTarget* eventTarget = id.m_eventTarget;
         m_eventType = std::move(id.m_eventType);
@@ -61,6 +68,11 @@ namespace algui {
             }
         }
         return false;
+    }
+
+
+    void EventTarget::addEventListenerId(EventListenerId&& id) {
+        m_eventListenerIds.push_back(std::move(id));
     }
 
 

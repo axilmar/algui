@@ -157,6 +157,46 @@ namespace algui {
             dispatchEvent(TreeNodeChildrenRemovedEvent(sharedFromThis<T>()));
         }
 
+        /**
+         * Returns a plain pointer to parent.
+         * @return a plain pointer to parent.
+         */
+        T* getParentPtr() const {
+            return m_parent;
+        }
+
+        /**
+         * Returns a plain pointer to the previous sibling node.
+         * @return a plain pointer to the previous sibling node.
+         */
+        T* getPrevSiblingPtr() const {
+            return m_prevSibling.get();
+        }
+
+        /**
+         * Returns a plain pointer to the next sibling node.
+         * @return a plain pointer to the next sibling node.
+         */
+        T* getNextSiblingPtr() const {
+            return m_nextSibling.get();
+        }
+
+        /**
+         * Returns a plain pointer to the first child node.
+         * @return a plain pointer to the first child node.
+         */
+        T* getFirstChildPtr() const {
+            return m_firstChild.get();
+        }
+
+        /**
+         * Returns a plain pointer to the last child node.
+         * @return a plain pointer to the last child node.
+         */
+        T* getLastChildPtr() const {
+            return m_lastChild.get();
+        }
+
     private:
         T* m_parent{ nullptr };
         std::shared_ptr<T> m_prevSibling;

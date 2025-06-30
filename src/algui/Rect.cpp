@@ -5,19 +5,19 @@
 namespace algui {
 
 
-    void Rect::getClippingRectangle() {
+    Rect Rect::getClippingRectangle() {
         int x, y, w, h;
         al_get_clipping_rectangle(&x, &y, &w, &h);
-        setPositionAndSize(x, y, w, h);
+        return { (float)x, (float)y, (float)(x + w), (float)(y + h) };
     }
 
 
     void Rect::setClippingRectangle() const {
         al_set_clipping_rectangle(
-            (int)std::floor(m_left),
-            (int)std::floor(m_top),
-            std::max((int)std::ceil(m_right) - (int)std::floor(m_left), 0),
-            std::max((int)std::ceil(m_bottom) - (int)std::floor(m_top), 0));
+            (int)std::floor(left),
+            (int)std::floor(top),
+            std::max((int)std::ceil(right) - (int)std::floor(left), 0),
+            std::max((int)std::ceil(bottom) - (int)std::floor(top), 0));
     }
 
 

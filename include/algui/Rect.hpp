@@ -18,61 +18,25 @@ namespace algui {
     /**
      * A rectangle.
      */
-    class Rect {
-    public:
-        /**
-         * The constructor.
-         * @param left left coordinate.
-         * @param top top coordinate.
-         * @param right right coordinate.
-         * @param bottom bottom coordinate.
-         */
-        Rect(float left = 0.0f, float top = 0.0f, float right = 0.0f, float bottom = 0.0f)
-            : m_left(left)
-            , m_top(top)
-            , m_right(right)
-            , m_bottom(bottom)
-        {
-        }
+    struct Rect {
+        ///left coordinate
+        float left{ 0 };
 
-        /**
-         * Returns the left coordinate.
-         * @return the left coordinate.
-         */
-        float getLeft() const {
-            return m_left;
-        }
+        ///top coordinate
+        float top{ 0 };
 
-        /**
-         * Returns the top coordinate.
-         * @return the top coordinate.
-         */
-        float getTop() const {
-            return m_top;
-        }
+        ///right coordinae
+        float right{ 0 };
 
-        /**
-         * Returns the right coordinate.
-         * @return the right coordinate.
-         */
-        float getRight() const {
-            return m_right;
-        }
-
-        /**
-         * Returns the bottom coordinate.
-         * @return the bottom coordinate.
-         */
-        float getBottom() const {
-            return m_bottom;
-        }
+        ///bottom coordinate
+        float bottom{ 0 };
 
         /**
          * Returns the width.
          * @return the width.
          */
         float getWidth() const {
-            return m_right - m_left;
+            return right - left;
         }
 
         /**
@@ -80,7 +44,7 @@ namespace algui {
          * @return the height.
          */
         float getHeight() const {
-            return m_bottom - m_top;
+            return bottom - top;
         }
 
         /**
@@ -90,7 +54,7 @@ namespace algui {
          * @return true if the point lies within the rectangle, false otherwise.
          */
         bool intersects(float x, float y) const {
-            return x >= m_left && x < m_right && y >= m_top && y < m_bottom;
+            return x >= left && x < right && y >= top && y < bottom;
         }
 
         /**
@@ -99,7 +63,7 @@ namespace algui {
          * @return true if this intersects the other rectangle, false otherwise.
          */
         bool intersects(const Rect& r) const {
-            return r.m_left < m_right && r.m_right > m_left && r.m_top < m_bottom && r.m_bottom > m_top;
+            return r.left < right && r.right > left && r.top < bottom && r.bottom > top;
         }
 
         /**
@@ -107,39 +71,7 @@ namespace algui {
          * @return true if the rectangle is valid, false otherwise.
          */
         bool isValid() const {
-            return m_left < m_right && m_top < m_bottom;
-        }
-
-        /**
-         * Sets the left coordinate.
-         * @param left the left coordinate.
-         */
-        void setLeft(float left) {
-            m_left = left;
-        }
-
-        /**
-         * Sets the top coordinate.
-         * @param top the top coordinate.
-         */
-        void setTop(float top) {
-            m_top = top;
-        }
-
-        /**
-         * Sets the right coordinate.
-         * @param right the right coordinate.
-         */
-        void setRight(float right) {
-            m_right = right;
-        }
-
-        /**
-         * Sets the bottom coordinate.
-         * @param bottom the bottom coordinate.
-         */
-        void setBottom(float bottom) {
-            m_bottom = bottom;
+            return left < right && top < bottom;
         }
 
         /**
@@ -148,8 +80,8 @@ namespace algui {
          * @param left the left coordinate.
          */
         void setTopLeft(float top, float left) {
-            m_top = top;
-            m_left = left;
+            top = top;
+            left = left;
         }
 
         /**
@@ -158,8 +90,8 @@ namespace algui {
          * @param right the right coordinate.
          */
         void setTopRight(float top, float right) {
-            m_top = top;
-            m_right = right;
+            top = top;
+            right = right;
         }
 
         /**
@@ -168,8 +100,8 @@ namespace algui {
          * @param left the left coordinate.
          */
         void setBottomLeft(float bottom, float left) {
-            m_bottom = bottom;
-            m_left = left;
+            bottom = bottom;
+            left = left;
         }
 
         /**
@@ -178,8 +110,8 @@ namespace algui {
          * @param right the right coordinate.
          */
         void setBottomRight(float bottom, float right) {
-            m_bottom = bottom;
-            m_right = right;
+            bottom = bottom;
+            right = right;
         }
 
         /**
@@ -190,10 +122,10 @@ namespace algui {
          * @param bottom bottom coordinate.
          */
         void set(float left, float top, float right, float bottom) {
-            m_left = left;
-            m_top = top;
-            m_right = right;
-            m_bottom = bottom;
+            left = left;
+            top = top;
+            right = right;
+            bottom = bottom;
         }
 
         /**
@@ -204,10 +136,10 @@ namespace algui {
         void setPosition(float x, float y) {
             float w = getWidth();
             float h = getHeight();
-            m_left = x;
-            m_top = y;
-            m_right = x + w;
-            m_bottom = y + h;
+            left = x;
+            top = y;
+            right = x + w;
+            bottom = y + h;
         }
 
         /**
@@ -216,8 +148,8 @@ namespace algui {
          * @param height the height.
          */
         void setSize(float width, float height) {
-            m_right = m_left + width;
-            m_bottom = m_top + height;
+            right = left + width;
+            bottom = top + height;
         }
 
         /**
@@ -228,48 +160,45 @@ namespace algui {
          * @param height the height.
          */
         void setPositionAndSize(float x, float y, float width, float height) {
-            m_left = x;
-            m_top = y;
-            m_right = x + width;
-            m_bottom = y + height;
+            left = x;
+            top = y;
+            right = x + width;
+            bottom = y + height;
         }
 
         /**
          * Makes sure neither width nor height is less than 0.
          */
         void clampSizeTo0() {
-            m_right = std::max(m_left, m_right);
-            m_bottom = std::max(m_top, m_bottom);
+            right = std::max(left, right);
+            bottom = std::max(top, bottom);
         }
 
         /**
          * Calculates the intersection of the given rectangles into this rectangle.
          * @param a 1st rectangle.
          * @param b 2nd rectangle.
+         * @return the intersection of the two rectangles.
          */
-        void intersectionOf(const Rect& a, const Rect& b) {
-            m_left = std::max(a.m_left, b.m_left);
-            m_top = std::max(a.m_top, b.m_top);
-            m_right = std::min(a.m_right, b.m_right);
-            m_bottom = std::min(a.m_bottom, b.m_bottom);
+        static Rect intersectionOf(const Rect& a, const Rect& b) {
+            return { std::max(a.left, b.left), std::max(a.top, b.top), std::min(a.right, b.right), std::min(a.bottom, b.bottom) };
         }
 
         /**
          * Calculates the union of the given rectangles into this rectangle.
          * @param a 1st rectangle.
          * @param b 2nd rectangle.
+         * @return the union of the two rectangles.
          */
-        void unionOf(const Rect& a, const Rect& b) {
-            m_left = std::min(a.m_left, b.m_left);
-            m_top = std::min(a.m_top, b.m_top);
-            m_right = std::max(a.m_right, b.m_right);
-            m_bottom = std::max(a.m_bottom, b.m_bottom);
+        static Rect unionOf(const Rect& a, const Rect& b) {
+            return { std::min(a.left, b.left), std::min(a.top, b.top), std::max(a.right, b.right), std::max(a.bottom, b.bottom) };
         }
 
         /**
-         * Stores the current bitmap clipping into this rectangle.
+         * Stores the current bitmap clipping into a rectangle.
+         * @return a rectangle with the current bitmap clipping.
          */
-        void getClippingRectangle();
+        static Rect getClippingRectangle();
 
         /**
          * Sets the current bitmap clipping from this rectangle.
@@ -282,7 +211,7 @@ namespace algui {
          * @return true if they are equal, false otherwise.
          */
         bool operator == (const Rect& r) const {
-            return m_left == r.m_left && m_top == r.m_top && m_right == r.m_right && m_bottom == r.m_bottom;
+            return left == r.left && top == r.top && right == r.right && bottom == r.bottom;
         }
 
         /**
@@ -291,14 +220,37 @@ namespace algui {
          * @return true if they are different, false otherwise.
          */
         bool operator != (const Rect& r) const {
-            return m_left != r.m_left || m_top != r.m_top || m_right != r.m_right || m_bottom != r.m_bottom;
+            return left != r.left || top != r.top || right != r.right || bottom != r.bottom;
         }
 
-    private:
-        float m_left;
-        float m_top;
-        float m_right;
-        float m_bottom;
+        /**
+         * Checks if the position of the given rect differs from this one.
+         * @return r the other node to compare to this.
+         * @return true if position differs, false otherwise.
+         */
+        bool positionDiffers(const Rect& r) const {
+            return left != r.left || top != r.top;
+        }
+
+        /**
+         * Checks if the size of the given rect differs from this one.
+         * @return r the other node to compare to this.
+         * @return true if size differs, false otherwise.
+         */
+        bool sizeDiffers(const Rect& r) const {
+            return getWidth() != r.getWidth() || getHeight() != r.getHeight();
+        }
+
+        /**
+         * constructs a rectangle from position and size.
+         * @param x left coordinate.
+         * @param y top coordinate.
+         * @param width width.
+         * @param height height.
+         */
+        static Rect rect(float x, float y, float width, float height) {
+            return { x , y, x + width, y + height };
+        }
     };
 
 
