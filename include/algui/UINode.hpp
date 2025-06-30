@@ -106,9 +106,7 @@ namespace algui {
          * Checks if this node is visible.
          * @return true if visible, false otherwise.
          */
-        bool isVisible() const {
-            return m_visible;
-        }
+        bool isVisible() const;
 
         /**
          * Hides/shows this node.
@@ -120,17 +118,13 @@ namespace algui {
          * Returns true if the node is painted clipped.
          * @return true if the node is painted clipped, false otherwise.
          */
-        bool isClipped() const {
-            return !m_unclipped;
-        }
+        bool isClipped() const;
 
         /**
          * Sets the clipped state.
          * @param v if true, the node is painted clipped, otherwise it is not.
          */
-        void setClipped(bool v) {
-            m_unclipped = !v;
-        }
+        void setClipped(bool v);
 
         /**
          * Updates and paints the node tree.
@@ -144,45 +138,6 @@ namespace algui {
         void render(const Rect& clipping);
 
     protected:
-        /**
-         * Internal state flags.
-         */
-        enum FLAGS : uint64_t {
-            ///rect needs updating.
-            RECT_DIRTY            = 1 << 0,
-
-            ///descentant rect needs updating.
-            DESCENTANT_RECT_DIRTY = 1 << 1,
-
-            ///layout needs updating.
-            LAYOUT_DIRTY          = 1 << 2,
-
-            ///screen rect needs updating.
-            SCREEN_RECT_DIRTY     = 1 << 3,
-
-            ///screen scaling needs updating.
-            SCREEN_SCALING_DIRTY  = 1 << 4,
-
-            ///first free flag.
-            FREE_FLAG             = 1 << 8
-        };
-
-        /**
-         * Returns the current flags.
-         * @return the current flags.
-         */
-        uint64_t getFlags() const {
-            return m_flags;
-        }
-
-        /**
-         * Sets the flags.
-         * @param flags new flags.
-         */
-        void setFlags(uint64_t flags) {
-            m_flags = flags;
-        }
-
         /**
          * Sets the RECT_DIRTY flag on this UI node,
          * and the DESCENTANT_RECT_DIRTY flag to all the ancestor nodes,
@@ -260,15 +215,13 @@ namespace algui {
         Rect m_screenRect;
         Scaling m_scaling;
         Scaling m_screenScaling;
-        uint64_t m_flags{ 0 };
-        bool m_visible{ true };
-        bool m_unclipped{ true };
+        int m_flags{1};
 
         void _updateRect();
-        void _updateScreenProps(uint64_t flags);
-        void _render(uint64_t flags);
-        void _render(uint64_t flags, const Rect& clipping);
-        void _render1(uint64_t flags, const Rect& clipping);
+        void _updateScreenProps(int flags);
+        void _render(int flags);
+        void _render(int flags, const Rect& clipping);
+        void _render1(int flags, const Rect& clipping);
         void _setDescentantRectDirty();
     };
 

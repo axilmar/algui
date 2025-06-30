@@ -4,6 +4,16 @@
 namespace algui {
 
 
+    enum FLAGS {
+        VISIBLE               = 1 << 0,
+        CLIPPED               = 1 << 1,
+        RECT_DIRTY            = 1 << 2,
+        DESCENTANT_RECT_DIRTY = 1 << 3,
+        LAYOUT_DIRTY          = 1 << 4,
+        SCREEN_RECT_DIRTY     = 1 << 5,
+        SCREEN_SCALING_DIRTY  = 1 << 6
+    };
+
 
     void UINode::addChild(const std::shared_ptr<UINode>& child, const std::shared_ptr<UINode>& nextSibling) {
         TreeNode<UINode>::addChild(child, nextSibling);
@@ -39,9 +49,14 @@ namespace algui {
     }
 
 
+    bool UINode::isVisible() const {
+        return m_flags & VISIBLE;
+    }
+
+
     void UINode::setVisible(bool v) {
-        if (v != m_visible) {
-            m_visible = v;
+        if (v != ((m_flags & VISIBLE) == VISIBLE)) {
+            m_flags = v ? m_flags | VISIBLE : m_flags & ~VISIBLE;
             if (getParentPtr()) {
                 getParentPtr()->invalidateRect();
                 getParentPtr()->invalidateLayout();
@@ -50,6 +65,16 @@ namespace algui {
     }
 
 
+    bool UINode::isClipped() const {
+        return m_flags & CLIPPED;
+    }
+
+
+    void UINode::setClipped(bool v) {
+        m_flags = v ? m_flags | CLIPPED : m_flags & ~CLIPPED;
+    }
+       
+        
     void UINode::render() {
         _updateRect();
         _render(0);
@@ -145,16 +170,16 @@ namespace algui {
     }
 
 
-    void UINode::_updateScreenProps(uint64_t flags) {
+    void UINode::_updateScreenProps(int flags) {
         flags = m_flags |= flags;
         updateScreenProps();
     }
 
 
-    void UINode::_render(uint64_t flags) {
-        if (m_visible) {
+    void UINode::_render(int flags) {
+        if (m_flags & VISIBLE) {
             _updateScreenProps(flags);
-            if (m_unclipped) {
+            if ((m_flags & CLIPPED) == 0) {
                 paint();
                 for (UINode* child = getFirstChildPtr(); child; child = child->getNextSiblingPtr()) {
                     child->_render(flags);
@@ -175,9 +200,9 @@ namespace algui {
     }
 
 
-    void UINode::_render(uint64_t flags, const Rect& clipping) {
-        if (m_visible) {
-            if (m_unclipped) {
+    void UINode::_render(int flags, const Rect& clipping) {
+        if (m_flags & VISIBLE) {
+            if (((m_flags & CLIPPED) == 0)) {
                 Rect intersection = Rect::intersectionOf(m_screenRect, clipping);
                 if (intersection.isValid()) {
                     _updateScreenProps(flags);
@@ -209,9 +234,9 @@ namespace algui {
     }
 
 
-    void UINode::_render1(uint64_t flags, const Rect& clipping) {
-        if (m_visible) {
-            if (m_unclipped) {
+    void UINode::_render1(int flags, const Rect& clipping) {
+        if (m_flags & VISIBLE) {
+            if (((m_flags & CLIPPED) == 0)) {
                 Rect intersection = Rect::intersectionOf(m_screenRect, clipping);
                 if (intersection.isValid()) {
                     _updateScreenProps(flags);
