@@ -15,6 +15,9 @@ namespace algui {
     };
 
 
+    static constexpr int DIRTY_FLAGS = RECT_DIRTY | DESCENTANT_RECT_DIRTY | LAYOUT_DIRTY | SCREEN_RECT_DIRTY | SCREEN_SCALING_DIRTY;
+
+
     void UINode::addChild(const std::shared_ptr<UINode>& child, const std::shared_ptr<UINode>& nextSibling) {
         TreeNode<UINode>::addChild(child, nextSibling);
         if (child->m_flags & (RECT_DIRTY | DESCENTANT_RECT_DIRTY)) {
@@ -171,7 +174,8 @@ namespace algui {
 
 
     void UINode::_updateScreenProps(int& flags) {
-        flags = m_flags |= flags;
+        m_flags |= flags;
+        flags = m_flags & DIRTY_FLAGS;
         updateScreenProps();
     }
 

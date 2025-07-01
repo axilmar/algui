@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
     form2->addChild(button2);
 
     std::shared_ptr<Test> button3 = std::make_shared<Test>();
-    button3->setRect(Rect::rect(90, 80, 50, 40));
+    button3->setRect(Rect::rect(210, 80, 50, 40));
     form2->addChild(button3);
 
     for (;;) {
@@ -101,9 +101,12 @@ int main(int argc, char** argv) {
                     goto END;
                 }
                 if (event.keyboard.keycode == ALLEGRO_KEY_SPACE) {
+                    /*
                     Rect r = form2->getRect();
                     r.setPosition(r.left + 8, r.top);
                     form2->setRect(r);
+                    */
+                    form2->setClipped(!form2->isClipped());
                     break;
                 }
                 [[fallthrough]];
