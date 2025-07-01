@@ -19,8 +19,8 @@ namespace algui {
          * @param target event target.
          * @param child the child.
          */
-        TreeNodeChildRemovedEvent(const std::shared_ptr<T>& target, const std::shared_ptr<T>& child)
-            : TreeNodeChildEvent<T>("treeNodeChildRemoved", target, child)
+        TreeNodeChildRemovedEvent(std::shared_ptr<T>&& target, const std::shared_ptr<T>& child)
+            : TreeNodeChildEvent<T>("childRemoved", std::move(target), child)
         {
         }
     };

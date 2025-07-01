@@ -28,9 +28,9 @@ namespace algui {
          * @param type event type.
          * @param target event target.
          */
-        TreeNodeEvent(std::string&& type, const std::shared_ptr<T>& target) 
+        TreeNodeEvent(std::string&& type, std::shared_ptr<T>&& target) 
             : Event(std::move(type))
-            , m_target(target)
+            , m_target(std::move(target))
         {
         }
 

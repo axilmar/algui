@@ -1,4 +1,7 @@
 #include "algui/UINode.hpp"
+#include "algui/UINodeRectChangedEvent.hpp"
+#include "algui/UINodeScalingChangedEvent.hpp"
+#include "algui/UINodeVisibleChangedEvent.hpp"
 
 
 namespace algui {
@@ -39,6 +42,7 @@ namespace algui {
             if (getParentPtr()) {
                 getParentPtr()->invalidateRect();
             }
+            dispatchEvent(UINodeRectChangedEvent(sharedFromThis<UINode>()));
         }
     }
 
@@ -48,6 +52,7 @@ namespace algui {
         if (scaling != m_scaling) {
             m_scaling = scaling;
             invalidateScreenScaling();
+            dispatchEvent(UINodeScalingChangedEvent(sharedFromThis<UINode>()));
         }
     }
 
@@ -64,6 +69,7 @@ namespace algui {
                 getParentPtr()->invalidateRect();
                 getParentPtr()->invalidateLayout();
             }
+            dispatchEvent(UINodeVisibleChangedEvent(sharedFromThis<UINode>()));
         }
     }
 

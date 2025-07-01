@@ -18,8 +18,8 @@ namespace algui {
          * The constructor.
          * @param target event target.
          */
-        TreeNodeChildrenRemovedEvent(const std::shared_ptr<T>& target)
-            : TreeNodeEvent<T>("treeNodeChildrenRemoved", target)
+        TreeNodeChildrenRemovedEvent(std::shared_ptr<T>&& target)
+            : TreeNodeEvent<T>("childrenRemoved", std::move(target))
         {
         }
     };
