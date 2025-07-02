@@ -9,12 +9,13 @@ namespace algui {
 
     enum FLAGS {
         VISIBLE               = 1 << 0,
-        CLIPPED               = 1 << 1,
-        RECT_DIRTY            = 1 << 2,
-        DESCENTANT_RECT_DIRTY = 1 << 3,
-        LAYOUT_DIRTY          = 1 << 4,
-        SCREEN_RECT_DIRTY     = 1 << 5,
-        SCREEN_SCALING_DIRTY  = 1 << 6
+        ENABLED_TREE          = 1 << 1,
+        CLIPPED               = 1 << 2,
+        RECT_DIRTY            = 1 << 3,
+        DESCENTANT_RECT_DIRTY = 1 << 4,
+        LAYOUT_DIRTY          = 1 << 5,
+        SCREEN_RECT_DIRTY     = 1 << 6,
+        SCREEN_SCALING_DIRTY  = 1 << 7
     };
 
 
@@ -84,6 +85,11 @@ namespace algui {
     }
        
         
+    bool UINode::isEnabledTree() const {
+        return (m_flags & ENABLED_TREE) == ENABLED_TREE;
+    }
+
+
     void UINode::render() {
         _updateRect();
         _render(0);
@@ -282,6 +288,11 @@ namespace algui {
             }
             node->m_flags |= DESCENTANT_RECT_DIRTY;
         }
+    }
+
+
+    void UINode::_setEnabledTree(bool v) {
+        m_flags = v ? m_flags | ENABLED_TREE : m_flags & ~ENABLED_TREE;
     }
 
 

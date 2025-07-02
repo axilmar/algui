@@ -6,8 +6,7 @@ namespace algui {
 
 
     enum FLAGS {
-        ENABLED      = 1 << 0,
-        ENABLED_TREE = 1 << 1
+        ENABLED = 1 << 0,
     };
 
 
@@ -119,11 +118,6 @@ namespace algui {
     }
 
 
-    bool InteractiveUINode::isEnabledTree() const {
-        return (m_flags & ENABLED_TREE) == ENABLED_TREE;
-    }
-
-
     void InteractiveUINode::setEnabled(bool v) {
         if (v != ((m_flags & ENABLED) == ENABLED)) {
             m_flags = v ? m_flags | ENABLED : m_flags & ~ENABLED;
@@ -134,7 +128,7 @@ namespace algui {
 
     bool InteractiveUINode::_isEnabledAncestorTree() const {
         InteractiveUINode* parent = getParentPtr();
-        return !parent || (parent->m_flags & ENABLED_TREE) == ENABLED_TREE;
+        return !parent || parent->isEnabledTree();
     }
 
 
@@ -143,11 +137,11 @@ namespace algui {
         InteractiveUINode* inode = dynamic_cast<InteractiveUINode*>(node);
         if (inode) {
             enabledTree = ((inode->m_flags & ENABLED) == ENABLED) && parentEnabledTree;
-            inode->m_flags = enabledTree ? inode->m_flags | ENABLED_TREE : inode->m_flags & ~ENABLED_TREE;
         }
         else {
             enabledTree = parentEnabledTree;
         }
+        node->UINode::_setEnabledTree(enabledTree);
         for (UINode* child = node->getFirstChildPtr(); child; child = child->getNextSiblingPtr()) {
             _setEnabledTree(child, enabledTree);
         }

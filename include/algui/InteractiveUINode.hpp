@@ -92,12 +92,6 @@ namespace algui {
         bool isEnabled() const;
 
         /**
-         * Checks if this node, and all its ancestor nodes, are enabled.
-         * @return true if the node and all its ancestor nodes are enabled, false otherwise.
-         */
-        bool isEnabledTree() const;
-
-        /**
          * Sets the enabled state.
          * It emits the InteractiveUINodeEnabledChangedEvent event.
          * @param v the new enabled state.
@@ -105,7 +99,7 @@ namespace algui {
         void setEnabled(bool v);
 
     private:
-        int m_flags{3};
+        int m_flags{1};
         bool _isEnabledAncestorTree() const;
         static void _setEnabledTree(UINode* node, bool parentEnabledTree);
     };

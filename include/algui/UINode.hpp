@@ -10,6 +10,9 @@
 namespace algui {
 
 
+    class InteractiveUINode;
+
+
     /**
      * Scaling.
      */
@@ -130,6 +133,12 @@ namespace algui {
         void setClipped(bool v);
 
         /**
+         * Checks if this UI node belongs in an enabled tree.
+         * @return true if this UI node belongs in an an enabled tree, false otherwise.
+         */
+        bool isEnabledTree() const;
+
+        /**
          * Updates and paints the node tree.
          */
         void render();
@@ -218,7 +227,7 @@ namespace algui {
         Rect m_screenRect;
         Scaling m_scaling;
         Scaling m_screenScaling;
-        int m_flags{1};
+        int m_flags{3};
 
         void _updateRect();
         void _updateScreenProps(int& flags);
@@ -226,6 +235,9 @@ namespace algui {
         void _render(int flags, const Rect& clipping);
         void _render1(int flags, const Rect& clipping);
         void _setDescentantRectDirty();
+        void _setEnabledTree(bool v);
+
+        friend class InteractiveUINode;
     };
 
 
