@@ -161,6 +161,58 @@ namespace algui {
             return setFocused(false);
         }
 
+        /**
+         * Checks if this node is highlighted.
+         * @return true if this node is highlighted, false otherwise.
+         */
+        bool isHighlighted() const;
+
+        /**
+         * Sets the highlighted state.
+         * It emits the InteractiveUINodeHighlightedChangedEvent event.
+         * @param v the new highlighted state.
+         */
+        void setHighlighted(bool v);
+
+        /**
+         * Checks if this node is pressed.
+         * @return true if this node is pressed, false otherwise.
+         */
+        bool isPressed() const;
+
+        /**
+         * Sets the pressed state.
+         * It emits the InteractiveUINodePressedChangedEvent event.
+         * @param v the new pressed state.
+         */
+        void setPressed(bool v);
+
+        /**
+         * Checks if this node is selected.
+         * @return true if this node is selected, false otherwise.
+         */
+        bool isSelected() const;
+
+        /**
+         * Sets the selected state.
+         * It emits the InteractiveUINodeSelectedChangedEvent event.
+         * @param v the new selected state.
+         */
+        void setSelected(bool v);
+
+        /**
+         * Checks if this node is in error state.
+         * @return true if this node is in error state, false otherwise.
+         */
+        bool isError() const;
+
+        /**
+         * Sets the error state.
+         * It emits the InteractiveUINodeErrorChangedEvent event.
+         * @param v the new error state.
+         */
+        void setError(bool v);
+
     protected:
         /**
          * Sets the new child state.
@@ -172,7 +224,11 @@ namespace algui {
         int m_flags{1};
         static void _setEnabledTree(UINode* node, bool parentEnabledTree);
         static void _setFocusedTree(UINode* node, bool parentFocusedTree = false);
-    };
+        static void _setHighlightedTree(UINode* node, bool parentHighlightedTree = false);
+        static void _setPressedTree(UINode* node, bool parentPressedTree = false);
+        static void _setSelectedTree(UINode* node, bool parentSelectedTree = false);
+        static void _setErrorTree(UINode* node, bool parentErrorTree = false);
+};
 
 
 } //namespace algui

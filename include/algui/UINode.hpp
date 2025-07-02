@@ -137,6 +137,30 @@ namespace algui {
         bool isFocusedTree() const;
 
         /**
+         * Checks if this UI node belongs in a highlighted tree.
+         * @return true if this UI node belongs in an a highlighted tree, false otherwise.
+         */
+        bool isHighlightedTree() const;
+
+        /**
+         * Checks if this UI node belongs in a pressed tree.
+         * @return true if this UI node belongs in an a pressed tree, false otherwise.
+         */
+        bool isPressedTree() const;
+
+        /**
+         * Checks if this UI node belongs in a selected tree.
+         * @return true if this UI node belongs in an a selected tree, false otherwise.
+         */
+        bool isSelectedTree() const;
+
+        /**
+         * Checks if this UI node belongs in a error tree.
+         * @return true if this UI node belongs in an a error tree, false otherwise.
+         */
+        bool isErrorTree() const;
+
+        /**
          * Updates and paints the node tree.
          */
         void render();
@@ -241,6 +265,10 @@ namespace algui {
         void _setDescentantRectDirty();
         void _setEnabledTree(bool v);
         void _setFocusedTree(bool v);
+        void _setHighlightedTree(bool v);
+        void _setPressedTree(bool v);
+        void _setSelectedTree(bool v);
+        void _setErrorTree(bool v);
 
         friend class InteractiveUINode;
     };

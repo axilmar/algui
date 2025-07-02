@@ -1,5 +1,9 @@
 #include "algui/InteractiveUINode.hpp"
 #include "algui/InteractiveUINodeEnabledChangedEvent.hpp"
+#include "algui/InteractiveUINodeHighlightedChangedEvent.hpp"
+#include "algui/InteractiveUINodePressedChangedEvent.hpp"
+#include "algui/InteractiveUINodeSelectedChangedEvent.hpp"
+#include "algui/InteractiveUINodeErrorChangedEvent.hpp"
 #include "algui/InteractiveUINodeGotFocusEvent.hpp"
 #include "algui/InteractiveUINodeLostFocusEvent.hpp"
 
@@ -8,7 +12,11 @@ namespace algui {
 
 
     enum FLAGS {
-        ENABLED = 1 << 0,
+        ENABLED     = 1 << 0,
+        HIGHLIGHTED = 1 << 1, 
+        PRESSED     = 1 << 2,
+        SELECTED    = 1 << 3,
+        ERROR       = 1 << 4
     };
 
 
@@ -131,7 +139,7 @@ namespace algui {
 
 
     void InteractiveUINode::setEnabled(bool v) {
-        if (v != ((m_flags & ENABLED) == ENABLED)) {
+        if (v != isEnabled()) {
             if (!v && contains(_focusedNode)) {
                 _focusedNode->blur();
             }
@@ -185,10 +193,70 @@ namespace algui {
     }
 
 
+    bool InteractiveUINode::isHighlighted() const {
+        return (m_flags & HIGHLIGHTED) == HIGHLIGHTED;
+    }
+
+
+    void InteractiveUINode::setHighlighted(bool v) {
+        if (v != isHighlighted()) {
+            m_flags = v ? m_flags | HIGHLIGHTED : m_flags & ~HIGHLIGHTED;
+            _setHighlightedTree(this, UINode::getParentPtr() && UINode::getParentPtr()->isHighlightedTree());
+            dispatchEvent(InteractiveUINodeHighlightedChangedEvent(sharedFromThis<InteractiveUINode>()));
+        }
+    }
+
+
+    bool InteractiveUINode::isPressed() const {
+        return (m_flags & PRESSED) == PRESSED;
+    }
+
+
+    void InteractiveUINode::setPressed(bool v) {
+        if (v != isPressed()) {
+            m_flags = v ? m_flags | PRESSED : m_flags & ~PRESSED;
+            _setPressedTree(this, UINode::getParentPtr() && UINode::getParentPtr()->isPressedTree());
+            dispatchEvent(InteractiveUINodePressedChangedEvent(sharedFromThis<InteractiveUINode>()));
+        }
+    }
+
+
+    bool InteractiveUINode::isSelected() const {
+        return (m_flags & SELECTED) == SELECTED;
+    }
+
+
+    void InteractiveUINode::setSelected(bool v) {
+        if (v != isSelected()) {
+            m_flags = v ? m_flags | SELECTED : m_flags & ~SELECTED;
+            _setSelectedTree(this, UINode::getParentPtr() && UINode::getParentPtr()->isSelectedTree());
+            dispatchEvent(InteractiveUINodeSelectedChangedEvent(sharedFromThis<InteractiveUINode>()));
+        }
+    }
+
+
+    bool InteractiveUINode::isError() const {
+        return (m_flags & ERROR) == ERROR;
+    }
+
+
+    void InteractiveUINode::setError(bool v) {
+        if (v != isError()) {
+            m_flags = v ? m_flags | ERROR : m_flags & ~ERROR;
+             _setErrorTree(this, UINode::getParentPtr() && UINode::getParentPtr()->isErrorTree());
+            dispatchEvent(InteractiveUINodeErrorChangedEvent(sharedFromThis<InteractiveUINode>()));
+        }
+    }
+
+
     void InteractiveUINode::setNewChildState(const std::shared_ptr<UINode>& child) {
         UINode::setNewChildState(child);
         _setEnabledTree(child.get(), isEnabledTree());
         _setFocusedTree(child.get(), isFocusedTree());
+        _setHighlightedTree(child.get(), isHighlightedTree());
+        _setPressedTree(child.get(), isPressedTree());
+        _setSelectedTree(child.get(), isSelectedTree());
+        _setErrorTree(child.get(), isErrorTree());
     }
 
 
@@ -223,6 +291,78 @@ namespace algui {
             node->UINode::_setFocusedTree(focusedTree);
             for (UINode* child = node->getFirstChildPtr(); child; child = child->getNextSiblingPtr()) {
                 _setFocusedTree(child, focusedTree);
+            }
+        }
+    }
+
+
+    void InteractiveUINode::_setHighlightedTree(UINode* node, bool parentHighlightedTree) {
+        bool highlightedTree;
+        InteractiveUINode* inode = dynamic_cast<InteractiveUINode*>(node);
+        if (inode) {
+            highlightedTree = inode->isHighlighted() || parentHighlightedTree;
+        }
+        else {
+            highlightedTree = parentHighlightedTree;
+        }
+        if (highlightedTree != node->isHighlightedTree()) {
+            node->UINode::_setHighlightedTree(highlightedTree);
+            for (UINode* child = node->getFirstChildPtr(); child; child = child->getNextSiblingPtr()) {
+                _setHighlightedTree(child, highlightedTree);
+            }
+        }
+    }
+
+
+    void InteractiveUINode::_setPressedTree(UINode* node, bool parentPressedTree) {
+        bool pressedTree;
+        InteractiveUINode* inode = dynamic_cast<InteractiveUINode*>(node);
+        if (inode) {
+            pressedTree = inode->isPressed() || parentPressedTree;
+        }
+        else {
+            pressedTree = parentPressedTree;
+        }
+        if (pressedTree != node->isPressedTree()) {
+            node->UINode::_setPressedTree(pressedTree);
+            for (UINode* child = node->getFirstChildPtr(); child; child = child->getNextSiblingPtr()) {
+                _setPressedTree(child, pressedTree);
+            }
+        }
+    }
+
+
+    void InteractiveUINode::_setSelectedTree(UINode* node, bool parentSelectedTree) {
+        bool selectedTree;
+        InteractiveUINode* inode = dynamic_cast<InteractiveUINode*>(node);
+        if (inode) {
+            selectedTree = inode->isSelected() || parentSelectedTree;
+        }
+        else {
+            selectedTree = parentSelectedTree;
+        }
+        if (selectedTree != node->isSelectedTree()) {
+            node->UINode::_setSelectedTree(selectedTree);
+            for (UINode* child = node->getFirstChildPtr(); child; child = child->getNextSiblingPtr()) {
+                _setSelectedTree(child, selectedTree);
+            }
+        }
+    }
+
+
+    void InteractiveUINode::_setErrorTree(UINode* node, bool parentErrorTree) {
+        bool errorTree;
+        InteractiveUINode* inode = dynamic_cast<InteractiveUINode*>(node);
+        if (inode) {
+            errorTree = inode->isError() || parentErrorTree;
+        }
+        else {
+            errorTree = parentErrorTree;
+        }
+        if (errorTree != node->isErrorTree()) {
+            node->UINode::_setErrorTree(errorTree);
+            for (UINode* child = node->getFirstChildPtr(); child; child = child->getNextSiblingPtr()) {
+                _setErrorTree(child, errorTree);
             }
         }
     }

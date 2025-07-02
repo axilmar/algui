@@ -16,7 +16,11 @@ namespace algui {
         LAYOUT_DIRTY          = 1 << 5,
         SCREEN_RECT_DIRTY     = 1 << 6,
         SCREEN_SCALING_DIRTY  = 1 << 7,
-        FOCUSED_TREE          = 1 << 8
+        FOCUSED_TREE          = 1 << 8,
+        HIGHLIGHTED_TREE      = 1 << 9,
+        PRESSED_TREE          = 1 << 10,
+        SELECTED_TREE         = 1 << 11,
+        ERROR_TREE            = 1 << 12
     };
 
 
@@ -57,7 +61,7 @@ namespace algui {
 
 
     void UINode::setVisible(bool v) {
-        if (v != ((m_flags & VISIBLE) == VISIBLE)) {
+        if (v != isVisible()) {
             m_flags = v ? m_flags | VISIBLE : m_flags & ~VISIBLE;
             if (getParentPtr()) {
                 getParentPtr()->invalidateRect();
@@ -85,6 +89,26 @@ namespace algui {
 
     bool UINode::isFocusedTree() const {
         return (m_flags & FOCUSED_TREE) == FOCUSED_TREE;
+    }
+
+
+    bool UINode::isHighlightedTree() const {
+        return (m_flags & HIGHLIGHTED_TREE) == HIGHLIGHTED_TREE;
+    }
+
+
+    bool UINode::isPressedTree() const {
+        return (m_flags & PRESSED_TREE) == PRESSED_TREE;
+    }
+
+
+    bool UINode::isSelectedTree() const {
+        return (m_flags & SELECTED_TREE) == SELECTED_TREE;
+    }
+
+
+    bool UINode::isErrorTree() const {
+        return (m_flags & ERROR_TREE) == ERROR_TREE;
     }
 
 
@@ -304,6 +328,26 @@ namespace algui {
 
     void UINode::_setFocusedTree(bool v) {
         m_flags = v ? m_flags | FOCUSED_TREE : m_flags & ~FOCUSED_TREE;
+    }
+
+
+    void UINode::_setHighlightedTree(bool v) {
+        m_flags = v ? m_flags | HIGHLIGHTED_TREE : m_flags & ~HIGHLIGHTED_TREE;
+    }
+
+
+    void UINode::_setPressedTree(bool v) {
+        m_flags = v ? m_flags | PRESSED_TREE : m_flags & ~PRESSED_TREE;
+    }
+
+
+    void UINode::_setSelectedTree(bool v) {
+        m_flags = v ? m_flags | SELECTED_TREE : m_flags & ~SELECTED_TREE;
+    }
+
+
+    void UINode::_setErrorTree(bool v) {
+        m_flags = v ? m_flags | ERROR_TREE : m_flags & ~ERROR_TREE;
     }
 
 

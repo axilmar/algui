@@ -24,7 +24,7 @@ protected:
     void paint() const override {
         const Rect& r = getScreenRect();
         al_draw_filled_rectangle(r.left, r.top, r.right, r.bottom, isEnabledTree() ? al_map_rgb(255, 255, 255) : al_map_rgb(192, 192, 192));
-        al_draw_rectangle(r.left + 0.5f, r.top + 0.5f, r.right, r.bottom, al_map_rgb(0, 0, 0), 0);
+        al_draw_rectangle(r.left + 0.5f, r.top + 0.5f, r.right, r.bottom, isErrorTree() ? al_map_rgb(255, 0, 0) : al_map_rgb(0, 0, 0), 0);
     }
 };
 
@@ -107,7 +107,8 @@ int main(int argc, char** argv) {
                     form2->setRect(r);
                     */
                     //form2->setClipped(!form2->isClipped());
-                    form2->setEnabled(!form2->isEnabled());
+                    //form2->setEnabled(!form2->isEnabled());
+                    form2->setError(!form2->isError());
                     break;
                 }
                 [[fallthrough]];
