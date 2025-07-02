@@ -58,7 +58,7 @@ namespace algui {
 
 
     bool UINode::isVisible() const {
-        return m_flags & VISIBLE;
+        return (m_flags & VISIBLE) == VISIBLE;
     }
 
 
@@ -75,7 +75,7 @@ namespace algui {
 
 
     bool UINode::isClipped() const {
-        return m_flags & CLIPPED;
+        return (m_flags & CLIPPED) == CLIPPED;
     }
 
 

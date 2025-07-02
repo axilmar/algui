@@ -76,6 +76,7 @@ namespace algui {
 
         /**
          * Sets the local rectangle for this node.
+         * It emits the UINodeRectChangedEvent event.
          * @param rect the new local rectangle for this node.
          */
         void setRect(Rect rect);
@@ -98,6 +99,7 @@ namespace algui {
 
         /**
          * Sets the scaling.
+         * It emits the UINodeScalingChangedEvent event.
          * @param scaling the new scaling.
          */
         void setScaling(Scaling scaling);
@@ -110,6 +112,7 @@ namespace algui {
 
         /**
          * Hides/shows this node.
+         * It emits the UINodeVisibleChangedEvent event.
          * @param v the new visible state.
          */
         void setVisible(bool v);

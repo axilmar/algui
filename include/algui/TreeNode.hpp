@@ -70,6 +70,16 @@ namespace algui {
         }
 
         /**
+         * Returns a raw pointer to the root node.
+         * @return a raw pointer to the root node.
+         */
+        std::shared_ptr<T> getRootPtr() const {
+            T* root = const_cast<T*>(static_cast<const T*>(this));
+            for (; root->m_parent; root = root->m_parent) {}
+            return root;
+        }
+
+        /**
          * Checks if the given node is part of this tree.
          * @return true if the given node is part of this tree, false otherwise.
          */
