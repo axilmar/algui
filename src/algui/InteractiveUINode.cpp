@@ -1,11 +1,18 @@
+#include <allegro5/allegro.h>
 #include "algui/InteractiveUINode.hpp"
-#include "algui/InteractiveUINodeEnabledChangedEvent.hpp"
-#include "algui/InteractiveUINodeHighlightedChangedEvent.hpp"
-#include "algui/InteractiveUINodePressedChangedEvent.hpp"
-#include "algui/InteractiveUINodeSelectedChangedEvent.hpp"
-#include "algui/InteractiveUINodeErrorChangedEvent.hpp"
-#include "algui/InteractiveUINodeGotFocusEvent.hpp"
-#include "algui/InteractiveUINodeLostFocusEvent.hpp"
+#include "algui/EnabledChangedEvent.hpp"
+#include "algui/HighlightedChangedEvent.hpp"
+#include "algui/PressedChangedEvent.hpp"
+#include "algui/SelectedChangedEvent.hpp"
+#include "algui/ErrorChangedEvent.hpp"
+#include "algui/GotFocusEvent.hpp"
+#include "algui/LostFocusEvent.hpp"
+#include "algui/MouseEvent.hpp"
+
+
+#ifdef ERROR
+#undef ERROR
+#endif
 
 
 namespace algui {
@@ -21,6 +28,12 @@ namespace algui {
 
 
     static InteractiveUINode* _focusedNode = nullptr;
+    static ALLEGRO_EVENT _prevMouseEvent = { 0 };
+
+
+    static bool _dispatchEvent(const MouseEvent& event) {
+        return event.getTarget() ? event.getTarget()->dispatchEvent(event) : false;
+    }
 
 
     InteractiveUINode::~InteractiveUINode() {
@@ -145,7 +158,7 @@ namespace algui {
             }
             m_flags = v ? m_flags | ENABLED : m_flags & ~ENABLED;
             _setEnabledTree(this, !UINode::getParentPtr() || UINode::getParentPtr()->isEnabledTree());
-            dispatchEvent(InteractiveUINodeEnabledChangedEvent(sharedFromThis<InteractiveUINode>()));
+            dispatchEvent(EnabledChangedEvent(sharedFromThis<InteractiveUINode>()));
         }
     }
 
@@ -174,7 +187,7 @@ namespace algui {
             }
             _focusedNode = this;
             _setFocusedTree(this);
-            InteractiveUINodeGotFocusEvent event(sharedFromThis<InteractiveUINode>());
+            GotFocusEvent event(sharedFromThis<InteractiveUINode>());
             for (InteractiveUINode* inode = this; inode; inode = inode->getParentPtr()) {
                 inode->dispatchEvent(event);
             }
@@ -183,7 +196,7 @@ namespace algui {
         else {
             _focusedNode = nullptr;
             _setFocusedTree(this);
-            InteractiveUINodeLostFocusEvent event(sharedFromThis<InteractiveUINode>());
+            LostFocusEvent event(sharedFromThis<InteractiveUINode>());
             for (InteractiveUINode* inode = this; inode; inode = inode->getParentPtr()) {
                 inode->dispatchEvent(event);
             }
@@ -202,7 +215,7 @@ namespace algui {
         if (v != isHighlighted()) {
             m_flags = v ? m_flags | HIGHLIGHTED : m_flags & ~HIGHLIGHTED;
             _setHighlightedTree(this, UINode::getParentPtr() && UINode::getParentPtr()->isHighlightedTree());
-            dispatchEvent(InteractiveUINodeHighlightedChangedEvent(sharedFromThis<InteractiveUINode>()));
+            dispatchEvent(HighlightedChangedEvent(sharedFromThis<InteractiveUINode>()));
         }
     }
 
@@ -216,7 +229,7 @@ namespace algui {
         if (v != isPressed()) {
             m_flags = v ? m_flags | PRESSED : m_flags & ~PRESSED;
             _setPressedTree(this, UINode::getParentPtr() && UINode::getParentPtr()->isPressedTree());
-            dispatchEvent(InteractiveUINodePressedChangedEvent(sharedFromThis<InteractiveUINode>()));
+            dispatchEvent(PressedChangedEvent(sharedFromThis<InteractiveUINode>()));
         }
     }
 
@@ -230,7 +243,7 @@ namespace algui {
         if (v != isSelected()) {
             m_flags = v ? m_flags | SELECTED : m_flags & ~SELECTED;
             _setSelectedTree(this, UINode::getParentPtr() && UINode::getParentPtr()->isSelectedTree());
-            dispatchEvent(InteractiveUINodeSelectedChangedEvent(sharedFromThis<InteractiveUINode>()));
+            dispatchEvent(SelectedChangedEvent(sharedFromThis<InteractiveUINode>()));
         }
     }
 
@@ -244,8 +257,52 @@ namespace algui {
         if (v != isError()) {
             m_flags = v ? m_flags | ERROR : m_flags & ~ERROR;
              _setErrorTree(this, UINode::getParentPtr() && UINode::getParentPtr()->isErrorTree());
-            dispatchEvent(InteractiveUINodeErrorChangedEvent(sharedFromThis<InteractiveUINode>()));
+            dispatchEvent(ErrorChangedEvent(sharedFromThis<InteractiveUINode>()));
         }
+    }
+
+
+    bool InteractiveUINode::doEvent(const ALLEGRO_EVENT& event) {
+        if (event.type == ALLEGRO_EVENT_MOUSE_AXES || event.type == ALLEGRO_EVENT_MOUSE_WARPED) {
+            bool result = false;
+
+            if (event.mouse.dx || event.mouse.dy) {
+                result = _doRootMouseMoveEvent(this, event);
+            }
+
+            if (event.mouse.dz || event.mouse.dw) {
+                result = _doMouseWheelEvent(this, event);
+            }
+
+            _prevMouseEvent = event;
+            return result;
+        }
+
+        if (event.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) {
+            bool result = _doMouseButtonDownEvent(this, event);
+            _prevMouseEvent = event;
+            return result;
+        }
+
+        if (event.type == ALLEGRO_EVENT_MOUSE_BUTTON_UP) {
+            bool result = _doMouseButtonUpEvent(this, event);
+            _prevMouseEvent = event;
+            return result;
+        }
+
+        if (event.type == ALLEGRO_EVENT_KEY_DOWN) {
+        }
+
+        if (event.type == ALLEGRO_EVENT_KEY_UP) {
+        }
+
+        if (event.type == ALLEGRO_EVENT_KEY_CHAR) {
+        }
+
+        if (event.type == ALLEGRO_EVENT_TIMER) {
+        }
+
+        return false;
     }
 
 
@@ -365,6 +422,168 @@ namespace algui {
                 _setErrorTree(child, errorTree);
             }
         }
+    }
+
+
+    bool InteractiveUINode::_doRootMouseMoveEvent(UINode* node, const ALLEGRO_EVENT& event) {
+        if (!node || !node->isEnabledTree()) {
+            return false;
+        }
+        const bool hadMouse = node->intersects(_prevMouseEvent.mouse.x, _prevMouseEvent.mouse.y);
+        const bool hasMouse = node->intersects(event.mouse.x, event.mouse.y);
+        if (hadMouse && hasMouse) {
+            return _doMouseMoveEvent(node, event);
+        }
+        if (hadMouse) {
+            return _doMouseLeaveEvent(node, event);
+        }
+        if (hasMouse) {
+            return _doMouseEnterEvent(node, event);
+        }
+        return false;
+    }
+
+
+    bool InteractiveUINode::_doMouseEnterEvent(UINode* node, const ALLEGRO_EVENT& event) {
+        if (!node || !node->isEnabledTree()) {
+            return false;
+        }
+
+        if (_dispatchEvent(MouseEvent("mouseEnter", node->sharedFromThis<InteractiveUINode>(), event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, true))) {
+            return true;
+        }
+
+        UINode* child = node->getChildAt(event.mouse.x, event.mouse.y);
+        if (_doMouseEnterEvent(child, event)) {
+            return true;
+        }
+        
+        if (_dispatchEvent(MouseEvent("mouseEnter", node->sharedFromThis<InteractiveUINode>(), event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, false))) {
+            return true;
+        }
+
+        return false;
+    }
+
+
+    bool InteractiveUINode::_doMouseMoveEvent(UINode* node, const ALLEGRO_EVENT& event) {
+        if (!node || !node->isEnabledTree()) {
+            return false;
+        }
+
+        if (_dispatchEvent(MouseEvent("mouseMove", node->sharedFromThis<InteractiveUINode>(), event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, true))) {
+            return true;
+        }
+
+        UINode* oldChild = node->getChildAt(_prevMouseEvent.mouse.x, _prevMouseEvent.mouse.y);
+        UINode* newChild = node->getChildAt(event.mouse.x, event.mouse.y);
+
+        if (oldChild == newChild) {
+            if (_doMouseMoveEvent(newChild, event)) {
+                return true;
+            }
+        }
+        else {
+            const bool result1 = _doMouseLeaveEvent(oldChild, _prevMouseEvent);
+            const bool result2 = _doMouseEnterEvent(newChild, event);
+            if (result1 || result2) {
+                return true;
+            }
+        }
+
+        if (_dispatchEvent(MouseEvent("mouseMove", node->sharedFromThis<InteractiveUINode>(), event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, false))) {
+            return true;
+        }
+
+        return false;
+    }
+
+
+    bool InteractiveUINode::_doMouseLeaveEvent(UINode* node, const ALLEGRO_EVENT& event) {
+        if (!node || !node->isEnabledTree()) {
+            return false;
+        }
+
+        if (_dispatchEvent(MouseEvent("mouseLeave", node->sharedFromThis<InteractiveUINode>(), event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, true))) {
+            return true;
+        }
+
+        UINode* child = node->getChildAt(_prevMouseEvent.mouse.x, _prevMouseEvent.mouse.y);
+        if (_doMouseLeaveEvent(child, _prevMouseEvent)) {
+            return true;
+        }
+
+        if (_dispatchEvent(MouseEvent("mouseLeave", node->sharedFromThis<InteractiveUINode>(), event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, false))) {
+            return true;
+        }
+
+        return false;
+    }
+
+
+    bool InteractiveUINode::_doMouseWheelEvent(UINode* node, const ALLEGRO_EVENT& event) {
+        if (!node || !node->isEnabledTree()) {
+            return false;
+        }
+
+        if (_dispatchEvent(MouseEvent("mouseWheel", node->sharedFromThis<InteractiveUINode>(), event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, true))) {
+            return true;
+        }
+
+        UINode* child = node->getChildAt(event.mouse.x, event.mouse.y);
+        if (_doMouseWheelEvent(child, event)) {
+            return true;
+        }
+
+        if (_dispatchEvent(MouseEvent("mouseWheel", node->sharedFromThis<InteractiveUINode>(), event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, false))) {
+            return true;
+        }
+
+        return false;
+    }
+
+
+    bool InteractiveUINode::_doMouseButtonDownEvent(UINode* node, const ALLEGRO_EVENT& event) {
+        if (!node || !node->isEnabledTree()) {
+            return false;
+        }
+
+        if (_dispatchEvent(MouseEvent("mouseButtonDown", node->sharedFromThis<InteractiveUINode>(), event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, true))) {
+            return true;
+        }
+
+        UINode* child = node->getChildAt(event.mouse.x, event.mouse.y);
+        if (_doMouseButtonDownEvent(child, event)) {
+            return true;
+        }
+
+        if (_dispatchEvent(MouseEvent("mouseButtonDown", node->sharedFromThis<InteractiveUINode>(), event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, false))) {
+            return true;
+        }
+
+        return false;
+    }
+
+
+    bool InteractiveUINode::_doMouseButtonUpEvent(UINode* node, const ALLEGRO_EVENT& event) {
+        if (!node || !node->isEnabledTree()) {
+            return false;
+        }
+
+        if (_dispatchEvent(MouseEvent("mouseButtonUp", node->sharedFromThis<InteractiveUINode>(), event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, true))) {
+            return true;
+        }
+
+        UINode* child = node->getChildAt(event.mouse.x, event.mouse.y);
+        if (_doMouseButtonUpEvent(child, event)) {
+            return true;
+        }
+
+        if (_dispatchEvent(MouseEvent("mouseButtonUp", node->sharedFromThis<InteractiveUINode>(), event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, false))) {
+            return true;
+        }
+
+        return false;
     }
 
 

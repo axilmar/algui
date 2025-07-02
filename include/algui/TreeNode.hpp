@@ -5,9 +5,9 @@
 #include <stdexcept>
 #include <memory>
 #include "EventTarget.hpp"
-#include "TreeNodeChildAddedEvent.hpp"
-#include "TreeNodeChildRemovedEvent.hpp"
-#include "TreeNodeChildrenREmovedEvent.hpp"
+#include "ChildAddedEvent.hpp"
+#include "ChildRemovedEvent.hpp"
+#include "ChildrenRemovedEvent.hpp"
 
 
 namespace algui {
@@ -101,6 +101,19 @@ namespace algui {
         }
 
         /**
+         * Returns the depth of the node.
+         * @return the depth of the node.
+         */
+        size_t getDepth() const {
+            size_t result = 0;
+            for (const TreeNode<T>* node = this; node->m_parent; node = node->m_parent) {
+                ++result;
+            }
+            return result;
+
+        }
+
+        /**
          * Adds a child node.
          * Emits a `TreeNodeChildAddedEvent`.
          * @param child child to add; must not be null, must not already be a child, must not be an ancestor of this.
@@ -135,7 +148,7 @@ namespace algui {
 
             setNewChildState(child);
 
-            dispatchEvent(TreeNodeChildAddedEvent(sharedFromThis<T>(), child));
+            dispatchEvent(ChildAddedEvent(sharedFromThis<T>(), child));
         }
 
         /**
@@ -155,7 +168,7 @@ namespace algui {
 
             remove(child);
 
-            dispatchEvent(TreeNodeChildRemovedEvent(sharedFromThis<T>(), child));
+            dispatchEvent(ChildRemovedEvent(sharedFromThis<T>(), child));
         }
 
         /**
@@ -166,7 +179,7 @@ namespace algui {
             while (m_lastChild) {
                 remove(m_lastChild);
             }
-            dispatchEvent(TreeNodeChildrenRemovedEvent(sharedFromThis<T>()));
+            dispatchEvent(ChildrenRemovedEvent(sharedFromThis<T>()));
         }
 
         /**

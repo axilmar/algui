@@ -19,6 +19,14 @@ using namespace algui;
 
 class Test : public InteractiveUINode {
 public:
+    Test(const std::string& id) : m_id(id) {
+        addEventListener("mouseEnter", [&](const Event& event) { std::cout << std::string(getDepth() * 4, ' ') << m_id << ": mouseEnter\n"; return false; });
+        addEventListener("mouseMove", [&](const Event& event) { std::cout << std::string(getDepth() * 4, ' ') << m_id << ": mouseMove\n"; return false; });
+        addEventListener("mouseLeave", [&](const Event& event) { std::cout << std::string(getDepth() * 4, ' ') << m_id << ": mouseLeave\n"; return false; });
+        addEventListener("mouseWheel", [&](const Event& event) { std::cout << std::string(getDepth() * 4, ' ') << m_id << ": mouseWheel\n"; return false; });
+        addEventListener("mouseButtonDown", [&](const Event& event) { std::cout << std::string(getDepth() * 4, ' ') << m_id << ": mouseButtonDown\n"; return false; });
+        addEventListener("mouseButtonUp", [&](const Event& event) { std::cout << std::string(getDepth() * 4, ' ') << m_id << ": mouseButtonUp\n"; return false; });
+    }
 
 protected:
     void paint() const override {
@@ -26,6 +34,9 @@ protected:
         al_draw_filled_rectangle(r.left, r.top, r.right, r.bottom, isEnabledTree() ? al_map_rgb(255, 255, 255) : al_map_rgb(192, 192, 192));
         al_draw_rectangle(r.left + 0.5f, r.top + 0.5f, r.right, r.bottom, isErrorTree() ? al_map_rgb(255, 0, 0) : al_map_rgb(0, 0, 0), 0);
     }
+
+private:
+    std::string m_id;
 };
 
 int main(int argc, char** argv) {
@@ -56,31 +67,31 @@ int main(int argc, char** argv) {
 
     al_start_timer(timer);
 
-    std::shared_ptr<Test> root = std::make_shared<Test>();
+    std::shared_ptr<Test> root = std::make_shared<Test>("root");
     root->setRect(Rect::rect(0, 0, 800, 600));
 
-    std::shared_ptr<Test> form1 = std::make_shared<Test>();
+    std::shared_ptr<Test> form1 = std::make_shared<Test>("form1");
     form1->setRect(Rect::rect(100, 50, 250, 200));
     root->addChild(form1);
 
-    std::shared_ptr<Test> form2 = std::make_shared<Test>();
+    std::shared_ptr<Test> form2 = std::make_shared<Test>("form2");
     form2->setRect(Rect::rect(200, 150, 250, 200));
     root->addChild(form2);
 
-    std::shared_ptr<Test> form3 = std::make_shared<Test>();
+    std::shared_ptr<Test> form3 = std::make_shared<Test>("form3");
     form3->setRect(Rect::rect(300, 250, 250, 200));
     root->addChild(form3);
 
-    std::shared_ptr<Test> button1 = std::make_shared<Test>();
+    std::shared_ptr<Test> button1 = std::make_shared<Test>("button1");
     button1->setRect(Rect::rect(50, 40, 50, 40));
     form2->addChild(button1);
 
-    std::shared_ptr<Test> button2 = std::make_shared<Test>();
+    std::shared_ptr<Test> button2 = std::make_shared<Test>("button2");
     button2->setRect(Rect::rect(70, 60, 50, 40));
     form2->addChild(button2);
 
-    std::shared_ptr<Test> button3 = std::make_shared<Test>();
-    button3->setRect(Rect::rect(210, 80, 50, 40));
+    std::shared_ptr<Test> button3 = std::make_shared<Test>("button3");
+    button3->setRect(Rect::rect(230, 80, 50, 40));
     form2->addChild(button3);
 
     for (;;) {
@@ -114,6 +125,7 @@ int main(int argc, char** argv) {
                 [[fallthrough]];
 
             default:
+                root->doEvent(event);
                 break;
         }
     }

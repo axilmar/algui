@@ -1,5 +1,5 @@
-#ifndef ALGUI_UINODERECTCHANGEDEVENT_HPP
-#define ALGUI_UINODERECTCHANGEDEVENT_HPP
+#ifndef ALGUI_RECTCHANGEDEVENT_HPP
+#define ALGUI_RECTCHANGEDEVENT_HPP
 
 
 #include "UINodeEvent.hpp"
@@ -11,13 +11,13 @@ namespace algui {
     /**
      * Rect changed event.
      */
-    class UINodeRectChangedEvent : public UINodeEvent {
+    class RectChangedEvent : public UINodeEvent {
     public:
         /**
          * Constructor.
          * @param target target node.
          */
-        UINodeRectChangedEvent(std::shared_ptr<UINode>&& target)
+        RectChangedEvent(std::shared_ptr<UINode>&& target)
             : UINodeEvent("rectChanged", std::move(target))
         {
         }
@@ -27,4 +27,4 @@ namespace algui {
 } //namespace algui
 
 
-#endif //ALGUI_UINODERECTCHANGEDEVENT_HPP
+#endif //ALGUI_RECTCHANGEDEVENT_HPP

@@ -1,5 +1,5 @@
-#ifndef ALGUI_UINODEVISIBLECHANGEDEVENT_HPP
-#define ALGUI_UINODEVISIBLECHANGEDEVENT_HPP
+#ifndef ALGUI_VISIBLECHANGEDEVENT_HPP
+#define ALGUI_VISIBLECHANGEDEVENT_HPP
 
 
 #include "UINodeEvent.hpp"
@@ -11,13 +11,13 @@ namespace algui {
     /**
      * Visible changed event.
      */
-    class UINodeVisibleChangedEvent : public UINodeEvent {
+    class VisibleChangedEvent : public UINodeEvent {
     public:
         /**
          * Constructor.
          * @param target target node.
          */
-        UINodeVisibleChangedEvent(std::shared_ptr<UINode>&& target)
+        VisibleChangedEvent(std::shared_ptr<UINode>&& target)
             : UINodeEvent("visibleChanged", std::move(target))
         {
         }
@@ -27,4 +27,4 @@ namespace algui {
 } //namespace algui
 
 
-#endif //ALGUI_UINODEVISIBLECHANGEDEVENT_HPP
+#endif //ALGUI_VISIBLECHANGEDEVENT_HPP

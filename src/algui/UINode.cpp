@@ -1,7 +1,7 @@
 #include "algui/UINode.hpp"
-#include "algui/UINodeRectChangedEvent.hpp"
-#include "algui/UINodeScalingChangedEvent.hpp"
-#include "algui/UINodeVisibleChangedEvent.hpp"
+#include "algui/RectChangedEvent.hpp"
+#include "algui/ScalingChangedEvent.hpp"
+#include "algui/VisibleChangedEvent.hpp"
 
 
 namespace algui {
@@ -40,7 +40,7 @@ namespace algui {
             if (getParentPtr()) {
                 getParentPtr()->invalidateRect();
             }
-            dispatchEvent(UINodeRectChangedEvent(sharedFromThis<UINode>()));
+            dispatchEvent(RectChangedEvent(sharedFromThis<UINode>()));
         }
     }
 
@@ -50,7 +50,7 @@ namespace algui {
         if (scaling != m_scaling) {
             m_scaling = scaling;
             invalidateScreenScaling();
-            dispatchEvent(UINodeScalingChangedEvent(sharedFromThis<UINode>()));
+            dispatchEvent(ScalingChangedEvent(sharedFromThis<UINode>()));
         }
     }
 
@@ -67,7 +67,7 @@ namespace algui {
                 getParentPtr()->invalidateRect();
                 getParentPtr()->invalidateLayout();
             }
-            dispatchEvent(UINodeVisibleChangedEvent(sharedFromThis<UINode>()));
+            dispatchEvent(VisibleChangedEvent(sharedFromThis<UINode>()));
         }
     }
 
@@ -121,6 +121,29 @@ namespace algui {
     void UINode::render(const Rect& clipping) {
         _updateRect();
         _render(0, clipping);
+    }
+
+
+    bool UINode::intersects(float x, float y) const {
+        if (!isClipped()) {
+            for (UINode* child = getLastChildPtr(); child; child = child->getPrevSiblingPtr()) {
+                if (child->isVisible() && child->intersects(x, y)) {
+                    return true;
+                }
+            }
+        }
+        return m_screenRect.intersects(x, y);
+    }
+
+
+    UINode* UINode::getChildAt(float x, float y, bool enabled) const {
+        const int flags = VISIBLE | (enabled ? ENABLED_TREE : 0);
+        for (UINode* child = getLastChildPtr(); child; child = child->getPrevSiblingPtr()) {
+            if ((child->m_flags & flags) == flags && child->intersects(x, y)) {
+                return child;
+            }
+        }
+        return nullptr;
     }
 
 

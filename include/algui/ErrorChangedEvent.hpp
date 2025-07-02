@@ -1,5 +1,5 @@
-#ifndef ALGUI_INTERACTIVEUINODEERRORCHANGEDEVENT_HPP
-#define ALGUI_INTERACTIVEUINODEERRORCHANGEDEVENT_HPP
+#ifndef ALGUI_ERRORCHANGEDEVENT_HPP
+#define ALGUI_ERRORCHANGEDEVENT_HPP
 
 
 #include "InteractiveUINodeEvent.hpp"
@@ -11,13 +11,13 @@ namespace algui {
     /**
      * Error changed event.
      */
-    class InteractiveUINodeErrorChangedEvent : public InteractiveUINodeEvent {
+    class ErrorChangedEvent : public InteractiveUINodeEvent {
     public:
         /**
          * The constructor.
          * @param target the target node.
          */
-        InteractiveUINodeErrorChangedEvent(std::shared_ptr<InteractiveUINode>&& target)
+        ErrorChangedEvent(std::shared_ptr<InteractiveUINode>&& target)
             : InteractiveUINodeEvent("errorChanged", std::move(target))
         {
         }
@@ -27,4 +27,4 @@ namespace algui {
 } //namespace algui
 
 
-#endif //ALGUI_INTERACTIVEUINODEERRORCHANGEDEVENT_HPP
+#endif //ALGUI_ERRORCHANGEDEVENT_HPP

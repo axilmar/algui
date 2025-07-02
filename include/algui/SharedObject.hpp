@@ -55,7 +55,7 @@ namespace algui {
          * @return a shared ptr to const T.
          */
         template <class T> std::shared_ptr<const T> sharedFromThis() const {
-            return std::static_pointer_cast<const T>(this->shared_from_this());
+            return std::dynamic_pointer_cast<const T>(this->shared_from_this());
         }
 
         /**
@@ -63,7 +63,7 @@ namespace algui {
          * @return a shared ptr to T.
          */
         template <class T> std::shared_ptr<T> sharedFromThis() {
-            return std::static_pointer_cast<T>(this->shared_from_this());
+            return std::dynamic_pointer_cast<T>(this->shared_from_this());
         }
     };
 

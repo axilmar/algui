@@ -1,5 +1,5 @@
-#ifndef ALGUI_UINODESCALINGCHANGEDEVENT_HPP
-#define ALGUI_UINODESCALINGCHANGEDEVENT_HPP
+#ifndef ALGUI_SCALINGCHANGEDEVENT_HPP
+#define ALGUI_SCALINGCHANGEDEVENT_HPP
 
 
 #include "UINodeEvent.hpp"
@@ -11,13 +11,13 @@ namespace algui {
     /**
      * Scaling changed event.
      */
-    class UINodeScalingChangedEvent : public UINodeEvent {
+    class ScalingChangedEvent : public UINodeEvent {
     public:
         /**
          * Constructor.
          * @param target target node.
          */
-        UINodeScalingChangedEvent(std::shared_ptr<UINode>&& target)
+        ScalingChangedEvent(std::shared_ptr<UINode>&& target)
             : UINodeEvent("scalingChanged", std::move(target))
         {
         }
@@ -27,4 +27,4 @@ namespace algui {
 } //namespace algui
 
 
-#endif //ALGUI_UINODESCALINGCHANGEDEVENT_HPP
+#endif //ALGUI_SCALINGCHANGEDEVENT_HPP

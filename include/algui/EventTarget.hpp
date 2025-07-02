@@ -47,12 +47,6 @@ namespace algui {
             EventListenerId(EventListenerId&& id);
 
             /**
-             * The destructor.
-             * The event listener is removed from its event target, if not yet removed.
-             */
-            ~EventListenerId();
-
-            /**
              * The copy assignment operator.
              * Deleted because there shall be only one owner of an event listener.
              */
@@ -72,6 +66,11 @@ namespace algui {
             EventListenerId(EventTarget* eventTarget, std::string&& eventType, std::list<EventListenerFunction>::iterator&& it);
             friend class EventTarget;
         };
+
+        /**
+         * Removes all event listener ids registered to this.
+         */
+        virtual ~EventTarget();
 
         /**
          * Adds an event listener.
@@ -99,7 +98,7 @@ namespace algui {
 
         /**
          * Adds an event listener id to this object.
-         * The event listener will automatically be removed from its event target when this object goes out of scope.
+         * The event listener will automatically be removed from its event target when this event target goes out of scope.
          * @param id the event listener id to add to this object.
          */
         void addEventListenerId(EventListenerId&& id);

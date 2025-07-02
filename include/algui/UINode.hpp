@@ -51,6 +51,9 @@ namespace algui {
     };
 
 
+    /**
+     * Base class for UI nodes.
+     */
     class UINode : public TreeNode<UINode> {
     public:
         /**
@@ -170,6 +173,26 @@ namespace algui {
          * @param clipping screen clipping.
          */
         void render(const Rect& clipping);
+
+        /**
+         * Checks intersection with coordinates, i.e. if coordinates lie within this node.
+         * The comparison is done against the screen rectangle of the node, if the node is clipped,
+         * otherwise the children are also taken into account.
+         * @param x screen horizontal coordinate.
+         * @param y screen vertical coordinate.
+         */
+        virtual bool intersects(float x, float y) const;
+
+        /**
+         * Returns the child under the given screen coordinates.
+         * The method `intersects(x, y)` is called on visible children in order to 
+         * check which child is under the given coordinates.
+         * @param x screen horizontal coordinate.
+         * @param y screen vertical coordinate.
+         * @param enabled if true, then only enabled children (i.e. those with `isEnabledTree() == true`) are considered.
+         * @return the child at the given screen coordinates.
+         */
+        UINode* getChildAt(float x, float y, bool enabled = false) const;
 
     protected:
         /**

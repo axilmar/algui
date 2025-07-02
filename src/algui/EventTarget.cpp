@@ -5,19 +5,21 @@
 namespace algui {
 
 
+    EventTarget::~EventTarget() {
+        for (const EventListenerId& id : m_eventListenerIds) {
+            if (id.m_eventTarget) {
+                id.m_eventTarget->removeEventListener(id);
+            }
+        }
+    }
+
+
     EventTarget::EventListenerId::EventListenerId(EventListenerId&& id)
         : m_eventTarget(id.m_eventTarget)
         , m_eventType(std::move(id.m_eventType))
         , m_it(std::move(id.m_it))
     {
         id.m_eventTarget = nullptr;
-    }
-
-
-    EventTarget::EventListenerId::~EventListenerId() {
-        if (m_eventTarget) {
-            m_eventTarget->removeEventListener(*this);
-        }
     }
 
 

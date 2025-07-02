@@ -5,6 +5,9 @@
 #include "UINode.hpp"
 
 
+union ALLEGRO_EVENT;
+
+
 namespace algui {
 
 
@@ -213,6 +216,14 @@ namespace algui {
          */
         void setError(bool v);
 
+        /**
+         * Handles the given allegro event and creates events for this UI tree.
+         * The node must be enabled in order to handle events.
+         * @param event allegro event to handle.
+         * @return true if the event was handled, false otherwise.
+         */
+        virtual bool doEvent(const ALLEGRO_EVENT& event);
+
     protected:
         /**
          * Sets the new child state.
@@ -222,12 +233,20 @@ namespace algui {
 
     private:
         int m_flags{1};
+
         static void _setEnabledTree(UINode* node, bool parentEnabledTree);
         static void _setFocusedTree(UINode* node, bool parentFocusedTree = false);
         static void _setHighlightedTree(UINode* node, bool parentHighlightedTree = false);
         static void _setPressedTree(UINode* node, bool parentPressedTree = false);
         static void _setSelectedTree(UINode* node, bool parentSelectedTree = false);
         static void _setErrorTree(UINode* node, bool parentErrorTree = false);
+        static bool _doRootMouseMoveEvent(UINode* node, const ALLEGRO_EVENT& event);
+        static bool _doMouseEnterEvent(UINode* node, const ALLEGRO_EVENT& event);
+        static bool _doMouseMoveEvent(UINode* node, const ALLEGRO_EVENT& event);
+        static bool _doMouseLeaveEvent(UINode* node, const ALLEGRO_EVENT& event);
+        static bool _doMouseWheelEvent(UINode* node, const ALLEGRO_EVENT& event);
+        static bool _doMouseButtonDownEvent(UINode* node, const ALLEGRO_EVENT& event);
+        static bool _doMouseButtonUpEvent(UINode* node, const ALLEGRO_EVENT& event);
 };
 
 
