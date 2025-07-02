@@ -15,19 +15,12 @@ namespace algui {
         DESCENTANT_RECT_DIRTY = 1 << 4,
         LAYOUT_DIRTY          = 1 << 5,
         SCREEN_RECT_DIRTY     = 1 << 6,
-        SCREEN_SCALING_DIRTY  = 1 << 7
+        SCREEN_SCALING_DIRTY  = 1 << 7,
+        FOCUSED_TREE          = 1 << 8
     };
 
 
     static constexpr int DIRTY_FLAGS = RECT_DIRTY | DESCENTANT_RECT_DIRTY | LAYOUT_DIRTY | SCREEN_RECT_DIRTY | SCREEN_SCALING_DIRTY;
-
-
-    void UINode::addChild(const std::shared_ptr<UINode>& child, const std::shared_ptr<UINode>& nextSibling) {
-        TreeNode<UINode>::addChild(child, nextSibling);
-        if (child->m_flags & (RECT_DIRTY | DESCENTANT_RECT_DIRTY)) {
-            _setDescentantRectDirty();
-        }
-    }
 
 
     void UINode::setRect(Rect rect) {
@@ -90,6 +83,11 @@ namespace algui {
     }
 
 
+    bool UINode::isFocusedTree() const {
+        return (m_flags & FOCUSED_TREE) == FOCUSED_TREE;
+    }
+
+
     void UINode::render() {
         _updateRect();
         _render(0);
@@ -99,6 +97,14 @@ namespace algui {
     void UINode::render(const Rect& clipping) {
         _updateRect();
         _render(0, clipping);
+    }
+
+
+    void UINode::setNewChildState(const std::shared_ptr<UINode>& child) {
+        TreeNode<UINode>::setNewChildState(child);
+        if (child->m_flags & (RECT_DIRTY | DESCENTANT_RECT_DIRTY)) {
+            _setDescentantRectDirty();
+        }
     }
 
 
@@ -293,6 +299,11 @@ namespace algui {
 
     void UINode::_setEnabledTree(bool v) {
         m_flags = v ? m_flags | ENABLED_TREE : m_flags & ~ENABLED_TREE;
+    }
+
+
+    void UINode::_setFocusedTree(bool v) {
+        m_flags = v ? m_flags | FOCUSED_TREE : m_flags & ~FOCUSED_TREE;
     }
 
 

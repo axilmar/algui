@@ -54,14 +54,6 @@ namespace algui {
     class UINode : public TreeNode<UINode> {
     public:
         /**
-         * Overrides the base class method in order to set the state of the added child.
-         * @param child child to add; must not be null, must not already be a child, must not be an ancestor of this.
-         * @param nextSibling optional; if not given, then the child is added as last child, otherwise it is added before this; must be a child of this.
-         * @exception std::invalid_argument thrown if the constraints mentioned above are violated.
-         */
-        void addChild(const std::shared_ptr<UINode>& child, const std::shared_ptr<UINode>& nextSibling = nullptr) override;
-
-        /**
          * Returns the rectangle of this node, relative to its parent, or to the screen.
          * @return the rectangle of this node
          */
@@ -139,6 +131,12 @@ namespace algui {
         bool isEnabledTree() const;
 
         /**
+         * Checks if this UI node belongs in a focused tree.
+         * @return true if this UI node belongs in an a focused tree, false otherwise.
+         */
+        bool isFocusedTree() const;
+
+        /**
          * Updates and paints the node tree.
          */
         void render();
@@ -150,6 +148,12 @@ namespace algui {
         void render(const Rect& clipping);
 
     protected:
+        /**
+         * Sets the new child state.
+         * @param child the new child.
+         */
+        void setNewChildState(const std::shared_ptr<UINode>& child) override;
+
         /**
          * Sets the RECT_DIRTY flag on this UI node,
          * and the DESCENTANT_RECT_DIRTY flag to all the ancestor nodes,
@@ -236,6 +240,7 @@ namespace algui {
         void _render1(int flags, const Rect& clipping);
         void _setDescentantRectDirty();
         void _setEnabledTree(bool v);
+        void _setFocusedTree(bool v);
 
         friend class InteractiveUINode;
     };

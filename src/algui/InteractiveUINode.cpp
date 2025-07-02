@@ -1,5 +1,7 @@
 #include "algui/InteractiveUINode.hpp"
 #include "algui/InteractiveUINodeEnabledChangedEvent.hpp"
+#include "algui/InteractiveUINodeGotFocusEvent.hpp"
+#include "algui/InteractiveUINodeLostFocusEvent.hpp"
 
 
 namespace algui {
@@ -8,6 +10,16 @@ namespace algui {
     enum FLAGS {
         ENABLED = 1 << 0,
     };
+
+
+    static InteractiveUINode* _focusedNode = nullptr;
+
+
+    InteractiveUINode::~InteractiveUINode() {
+        if (this == _focusedNode) {
+            _focusedNode = nullptr;
+        }
+    }
 
 
     std::shared_ptr<InteractiveUINode> InteractiveUINode::getParent() const {
@@ -120,15 +132,63 @@ namespace algui {
 
     void InteractiveUINode::setEnabled(bool v) {
         if (v != ((m_flags & ENABLED) == ENABLED)) {
+            if (!v && contains(_focusedNode)) {
+                _focusedNode->blur();
+            }
             m_flags = v ? m_flags | ENABLED : m_flags & ~ENABLED;
-            _setEnabledTree(this, _isEnabledAncestorTree());
+            _setEnabledTree(this, !UINode::getParentPtr() || UINode::getParentPtr()->isEnabledTree());
             dispatchEvent(InteractiveUINodeEnabledChangedEvent(sharedFromThis<InteractiveUINode>()));
         }
     }
 
-    bool InteractiveUINode::_isEnabledAncestorTree() const {
-        InteractiveUINode* parent = getParentPtr();
-        return !parent || parent->isEnabledTree();
+
+    bool InteractiveUINode::isFocused() const {
+        return _focusedNode == this;
+    }
+
+
+    InteractiveUINode* InteractiveUINode::getFocusedNode() {
+        return _focusedNode;
+    }
+
+
+    bool InteractiveUINode::setFocused(bool v) {
+        if (v == isFocused()) {
+            return true;
+        }
+
+        if (v) {
+            if (!isEnabledTree()) {
+                return false;
+            }
+            if (_focusedNode) {
+                _focusedNode->blur();
+            }
+            _focusedNode = this;
+            _setFocusedTree(this);
+            InteractiveUINodeGotFocusEvent event(sharedFromThis<InteractiveUINode>());
+            for (InteractiveUINode* inode = this; inode; inode = inode->getParentPtr()) {
+                inode->dispatchEvent(event);
+            }
+        }
+
+        else {
+            _focusedNode = nullptr;
+            _setFocusedTree(this);
+            InteractiveUINodeLostFocusEvent event(sharedFromThis<InteractiveUINode>());
+            for (InteractiveUINode* inode = this; inode; inode = inode->getParentPtr()) {
+                inode->dispatchEvent(event);
+            }
+        }
+
+        return true;
+    }
+
+
+    void InteractiveUINode::setNewChildState(const std::shared_ptr<UINode>& child) {
+        UINode::setNewChildState(child);
+        _setEnabledTree(child.get(), isEnabledTree());
+        _setFocusedTree(child.get(), isFocusedTree());
     }
 
 
@@ -141,9 +201,29 @@ namespace algui {
         else {
             enabledTree = parentEnabledTree;
         }
-        node->UINode::_setEnabledTree(enabledTree);
-        for (UINode* child = node->getFirstChildPtr(); child; child = child->getNextSiblingPtr()) {
-            _setEnabledTree(child, enabledTree);
+        if (enabledTree != node->isEnabledTree()) {
+            node->UINode::_setEnabledTree(enabledTree);
+            for (UINode* child = node->getFirstChildPtr(); child; child = child->getNextSiblingPtr()) {
+                _setEnabledTree(child, enabledTree);
+            }
+        }
+    }
+
+
+    void InteractiveUINode::_setFocusedTree(UINode* node, bool parentFocusedTree) {
+        bool focusedTree;
+        InteractiveUINode* inode = dynamic_cast<InteractiveUINode*>(node);
+        if (inode) {
+            focusedTree = inode->isFocused() || parentFocusedTree;
+        }
+        else {
+            focusedTree = parentFocusedTree;
+        }
+        if (focusedTree != node->isFocusedTree()) {
+            node->UINode::_setFocusedTree(focusedTree);
+            for (UINode* child = node->getFirstChildPtr(); child; child = child->getNextSiblingPtr()) {
+                _setFocusedTree(child, focusedTree);
+            }
         }
     }
 

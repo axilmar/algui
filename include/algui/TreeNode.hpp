@@ -24,7 +24,7 @@ namespace algui {
          * @return a pointer to the parent node.
          */
         std::shared_ptr<T> getParent() const {
-            return m_parent ? m_parent->shared_from_this() : nullptr;
+            return m_parent ? m_parent->sharedFromThis<T>() : nullptr;
         }
 
         /**
@@ -133,6 +133,8 @@ namespace algui {
             (prevSibling ? prevSibling->m_nextSibling : m_firstChild) = child;
             (nextSibling ? nextSibling->m_prevSibling : m_lastChild) = child;
 
+            setNewChildState(child);
+
             dispatchEvent(TreeNodeChildAddedEvent(sharedFromThis<T>(), child));
         }
 
@@ -205,6 +207,16 @@ namespace algui {
          */
         T* getLastChildPtr() const {
             return m_lastChild.get();
+        }
+
+    protected:
+        /**
+         * Invoked when a new child is added.
+         * It allows setting the state of a new child.
+         * By default, it does nothing.
+         * @param child the new child.
+         */
+        virtual void setNewChildState(const std::shared_ptr<T>& child) {
         }
 
     private:
