@@ -2,7 +2,9 @@
 #define ALGUI_INTERACTIVEUINODE_HPP
 
 
+#include <any>
 #include "UINode.hpp"
+#include "algui/MouseEvent.hpp"
 
 
 union ALLEGRO_EVENT;
@@ -217,6 +219,28 @@ namespace algui {
         void setError(bool v);
 
         /**
+         * Begins drag-n-drop from the given mouse event.
+         * If drag-n-drop is enabled, then nodes receive drag-n-drop events instead of mouse and keyboard events.
+         * Drag-n-drop ends automatically when the user releases the same mouse button that started the drag-n-drop.
+         * Drag-n-drop cannot start if another drag-n-drop action is in progress or no mouse button is held down.
+         * @param event mouse event to start drag-n-drop with; mouse position must be away from button down position a few pixels.
+         * @param data dragged data; must not be empty.
+         * @return true on success, false if any of the above preconditions are not met.
+         */
+        virtual bool beginDragAndDrop(const MouseEvent& event, const std::any& data);
+
+        /**
+         * Stops drag-n-drop, if currently active.
+         */
+        static void endDragAndDrop();
+
+        /**
+         * Returns the dragged data.
+         * @return the dragged data.
+         */
+        static const std::any& getDraggedData();
+
+        /**
          * Handles the given allegro event and creates events for this UI tree.
          * The node must be enabled in order to handle events.
          * ALLEGRO events are handled in this way:
@@ -254,16 +278,16 @@ namespace algui {
         static void _setPressedTree(UINode* node, bool parentPressedTree = false);
         static void _setSelectedTree(UINode* node, bool parentSelectedTree = false);
         static void _setErrorTree(UINode* node, bool parentErrorTree = false);
-        static bool _doRootMouseMoveEvent(UINode* node, const ALLEGRO_EVENT& event);
-        static bool _doMouseEnterEvent(UINode* node, const ALLEGRO_EVENT& event);
-        static bool _doMouseMoveEvent(UINode* node, const ALLEGRO_EVENT& event);
-        static bool _doMouseLeaveEvent(UINode* node, const ALLEGRO_EVENT& event);
-        static bool _doMouseWheelEvent(UINode* node, const ALLEGRO_EVENT& event);
-        static bool _doMouseButtonDownEvent(UINode* node, const ALLEGRO_EVENT& event);
-        static bool _doMouseButtonUpEvent(UINode* node, const ALLEGRO_EVENT& event);
-        static bool _doKeyboardEvent(const std::string_view& type, InteractiveUINode* node, const ALLEGRO_EVENT& event);
-        static bool _doUnusedKeyboardEvent(const std::string_view& type, UINode* node, const ALLEGRO_EVENT& event);
+        static bool _doRootMouseMoveEvent(const std::string_view& type, const std::string_view& enterType, const std::string_view& leaveType, UINode* node, const ALLEGRO_EVENT& event);
+        static bool _doMouseEnterEvent(const std::string_view& type, UINode* node, const ALLEGRO_EVENT& event);
+        static bool _doMouseMoveEvent(const std::string_view& type, const std::string_view& enterType, const std::string_view& leaveType, UINode* node, const ALLEGRO_EVENT& event);
+        static bool _doMouseLeaveEvent(const std::string_view& type, UINode* node, const ALLEGRO_EVENT& event);
+        static bool _doMouseButtonEvent(const std::string_view& type, UINode* node, const ALLEGRO_EVENT& event);
+        static bool _doRootKeyboardEvent(const std::string_view& type, InteractiveUINode* node, const ALLEGRO_EVENT& event);
+        static bool _doKeyboardEvent(const std::string_view& type, UINode* node, const ALLEGRO_EVENT& event);
+        static bool _doDragKeyEvent(const std::string_view& type, UINode* node, const ALLEGRO_EVENT& event, const ALLEGRO_EVENT& mouseEvent);
         static bool _doTimerEvent(UINode* node, const Event& event);
+
 };
 
 
