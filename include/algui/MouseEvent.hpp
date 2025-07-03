@@ -3,7 +3,7 @@
 
 
 #include <utility>
-#include "InteractiveUINodeEvent.hpp"
+#include "Event.hpp"
 
 
 namespace algui {
@@ -12,7 +12,7 @@ namespace algui {
     /**
      * Base class for mouse events.
      */
-    class MouseEvent : public InteractiveUINodeEvent {
+    class MouseEvent : public Event {
     public:
         /**
          * Constructor.
@@ -24,8 +24,8 @@ namespace algui {
          * @param button mouse button.
          * @param capture capture phase flag.
          */
-        MouseEvent(const std::string_view& type, std::shared_ptr<InteractiveUINode>&& target, int x, int y, int z, int w, int button, bool capture)
-            : InteractiveUINodeEvent(type, std::move(target))
+        MouseEvent(const std::string_view& type, int x, int y, int z, int w, int button, bool capture)
+            : Event(type)
             , m_x(x)
             , m_y(y)
             , m_z(z)

@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <memory>
 #include "EventTarget.hpp"
-#include "TreeNodeChildEvent.hpp"
+#include "ChildEvent.hpp"
 
 
 namespace algui {
@@ -113,7 +113,7 @@ namespace algui {
 
         /**
          * Adds a child node.
-         * It emits a TreeNodeChildEvent with type "childAdded".
+         * It emits a ChildEvent with type "childAdded".
          * @param child child to add; must not be null, must not already be a child, must not be an ancestor of this.
          * @param nextSibling optional; if not given, then the child is added as last child, otherwise it is added before this; must be a child of this.
          * @exception std::invalid_argument thrown if the constraints mentioned above are violated.
@@ -146,12 +146,12 @@ namespace algui {
 
             setNewChildState(child);
 
-            dispatchEvent(TreeNodeChildEvent("childAdded", sharedFromThis<T>(), child));
+            dispatchEvent(ChildEvent<T>("childAdded", sharedFromThis<T>(), child));
         }
 
         /**
          * Removes a child node.
-         * It emits a TreeNodeChildEvent with type "childRemoved".
+         * It emits a ChildEvent with type "childRemoved".
          * @param child child to remove; must not be null, must be a child of this.
          * @exception std::invalid_argument thrown if the constraints mentioned above are violated.
          */
@@ -166,18 +166,18 @@ namespace algui {
 
             remove(child);
 
-            dispatchEvent(TreeNodeChildEvent("childRemoved", sharedFromThis<T>(), child));
+            dispatchEvent(ChildEvent<T>("childRemoved", sharedFromThis<T>(), child));
         }
 
         /**
          * Removes all children.
-         * It emits a TreeNodeEvent with type "childrenRemoved".
+         * It emits an ObjectEvent with type "childrenRemoved".
          */
         virtual void removeChildren() {
             while (m_lastChild) {
                 remove(m_lastChild);
             }
-            dispatchEvent(TreeNodeEvent("childrenREmoved", sharedFromThis<T>()));
+            dispatchEvent(ObjectEvent<T>("childrenRemoved", sharedFromThis<T>()));
         }
 
         /**

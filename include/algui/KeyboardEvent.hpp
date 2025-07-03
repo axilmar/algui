@@ -3,7 +3,7 @@
 
 
 #include <utility>
-#include "InteractiveUINodeEvent.hpp"
+#include "Event.hpp"
 
 
 namespace algui {
@@ -12,19 +12,19 @@ namespace algui {
     /**
      * Base class for keyboard events.
      */
-    class KeyboardEvent : public InteractiveUINodeEvent {
+    class KeyboardEvent : public Event {
     public:
         /**
          * Constructor.
-         * @param type type of eevent.
+         * @param type type of event.
          * @param x horizontal mouse coordinate.
          * @param keycode ALLEGRO keycode.
          * @param char_ unicode character.
          * @param modifiers ALLEGRO modifiers bitfield.
          * @param repeated if event is repeated.
          */
-        KeyboardEvent(const std::string_view& type, std::shared_ptr<InteractiveUINode>&& target, int keycode, int char_, unsigned int modifiers, bool repeated)
-            : InteractiveUINodeEvent(type, std::move(target))
+        KeyboardEvent(const std::string_view& type, int keycode, int char_, unsigned int modifiers, bool repeated)
+            : Event(type)
             , m_keycode(keycode)
             , m_char(char_)
             , m_modifiers(modifiers)

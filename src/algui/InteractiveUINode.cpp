@@ -1,6 +1,6 @@
 #include <allegro5/allegro.h>
 #include "algui/InteractiveUINode.hpp"
-#include "algui/InteractiveUINodeEvent.hpp"
+#include "algui/ObjectEvent.hpp"
 #include "algui/KeyboardEvent.hpp"
 
 
@@ -37,8 +37,9 @@ namespace algui {
     }
 
 
-    static bool _dispatchEvent(const InteractiveUINodeEvent& event) {
-        return event.getTarget() ? event.getTarget()->dispatchEvent(event) : false;
+    template <class T, class E>
+    static bool _dispatchEvent(T* object, const E& event) {
+        return object ? object->dispatchEvent(event) : false;
     }
 
 
@@ -164,7 +165,7 @@ namespace algui {
             }
             m_flags = v ? m_flags | ENABLED : m_flags & ~ENABLED;
             _setEnabledTree(this, !UINode::getParentPtr() || UINode::getParentPtr()->isEnabledTree());
-            dispatchEvent(InteractiveUINodeEvent("enabledChanged", sharedFromThis<InteractiveUINode>()));
+            dispatchEvent(ObjectEvent<InteractiveUINode>("enabledChanged", sharedFromThis<InteractiveUINode>()));
         }
     }
 
@@ -193,7 +194,7 @@ namespace algui {
             }
             _focusedNode = this;
             _setFocusedTree(this);
-            InteractiveUINodeEvent event("gotFocus", sharedFromThis<InteractiveUINode>());
+            ObjectEvent<InteractiveUINode> event("gotFocus", sharedFromThis<InteractiveUINode>());
             for (InteractiveUINode* inode = this; inode; inode = inode->getParentPtr()) {
                 inode->dispatchEvent(event);
             }
@@ -202,7 +203,7 @@ namespace algui {
         else {
             _focusedNode = nullptr;
             _setFocusedTree(this);
-            InteractiveUINodeEvent event("lostFocus", sharedFromThis<InteractiveUINode>());
+            ObjectEvent<InteractiveUINode> event("lostFocus", sharedFromThis<InteractiveUINode>());
             for (InteractiveUINode* inode = this; inode; inode = inode->getParentPtr()) {
                 inode->dispatchEvent(event);
             }
@@ -221,7 +222,7 @@ namespace algui {
         if (v != isHighlighted()) {
             m_flags = v ? m_flags | HIGHLIGHTED : m_flags & ~HIGHLIGHTED;
             _setHighlightedTree(this, UINode::getParentPtr() && UINode::getParentPtr()->isHighlightedTree());
-            dispatchEvent(InteractiveUINodeEvent("highlightedChanged", sharedFromThis<InteractiveUINode>()));
+            dispatchEvent(ObjectEvent<InteractiveUINode>("highlightedChanged", sharedFromThis<InteractiveUINode>()));
         }
     }
 
@@ -235,7 +236,7 @@ namespace algui {
         if (v != isPressed()) {
             m_flags = v ? m_flags | PRESSED : m_flags & ~PRESSED;
             _setPressedTree(this, UINode::getParentPtr() && UINode::getParentPtr()->isPressedTree());
-            dispatchEvent(InteractiveUINodeEvent("pressedChanged", sharedFromThis<InteractiveUINode>()));
+            dispatchEvent(ObjectEvent<InteractiveUINode>("pressedChanged", sharedFromThis<InteractiveUINode>()));
         }
     }
 
@@ -249,7 +250,7 @@ namespace algui {
         if (v != isSelected()) {
             m_flags = v ? m_flags | SELECTED : m_flags & ~SELECTED;
             _setSelectedTree(this, UINode::getParentPtr() && UINode::getParentPtr()->isSelectedTree());
-            dispatchEvent(InteractiveUINodeEvent("selectedChanged", sharedFromThis<InteractiveUINode>()));
+            dispatchEvent(ObjectEvent<InteractiveUINode>("selectedChanged", sharedFromThis<InteractiveUINode>()));
         }
     }
 
@@ -263,7 +264,7 @@ namespace algui {
         if (v != isError()) {
             m_flags = v ? m_flags | ERROR : m_flags & ~ERROR;
              _setErrorTree(this, UINode::getParentPtr() && UINode::getParentPtr()->isErrorTree());
-             dispatchEvent(InteractiveUINodeEvent("errorChanged", sharedFromThis<InteractiveUINode>()));
+             dispatchEvent(ObjectEvent<InteractiveUINode>("errorChanged", sharedFromThis<InteractiveUINode>()));
         }
     }
 
@@ -525,7 +526,9 @@ namespace algui {
             return false;
         }
 
-        if (_dispatchEvent(MouseEvent(type, node->sharedFromThis<InteractiveUINode>(), event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, true))) {
+        InteractiveUINode* inode = node->as<InteractiveUINode>();
+
+        if (_dispatchEvent(inode, MouseEvent(type, event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, true))) {
             return true;
         }
 
@@ -534,7 +537,7 @@ namespace algui {
             return true;
         }
         
-        if (_dispatchEvent(MouseEvent(type, node->sharedFromThis<InteractiveUINode>(), event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, false))) {
+        if (_dispatchEvent(inode, MouseEvent(type, event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, false))) {
             return true;
         }
 
@@ -547,7 +550,9 @@ namespace algui {
             return false;
         }
 
-        if (_dispatchEvent(MouseEvent(type, node->sharedFromThis<InteractiveUINode>(), event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, true))) {
+        InteractiveUINode* inode = node->as<InteractiveUINode>();
+
+        if (_dispatchEvent(inode, MouseEvent(type, event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, true))) {
             return true;
         }
 
@@ -567,7 +572,7 @@ namespace algui {
             }
         }
 
-        if (_dispatchEvent(MouseEvent(type, node->sharedFromThis<InteractiveUINode>(), event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, false))) {
+        if (_dispatchEvent(inode, MouseEvent(type, event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, false))) {
             return true;
         }
 
@@ -580,7 +585,9 @@ namespace algui {
             return false;
         }
 
-        if (_dispatchEvent(MouseEvent(type, node->sharedFromThis<InteractiveUINode>(), event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, true))) {
+        InteractiveUINode* inode = node->as<InteractiveUINode>();
+
+        if (_dispatchEvent(inode, MouseEvent(type, event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, true))) {
             return true;
         }
 
@@ -589,7 +596,7 @@ namespace algui {
             return true;
         }
 
-        if (_dispatchEvent(MouseEvent(type, node->sharedFromThis<InteractiveUINode>(), event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, false))) {
+        if (_dispatchEvent(inode, MouseEvent(type, event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, false))) {
             return true;
         }
 
@@ -602,7 +609,9 @@ namespace algui {
             return false;
         }
 
-        if (_dispatchEvent(MouseEvent(type, node->sharedFromThis<InteractiveUINode>(), event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, true))) {
+        InteractiveUINode* inode = node->as<InteractiveUINode>();
+
+        if (_dispatchEvent(inode, MouseEvent(type, event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, true))) {
             return true;
         }
 
@@ -611,7 +620,7 @@ namespace algui {
             return true;
         }
 
-        if (_dispatchEvent(MouseEvent(type, node->sharedFromThis<InteractiveUINode>(), event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, false))) {
+        if (_dispatchEvent(inode, MouseEvent(type, event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, false))) {
             return true;
         }
 
@@ -624,22 +633,26 @@ namespace algui {
             return false;
         }
 
+        KeyboardEvent keyEvent(type, event.keyboard.keycode, event.keyboard.unichar, event.keyboard.modifiers, event.keyboard.repeat);
+
         if (_focusedNode) {
-            if (_focusedNode->dispatchEvent(KeyboardEvent(type, _focusedNode->sharedFromThis<InteractiveUINode>(), event.keyboard.keycode, event.keyboard.unichar, event.keyboard.modifiers, event.keyboard.repeat))) {
+            if (_focusedNode->dispatchEvent(keyEvent)) {
                 return true;
             }
         }
 
-        return _doKeyboardEvent(type, node, event);
+        return _doKeyboardEvent(type, node, keyEvent);
     }
 
 
-    bool InteractiveUINode::_doKeyboardEvent(const std::string_view& type, UINode* node, const ALLEGRO_EVENT& event) {
+    bool InteractiveUINode::_doKeyboardEvent(const std::string_view& type, UINode* node, const KeyboardEvent& event) {
         if (!node || !node->isEnabledTree()) {
             return false;
         }
 
-        if (_dispatchEvent(KeyboardEvent(type, node->sharedFromThis<InteractiveUINode>(), event.keyboard.keycode, event.keyboard.unichar, event.keyboard.modifiers, event.keyboard.repeat))) {
+        InteractiveUINode* inode = node->as<InteractiveUINode>();
+
+        if (_dispatchEvent(inode, event)) {
             return true;
         }
 
@@ -677,7 +690,11 @@ namespace algui {
             return false;
         }
 
-        if (_dispatchEvent(KeyboardEvent(type, node->sharedFromThis<InteractiveUINode>(), event.keyboard.keycode, event.keyboard.unichar, event.keyboard.modifiers, event.keyboard.repeat))) {
+        InteractiveUINode* inode = node->as<InteractiveUINode>();
+
+        KeyboardEvent keyEvent(type, event.keyboard.keycode, event.keyboard.unichar, event.keyboard.modifiers, event.keyboard.repeat);
+
+        if (_dispatchEvent(inode, keyEvent)) {
             return true;
         }
 
@@ -686,7 +703,7 @@ namespace algui {
             return true;
         }
 
-        if (_dispatchEvent(KeyboardEvent(type, node->sharedFromThis<InteractiveUINode>(), event.keyboard.keycode, event.keyboard.unichar, event.keyboard.modifiers, event.keyboard.repeat))) {
+        if (_dispatchEvent(inode, keyEvent)) {
             return true;
         }
 

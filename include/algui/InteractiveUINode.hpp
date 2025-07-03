@@ -5,6 +5,7 @@
 #include <any>
 #include "UINode.hpp"
 #include "algui/MouseEvent.hpp"
+#include "algui/KeyboardEvent.hpp"
 
 
 union ALLEGRO_EVENT;
@@ -105,7 +106,7 @@ namespace algui {
         /**
          * Sets the enabled state.
          * If it is to be disabled and contains the focus, then the node with the focus loses the focus.
-         * It emits an InteractiveUINodeEvent with type "enabledChanged".
+         * It emits an ObjectEvent with type "enabledChanged".
          * @param v the new enabled state.
          */
         void setEnabled(bool v);
@@ -142,8 +143,8 @@ namespace algui {
         /**
          * Sets or removes the focus from this node.
          * If the node is disabled, it cannot get the focus.
-         * If the node gets the focus, then it emits an InteractiveUINodeEvent with type "gotFocus".
-         * If the node loses the focus, then it emits the InteractiveUINodeEvent with type "lostFocus".
+         * If the node gets the focus, then it emits an ObjectEvent with type "gotFocus".
+         * If the node loses the focus, then it emits an ObjectEvent with type "lostFocus".
          * Both events bubble up to root.
          * @param v the new focused state.
          * @return true if the state was changed successfully, false otherwise.
@@ -174,7 +175,7 @@ namespace algui {
 
         /**
          * Sets the highlighted state.
-         * It emits an InteractiveUINodeEvent with type "highlightedChanged".
+         * It emits an ObjectEvent with type "highlightedChanged".
          * @param v the new highlighted state.
          */
         void setHighlighted(bool v);
@@ -187,7 +188,7 @@ namespace algui {
 
         /**
          * Sets the pressed state.
-         * It emits an InteractiveUINodeEvent with type "pressedChanged".
+         * It emits an ObjectEvent with type "pressedChanged".
          * @param v the new pressed state.
          */
         void setPressed(bool v);
@@ -200,7 +201,7 @@ namespace algui {
 
         /**
          * Sets the selected state.
-         * It emits an InteractiveUINodeEvent with type "selectedChanged".
+         * It emits an ObjectEvent with type "selectedChanged".
          * @param v the new selected state.
          */
         void setSelected(bool v);
@@ -213,7 +214,7 @@ namespace algui {
 
         /**
          * Sets the error state.
-         * It emits an InteractiveUINodeEvent with type "errorChanged".
+         * It emits an ObjectEvent with type "errorChanged".
          * @param v the new error state.
          */
         void setError(bool v);
@@ -284,7 +285,7 @@ namespace algui {
         static bool _doMouseLeaveEvent(const std::string_view& type, UINode* node, const ALLEGRO_EVENT& event);
         static bool _doMouseButtonEvent(const std::string_view& type, UINode* node, const ALLEGRO_EVENT& event);
         static bool _doRootKeyboardEvent(const std::string_view& type, InteractiveUINode* node, const ALLEGRO_EVENT& event);
-        static bool _doKeyboardEvent(const std::string_view& type, UINode* node, const ALLEGRO_EVENT& event);
+        static bool _doKeyboardEvent(const std::string_view& type, UINode* node, const KeyboardEvent& event);
         static bool _doDragKeyEvent(const std::string_view& type, UINode* node, const ALLEGRO_EVENT& event, const ALLEGRO_EVENT& mouseEvent);
         static bool _doTimerEvent(UINode* node, const Event& event);
 

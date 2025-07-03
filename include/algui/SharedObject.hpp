@@ -65,6 +65,22 @@ namespace algui {
         template <class T> std::shared_ptr<T> sharedFromThis() {
             return std::dynamic_pointer_cast<T>(this->shared_from_this());
         }
+
+        /**
+         * Converts this to T.
+         * @return conversion of this to T or nullptr if the conversion is not valid.
+         */
+        template <class T> const T* as() const {
+            return dynamic_cast<const T*>(this);
+        }
+
+        /**
+         * Converts this to T.
+         * @return conversion of this to T or nullptr if the conversion is not valid.
+         */
+        template <class T> T* as() {
+            return dynamic_cast<T*>(this);
+        }
     };
 
 
