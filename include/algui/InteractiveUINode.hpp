@@ -219,6 +219,13 @@ namespace algui {
         /**
          * Handles the given allegro event and creates events for this UI tree.
          * The node must be enabled in order to handle events.
+         * ALLEGRO events are handled in this way:
+         *  - ALLEGRO_EVENT_MOUSE_AXES/ALLEGRO_EVENT_MOUSE_WARPED/ALLEGRO_EVENT_MOUSE_BUTTON_DOWN/ALEGRO_EVENT_MOUSE_BUTTON_UP: 
+         *      Converted to MouseEvent class with type "mouseMove", "mouseEnter", "mouseLeave", "mouseWheel".
+         *  - ALLEGRO_EVENT_KEY_DOWN/ALLEGRO_EVENT_KEY_UP/ALLEGRO_EVENT_KEYCHAR: 
+         *      Converted to KeyboardEvent class with type "keyDown", "keyUp", "keyChar".
+         *  - ALLEGRO_EVENT_TIMER: 
+         *      Converted to Event class with type "timer".
          * @param event allegro event to handle.
          * @return true if the event was handled, false otherwise.
          */
