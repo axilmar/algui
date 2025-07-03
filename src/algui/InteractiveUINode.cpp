@@ -1,4 +1,3 @@
-#include <allegro5/allegro.h>
 #include "algui/InteractiveUINode.hpp"
 #include "algui/ObjectEvent.hpp"
 #include "algui/KeyboardEvent.hpp"
@@ -29,6 +28,7 @@ namespace algui {
     static int _dragAndDropButton = 0;
     static std::any _draggedData;
     static bool _resetPrevMousePosition = false;
+    static std::vector<DraggedImage>* _draggedImages = nullptr;
 
 
     static float _distance(float x1, float y1, float x2, float y2) {
@@ -44,10 +44,35 @@ namespace algui {
     }
 
 
+    static void _renderDraggedImages() {
+        if (_draggedImages) {
+            ALLEGRO_MOUSE_STATE state;
+            al_get_mouse_state(&state);
+            for (const DraggedImage& di : *_draggedImages) {
+                if (di.enabled) {
+                    al_draw_bitmap(di.bitmap, state.x - di.xFocus, state.y - di.yFocus, 0);
+                }
+            }
+        }
+    }
+
+
     InteractiveUINode::~InteractiveUINode() {
         if (this == _focusedNode) {
             _focusedNode = nullptr;
         }
+    }
+
+
+    void InteractiveUINode::render() {
+        UINode::render();
+        _renderDraggedImages();
+    }
+
+
+    void InteractiveUINode::render(const Rect& clipping) {
+        UINode::render(clipping);
+        _renderDraggedImages();
     }
 
 
@@ -298,12 +323,22 @@ namespace algui {
             _draggedData.reset();
             _buttonDownEvent.mouse.button = 0;
             _resetPrevMousePosition = false;
+            _draggedImages = nullptr;
         }
     }
 
 
     const std::any& InteractiveUINode::getDraggedData() {
         return _draggedData;
+    }
+
+
+    bool InteractiveUINode::setDraggedImages(std::vector<DraggedImage>* images) {
+        if (_dragAndDrop) {
+            _draggedImages = images;
+            return true;
+        }
+        return false;
     }
 
 

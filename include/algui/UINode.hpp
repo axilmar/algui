@@ -167,13 +167,13 @@ namespace algui {
         /**
          * Updates and paints the node tree.
          */
-        void render();
+        virtual void render();
 
         /**
          * Updates and paints the node tree, for every node that falls within the given screen rectangle.
          * @param clipping screen clipping.
          */
-        void render(const Rect& clipping);
+        virtual void render(const Rect& clipping);
 
         /**
          * Checks intersection with coordinates, i.e. if coordinates lie within this node.

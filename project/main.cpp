@@ -103,6 +103,45 @@ int main(int argc, char** argv) {
         return button2->beginDragAndDrop(static_cast<const MouseEvent&>(event), std::string("data"));
     });
 
+    ALLEGRO_BITMAP* target = al_get_target_bitmap();
+
+    ALLEGRO_BITMAP* bmp = al_create_bitmap(32, 32);
+    al_set_target_bitmap(bmp);
+    al_draw_filled_rectangle(0, 0, 32, 32, al_map_rgb(128, 64, 192));
+
+    ALLEGRO_BITMAP* bmp1 = al_create_bitmap(8, 8);
+    al_set_target_bitmap(bmp1);
+    al_draw_filled_rectangle(0, 0, 8, 8, al_map_rgb(255, 0, 0));
+
+    al_set_target_bitmap(target);
+
+    std::vector<DraggedImage> draggedImages({ DraggedImage{bmp, 16, 16, true}, DraggedImage{bmp1, 16, -8, false} });
+
+    button3->addEventListener("dragEnter", [&](const Event& event) { 
+        InteractiveUINode::setDraggedImages(&draggedImages);
+        return false;
+    });
+
+    button3->addEventListener("dragLeave", [&](const Event& event) { 
+        InteractiveUINode::setDraggedImages(nullptr);
+        return false;
+    });
+
+    root->addEventListener("dragKeyDown", [&](const Event& event) { 
+        const KeyboardEvent& keyboardEvent = static_cast<const KeyboardEvent&>(event);
+        if (keyboardEvent.getKeyCode() == ALLEGRO_KEY_LSHIFT) {
+            draggedImages[1].enabled = true;
+        }
+        return false;
+    });
+
+    root->addEventListener("dragKeyUp", [&](const Event& event) { 
+        const KeyboardEvent& keyboardEvent = static_cast<const KeyboardEvent&>(event);
+        if (keyboardEvent.getKeyCode() == ALLEGRO_KEY_LSHIFT) {
+            draggedImages[1].enabled = false;
+        }
+        return false;
+    });
 
     for (;;) {
         ALLEGRO_EVENT event;

@@ -3,6 +3,8 @@
 
 
 #include <any>
+#include <vector>
+#include <allegro5/allegro.h>
 #include "UINode.hpp"
 #include "algui/MouseEvent.hpp"
 #include "algui/KeyboardEvent.hpp"
@@ -15,6 +17,24 @@ namespace algui {
 
 
     /**
+     * Dragged data image.
+     */
+    struct DraggedImage {
+        ///bitmap of cursor.
+        ALLEGRO_BITMAP* bitmap;
+
+        ///mouse offset from bitmap left side.
+        int xFocus;
+
+        ///mouse offset from bitmap top side.
+        int yFocus;
+
+        ///enabled flag.
+        bool enabled;
+    };
+
+
+    /**
      * Base class for interactive UI nodes.
      */
     class InteractiveUINode : public UINode {
@@ -24,6 +44,17 @@ namespace algui {
          * If this is the focused node, then the internal focused node pointer is reset.
          */
         virtual ~InteractiveUINode();
+
+        /**
+         * In addition to base class `render()`, it adds rendering of dragged images.
+         */
+        void render() override;
+
+        /**
+         * In addition to base class `render(clipping)`, it adds rendering of dragged images.
+         * @param clipping screen clipping.
+         */
+        void render(const Rect& clipping) override;
 
         /**
          * Returns a pointer to the closest ancestor node that is an interactive UI node.
@@ -240,6 +271,17 @@ namespace algui {
          * @return the dragged data.
          */
         static const std::any& getDraggedData();
+
+        /**
+         * Sets a bunch of images to be shown under the mouse cursor, while in drag-n-drop.
+         * The bitmaps are shown in the order they are given in the given vector, when the mouse is moved,
+         * after the UI is rendered.
+         * @param images pointer to vector with images; if null, then the internal pointer is reset.
+         *  If not null, then the vector must live as long as there is a drag-and-drop session.
+         *  The internal pointer to the images is automatically reset when the drag-n-drop ends.
+         * @return true on success, false if there is not a drag-n-drop session.
+         */
+        static bool setDraggedImages(std::vector<DraggedImage>* images);
 
         /**
          * Handles the given allegro event and creates events for this UI tree.
