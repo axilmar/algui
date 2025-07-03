@@ -302,6 +302,11 @@ namespace algui {
             return _doTimerEvent(this, event);
         }
 
+        if (event.type == ALLEGRO_EVENT_DISPLAY_EXPOSE) {
+            render(Rect::rect(event.display.x, event.display.y, event.display.width, event.display.height));
+            return true;
+        }
+
         return false;
     }
 
