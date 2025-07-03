@@ -1,13 +1,8 @@
 #include <allegro5/allegro.h>
 #include "algui/InteractiveUINode.hpp"
-#include "algui/EnabledChangedEvent.hpp"
-#include "algui/HighlightedChangedEvent.hpp"
-#include "algui/PressedChangedEvent.hpp"
-#include "algui/SelectedChangedEvent.hpp"
-#include "algui/ErrorChangedEvent.hpp"
-#include "algui/GotFocusEvent.hpp"
-#include "algui/LostFocusEvent.hpp"
+#include "algui/InteractiveUINodeEvent.hpp"
 #include "algui/MouseEvent.hpp"
+#include "algui/KeyboardEvent.hpp"
 
 
 #ifdef ERROR
@@ -158,7 +153,7 @@ namespace algui {
             }
             m_flags = v ? m_flags | ENABLED : m_flags & ~ENABLED;
             _setEnabledTree(this, !UINode::getParentPtr() || UINode::getParentPtr()->isEnabledTree());
-            dispatchEvent(EnabledChangedEvent(sharedFromThis<InteractiveUINode>()));
+            dispatchEvent(InteractiveUINodeEvent("enabledChanged", sharedFromThis<InteractiveUINode>()));
         }
     }
 
@@ -187,7 +182,7 @@ namespace algui {
             }
             _focusedNode = this;
             _setFocusedTree(this);
-            GotFocusEvent event(sharedFromThis<InteractiveUINode>());
+            InteractiveUINodeEvent event("gotFocus", sharedFromThis<InteractiveUINode>());
             for (InteractiveUINode* inode = this; inode; inode = inode->getParentPtr()) {
                 inode->dispatchEvent(event);
             }
@@ -196,7 +191,7 @@ namespace algui {
         else {
             _focusedNode = nullptr;
             _setFocusedTree(this);
-            LostFocusEvent event(sharedFromThis<InteractiveUINode>());
+            InteractiveUINodeEvent event("lostFocus", sharedFromThis<InteractiveUINode>());
             for (InteractiveUINode* inode = this; inode; inode = inode->getParentPtr()) {
                 inode->dispatchEvent(event);
             }
@@ -215,7 +210,7 @@ namespace algui {
         if (v != isHighlighted()) {
             m_flags = v ? m_flags | HIGHLIGHTED : m_flags & ~HIGHLIGHTED;
             _setHighlightedTree(this, UINode::getParentPtr() && UINode::getParentPtr()->isHighlightedTree());
-            dispatchEvent(HighlightedChangedEvent(sharedFromThis<InteractiveUINode>()));
+            dispatchEvent(InteractiveUINodeEvent("highlightedChanged", sharedFromThis<InteractiveUINode>()));
         }
     }
 
@@ -229,7 +224,7 @@ namespace algui {
         if (v != isPressed()) {
             m_flags = v ? m_flags | PRESSED : m_flags & ~PRESSED;
             _setPressedTree(this, UINode::getParentPtr() && UINode::getParentPtr()->isPressedTree());
-            dispatchEvent(PressedChangedEvent(sharedFromThis<InteractiveUINode>()));
+            dispatchEvent(InteractiveUINodeEvent("pressedChanged", sharedFromThis<InteractiveUINode>()));
         }
     }
 
@@ -243,7 +238,7 @@ namespace algui {
         if (v != isSelected()) {
             m_flags = v ? m_flags | SELECTED : m_flags & ~SELECTED;
             _setSelectedTree(this, UINode::getParentPtr() && UINode::getParentPtr()->isSelectedTree());
-            dispatchEvent(SelectedChangedEvent(sharedFromThis<InteractiveUINode>()));
+            dispatchEvent(InteractiveUINodeEvent("selectedChanged", sharedFromThis<InteractiveUINode>()));
         }
     }
 
@@ -257,7 +252,7 @@ namespace algui {
         if (v != isError()) {
             m_flags = v ? m_flags | ERROR : m_flags & ~ERROR;
              _setErrorTree(this, UINode::getParentPtr() && UINode::getParentPtr()->isErrorTree());
-            dispatchEvent(ErrorChangedEvent(sharedFromThis<InteractiveUINode>()));
+             dispatchEvent(InteractiveUINodeEvent("errorChanged", sharedFromThis<InteractiveUINode>()));
         }
     }
 

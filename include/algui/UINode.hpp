@@ -74,7 +74,7 @@ namespace algui {
 
         /**
          * Sets the local rectangle for this node.
-         * It emits the UINodeRectChangedEvent event.
+         * It emits a UINodeEvent with type "rectChanged".
          * @param rect the new local rectangle for this node.
          */
         void setRect(Rect rect);
@@ -97,7 +97,7 @@ namespace algui {
 
         /**
          * Sets the scaling.
-         * It emits the UINodeScalingChangedEvent event.
+         * It emits a UINodeEvent with type "scalingChanged".
          * @param scaling the new scaling.
          */
         void setScaling(Scaling scaling);
@@ -110,7 +110,7 @@ namespace algui {
 
         /**
          * Hides/shows this node.
-         * It emits the UINodeVisibleChangedEvent event.
+         * It emits a UINodeEvent with type "visibleChanged".
          * @param v the new visible state.
          */
         void setVisible(bool v);
@@ -123,6 +123,7 @@ namespace algui {
 
         /**
          * Sets the clipped state.
+         * It emits a UINodeEvent with type "clippedChanged".
          * @param v if true, the node is painted clipped, otherwise it is not.
          */
         void setClipped(bool v);

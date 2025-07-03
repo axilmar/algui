@@ -1,7 +1,5 @@
 #include "algui/UINode.hpp"
-#include "algui/RectChangedEvent.hpp"
-#include "algui/ScalingChangedEvent.hpp"
-#include "algui/VisibleChangedEvent.hpp"
+#include "algui/UINodeEvent.hpp"
 
 
 namespace algui {
@@ -40,7 +38,7 @@ namespace algui {
             if (getParentPtr()) {
                 getParentPtr()->invalidateRect();
             }
-            dispatchEvent(RectChangedEvent(sharedFromThis<UINode>()));
+            dispatchEvent(UINodeEvent("rectChanged", sharedFromThis<UINode>()));
         }
     }
 
@@ -50,7 +48,7 @@ namespace algui {
         if (scaling != m_scaling) {
             m_scaling = scaling;
             invalidateScreenScaling();
-            dispatchEvent(ScalingChangedEvent(sharedFromThis<UINode>()));
+            dispatchEvent(UINodeEvent("scalingChanged", sharedFromThis<UINode>()));
         }
     }
 
@@ -67,7 +65,7 @@ namespace algui {
                 getParentPtr()->invalidateRect();
                 getParentPtr()->invalidateLayout();
             }
-            dispatchEvent(VisibleChangedEvent(sharedFromThis<UINode>()));
+            dispatchEvent(UINodeEvent("visibleChanged", sharedFromThis<UINode>()));
         }
     }
 
@@ -78,7 +76,10 @@ namespace algui {
 
 
     void UINode::setClipped(bool v) {
-        m_flags = v ? m_flags | CLIPPED : m_flags & ~CLIPPED;
+        if (v != isClipped()) {
+            m_flags = v ? m_flags | CLIPPED : m_flags & ~CLIPPED;
+            dispatchEvent(UINodeEvent("clippedChanged", sharedFromThis<UINode>()));
+        }
     }
        
         

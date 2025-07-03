@@ -15,23 +15,22 @@ namespace algui {
     template <class T> class TreeNodeEvent : public Event {
     public:
         /**
+         * The constructor.
+         * @param type event type.
+         * @param target event target.
+         */
+        TreeNodeEvent(std::string&& type, std::shared_ptr<T>&& target)
+            : Event(std::move(type))
+            , m_target(std::move(target))
+        {
+        }
+
+        /**
          * Returns the event target.
          * @return the event target.
          */
         const std::shared_ptr<T>& getTarget() const {
             return m_target;
-        }
-
-    protected:
-        /**
-         * The constructor.
-         * @param type event type.
-         * @param target event target.
-         */
-        TreeNodeEvent(std::string&& type, std::shared_ptr<T>&& target) 
-            : Event(std::move(type))
-            , m_target(std::move(target))
-        {
         }
 
     private:

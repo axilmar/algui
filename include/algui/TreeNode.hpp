@@ -5,9 +5,7 @@
 #include <stdexcept>
 #include <memory>
 #include "EventTarget.hpp"
-#include "ChildAddedEvent.hpp"
-#include "ChildRemovedEvent.hpp"
-#include "ChildrenRemovedEvent.hpp"
+#include "TreeNodeChildEvent.hpp"
 
 
 namespace algui {
@@ -115,7 +113,7 @@ namespace algui {
 
         /**
          * Adds a child node.
-         * Emits a `TreeNodeChildAddedEvent`.
+         * It emits a TreeNodeChildEvent with type "childAdded".
          * @param child child to add; must not be null, must not already be a child, must not be an ancestor of this.
          * @param nextSibling optional; if not given, then the child is added as last child, otherwise it is added before this; must be a child of this.
          * @exception std::invalid_argument thrown if the constraints mentioned above are violated.
@@ -148,12 +146,12 @@ namespace algui {
 
             setNewChildState(child);
 
-            dispatchEvent(ChildAddedEvent(sharedFromThis<T>(), child));
+            dispatchEvent(TreeNodeChildEvent("childAdded", sharedFromThis<T>(), child));
         }
 
         /**
          * Removes a child node.
-         * Emits a `TreeNodeChildRemovedEvent`.
+         * It emits a TreeNodeChildEvent with type "childRemoved".
          * @param child child to remove; must not be null, must be a child of this.
          * @exception std::invalid_argument thrown if the constraints mentioned above are violated.
          */
@@ -168,18 +166,18 @@ namespace algui {
 
             remove(child);
 
-            dispatchEvent(ChildRemovedEvent(sharedFromThis<T>(), child));
+            dispatchEvent(TreeNodeChildEvent("childRemoved", sharedFromThis<T>(), child));
         }
 
         /**
          * Removes all children.
-         * Emits a `TreeNodeChildrenRemovedEvent`.
+         * It emits a TreeNodeEvent with type "childrenRemoved".
          */
         virtual void removeChildren() {
             while (m_lastChild) {
                 remove(m_lastChild);
             }
-            dispatchEvent(ChildrenRemovedEvent(sharedFromThis<T>()));
+            dispatchEvent(TreeNodeEvent("childrenREmoved", sharedFromThis<T>()));
         }
 
         /**

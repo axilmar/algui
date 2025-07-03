@@ -1,5 +1,5 @@
-#ifndef ALGUI_MOUSEMOVEEVENT_HPP
-#define ALGUI_MOUSEMOVEEVENT_HPP
+#ifndef ALGUI_MOUSEEVENT_HPP
+#define ALGUI_MOUSEEVENT_HPP
 
 
 #include <utility>
@@ -96,4 +96,4 @@ namespace algui {
 } //namespace algui
 
 
-#endif //ALGUI_MOUSEMOVEEVENT_HPP
+#endif //ALGUI_MOUSEEVENT_HPP

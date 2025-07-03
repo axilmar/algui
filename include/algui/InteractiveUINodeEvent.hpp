@@ -19,15 +19,6 @@ namespace algui {
     class InteractiveUINodeEvent : public Event {
     public:
         /**
-         * Returns the event target.
-         * @return the event target.
-         */
-        const std::shared_ptr<InteractiveUINode>& getTarget() const {
-            return m_target;
-        }
-
-    protected:
-        /**
          * The constructor.
          * @param type event type.
          * @param target event target.
@@ -36,6 +27,14 @@ namespace algui {
             : Event(std::move(type))
             , m_target(std::move(target))
         {
+        }
+
+        /**
+         * Returns the event target.
+         * @return the event target.
+         */
+        const std::shared_ptr<InteractiveUINode>& getTarget() const {
+            return m_target;
         }
 
     private:
