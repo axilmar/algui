@@ -24,10 +24,11 @@ namespace algui {
     static InteractiveUINode* _focusedNode = nullptr;
     static ALLEGRO_EVENT _prevMouseEvent = { 0 };
     static ALLEGRO_EVENT _buttonDownEvent = { 0 };
-    static float _dragAndDropDistance = 5;
+    static float _dragAndDropDistance = 4;
     static bool _dragAndDrop = false;
     static int _dragAndDropButton = 0;
     static std::any _draggedData;
+    static bool _resetPrevMousePosition = false;
 
 
     static float _distance(float x1, float y1, float x2, float y2) {
@@ -276,15 +277,16 @@ namespace algui {
         if (!_buttonDownEvent.mouse.button) {
             return false;
         }
-        if (_distance(event.getX(), event.getY(), _buttonDownEvent.mouse.x, _buttonDownEvent.mouse.y) < _dragAndDropDistance) {
+        if (!data.has_value()) {
             return false;
         }
-        if (!data.has_value()) {
+        if (_distance(event.getX(), event.getY(), _buttonDownEvent.mouse.x, _buttonDownEvent.mouse.y) < _dragAndDropDistance) {
             return false;
         }
         _dragAndDrop = true;
         _dragAndDropButton = _buttonDownEvent.mouse.button;
         _draggedData = data;
+        _resetPrevMousePosition = true;
         return true;
     }
 
@@ -294,6 +296,8 @@ namespace algui {
             _dragAndDrop = false;
             _dragAndDropButton = 0;
             _draggedData.reset();
+            _buttonDownEvent.mouse.button = 0;
+            _resetPrevMousePosition = false;
         }
     }
 
@@ -304,6 +308,12 @@ namespace algui {
 
 
     bool InteractiveUINode::doEvent(const ALLEGRO_EVENT& event) {
+        if (_resetPrevMousePosition) {
+            _resetPrevMousePosition = false;
+            _prevMouseEvent.mouse.x = -1;
+            _prevMouseEvent.mouse.y = -1;
+        }
+
         if (event.type == ALLEGRO_EVENT_MOUSE_AXES || event.type == ALLEGRO_EVENT_MOUSE_WARPED) {
             bool result = false;
 
@@ -327,7 +337,9 @@ namespace algui {
             if (_dragAndDrop) {
                 return false;
             }
-            _buttonDownEvent = event;
+            if (_buttonDownEvent.mouse.button == 0) {
+                _buttonDownEvent = event;
+            }
             bool result = _doMouseButtonEvent("mouseButtonDown", this, event);
             _prevMouseEvent = event;
             return result;
@@ -344,7 +356,9 @@ namespace algui {
                 return false;
             }
             else {
-                _buttonDownEvent.mouse.button = event.mouse.button;
+                if (event.mouse.button == _buttonDownEvent.mouse.button) {
+                    _buttonDownEvent.mouse.button = 0;
+                }
                 bool result = _doMouseButtonEvent("mouseButtonUp", this, event);
                 _prevMouseEvent = event;
                 return result;

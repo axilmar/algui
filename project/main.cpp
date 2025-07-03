@@ -26,6 +26,11 @@ public:
         addEventListener("mouseWheel", [&](const Event& event) { std::cout << std::string(getDepth() * 4, ' ') << m_id << ": mouseWheel\n"; return false; });
         addEventListener("mouseButtonDown", [&](const Event& event) { std::cout << std::string(getDepth() * 4, ' ') << m_id << ": mouseButtonDown\n"; return false; });
         addEventListener("mouseButtonUp", [&](const Event& event) { std::cout << std::string(getDepth() * 4, ' ') << m_id << ": mouseButtonUp\n"; return false; });
+        addEventListener("dragEnter", [&](const Event& event) { std::cout << std::string(getDepth() * 4, ' ') << m_id << ": dragEnter\n"; return false; });
+        addEventListener("drag", [&](const Event& event) { std::cout << std::string(getDepth() * 4, ' ') << m_id << ": dragMove\n"; return false; });
+        addEventListener("dragLeave", [&](const Event& event) { std::cout << std::string(getDepth() * 4, ' ') << m_id << ": dragLeave\n"; return false; });
+        addEventListener("dragWheel", [&](const Event& event) { std::cout << std::string(getDepth() * 4, ' ') << m_id << ": dragWheel\n"; return false; });
+        addEventListener("drop", [&](const Event& event) { std::cout << std::string(getDepth() * 4, ' ') << m_id << ": drop\n"; return false; });
     }
 
 protected:
@@ -93,6 +98,11 @@ int main(int argc, char** argv) {
     std::shared_ptr<Test> button3 = std::make_shared<Test>("button3");
     button3->setRect(Rect::rect(230, 80, 50, 40));
     form2->addChild(button3);
+
+    button2->addEventListener("mouseMove", [&](const Event& event) { 
+        return button2->beginDragAndDrop(static_cast<const MouseEvent&>(event), std::string("data"));
+    });
+
 
     for (;;) {
         ALLEGRO_EVENT event;

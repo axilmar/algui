@@ -247,11 +247,17 @@ namespace algui {
          * ALLEGRO events are handled in this way:
          * 
          *  - ALLEGRO_EVENT_MOUSE_AXES/ALLEGRO_EVENT_MOUSE_WARPED/ALLEGRO_EVENT_MOUSE_BUTTON_DOWN/ALEGRO_EVENT_MOUSE_BUTTON_UP: 
-         *      Converted to MouseEvent class with type "mouseMove"/"mouseEnter"/"mouseLeave"/"mouseWheel".
-         * 
+         *      When not in drag-and-drop:
+         *          Converted to MouseEvent class with type "mouseMove"/"mouseEnter"/"mouseLeave"/"mouseWheel".
+         *      While in drag-and-drop:
+         *          Converted to MouseEvent class with type "drag"/"dragEnter"/"dragLeave"/"dragWheel".
+         *
          *  - ALLEGRO_EVENT_KEY_DOWN/ALLEGRO_EVENT_KEY_UP/ALLEGRO_EVENT_KEYCHAR: 
-         *      Converted to KeyboardEvent class with type "keyDown"/"keyUp"/"keyChar".
-         * 
+         *      When not in drag-and-drop:
+         *          Converted to KeyboardEvent class with type "keyDown"/"keyUp"/"keyChar".
+         *      While in drag-and-drop:
+         *          Converted to KeyboardEvent class with type "dragKeyDown"/"dragKeyUp"/"dragKeyChar".
+         *
          *  - ALLEGRO_EVENT_TIMER: 
          *      Converted to Event class with type "timer".
          * 
