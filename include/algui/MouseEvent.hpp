@@ -24,8 +24,8 @@ namespace algui {
          * @param button mouse button.
          * @param capture capture phase flag.
          */
-        MouseEvent(std::string&& type, std::shared_ptr<InteractiveUINode>&& target, int x, int y, int z, int w, int button, bool capture)
-            : InteractiveUINodeEvent(std::move(type), std::move(target))
+        MouseEvent(const std::string_view& type, std::shared_ptr<InteractiveUINode>&& target, int x, int y, int z, int w, int button, bool capture)
+            : InteractiveUINodeEvent(type, std::move(target))
             , m_x(x)
             , m_y(y)
             , m_z(z)

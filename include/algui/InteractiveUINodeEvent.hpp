@@ -23,8 +23,8 @@ namespace algui {
          * @param type event type.
          * @param target event target.
          */
-        InteractiveUINodeEvent(std::string&& type, std::shared_ptr<InteractiveUINode>&& target)
-            : Event(std::move(type))
+        InteractiveUINodeEvent(const std::string_view& type, std::shared_ptr<InteractiveUINode>&& target)
+            : Event(type)
             , m_target(std::move(target))
         {
         }

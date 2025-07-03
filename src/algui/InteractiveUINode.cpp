@@ -26,7 +26,7 @@ namespace algui {
     static ALLEGRO_EVENT _prevMouseEvent = { 0 };
 
 
-    static bool _dispatchEvent(const MouseEvent& event) {
+    static bool _dispatchEvent(const InteractiveUINodeEvent& event) {
         return event.getTarget() ? event.getTarget()->dispatchEvent(event) : false;
     }
 
@@ -286,15 +286,20 @@ namespace algui {
         }
 
         if (event.type == ALLEGRO_EVENT_KEY_DOWN) {
+            return _doKeyboardEvent("keyDown", this, event);
         }
 
         if (event.type == ALLEGRO_EVENT_KEY_UP) {
+            return _doKeyboardEvent("keyUp", this, event);
         }
 
         if (event.type == ALLEGRO_EVENT_KEY_CHAR) {
+            return _doKeyboardEvent("keyChar", this, event);
         }
 
         if (event.type == ALLEGRO_EVENT_TIMER) {
+            Event event("timer");
+            return _doTimerEvent(this, event);
         }
 
         return false;
@@ -321,7 +326,7 @@ namespace algui {
         else {
             enabledTree = parentEnabledTree;
         }
-        if (enabledTree != node->isEnabledTree()) {
+        if (node && enabledTree != node->isEnabledTree()) {
             node->UINode::_setEnabledTree(enabledTree);
             for (UINode* child = node->getFirstChildPtr(); child; child = child->getNextSiblingPtr()) {
                 _setEnabledTree(child, enabledTree);
@@ -339,7 +344,7 @@ namespace algui {
         else {
             focusedTree = parentFocusedTree;
         }
-        if (focusedTree != node->isFocusedTree()) {
+        if (node && focusedTree != node->isFocusedTree()) {
             node->UINode::_setFocusedTree(focusedTree);
             for (UINode* child = node->getFirstChildPtr(); child; child = child->getNextSiblingPtr()) {
                 _setFocusedTree(child, focusedTree);
@@ -357,7 +362,7 @@ namespace algui {
         else {
             highlightedTree = parentHighlightedTree;
         }
-        if (highlightedTree != node->isHighlightedTree()) {
+        if (node && highlightedTree != node->isHighlightedTree()) {
             node->UINode::_setHighlightedTree(highlightedTree);
             for (UINode* child = node->getFirstChildPtr(); child; child = child->getNextSiblingPtr()) {
                 _setHighlightedTree(child, highlightedTree);
@@ -375,7 +380,7 @@ namespace algui {
         else {
             pressedTree = parentPressedTree;
         }
-        if (pressedTree != node->isPressedTree()) {
+        if (node && pressedTree != node->isPressedTree()) {
             node->UINode::_setPressedTree(pressedTree);
             for (UINode* child = node->getFirstChildPtr(); child; child = child->getNextSiblingPtr()) {
                 _setPressedTree(child, pressedTree);
@@ -393,7 +398,7 @@ namespace algui {
         else {
             selectedTree = parentSelectedTree;
         }
-        if (selectedTree != node->isSelectedTree()) {
+        if (node && selectedTree != node->isSelectedTree()) {
             node->UINode::_setSelectedTree(selectedTree);
             for (UINode* child = node->getFirstChildPtr(); child; child = child->getNextSiblingPtr()) {
                 _setSelectedTree(child, selectedTree);
@@ -411,7 +416,7 @@ namespace algui {
         else {
             errorTree = parentErrorTree;
         }
-        if (errorTree != node->isErrorTree()) {
+        if (node && errorTree != node->isErrorTree()) {
             node->UINode::_setErrorTree(errorTree);
             for (UINode* child = node->getFirstChildPtr(); child; child = child->getNextSiblingPtr()) {
                 _setErrorTree(child, errorTree);
@@ -576,6 +581,59 @@ namespace algui {
 
         if (_dispatchEvent(MouseEvent("mouseButtonUp", node->sharedFromThis<InteractiveUINode>(), event.mouse.x, event.mouse.y, event.mouse.z, event.mouse.w, event.mouse.button, false))) {
             return true;
+        }
+
+        return false;
+    }
+
+
+    bool InteractiveUINode::_doKeyboardEvent(const std::string_view& type, InteractiveUINode* node, const ALLEGRO_EVENT& event) {
+        if (!node->isEnabledTree()) {
+            return false;
+        }
+
+        if (_focusedNode) {
+            if (_focusedNode->dispatchEvent(KeyboardEvent(type, _focusedNode->sharedFromThis<InteractiveUINode>(), event.keyboard.keycode, event.keyboard.unichar, event.keyboard.modifiers, event.keyboard.repeat))) {
+                return true;
+            }
+        }
+
+        return _doUnusedKeyboardEvent(type, node, event);
+    }
+
+
+    bool InteractiveUINode::_doUnusedKeyboardEvent(const std::string_view& type, UINode* node, const ALLEGRO_EVENT& event) {
+        if (!node || !node->isEnabledTree()) {
+            return false;
+        }
+
+        if (_dispatchEvent(KeyboardEvent(type, node->sharedFromThis<InteractiveUINode>(), event.keyboard.keycode, event.keyboard.unichar, event.keyboard.modifiers, event.keyboard.repeat))) {
+            return true;
+        }
+
+        for (UINode* child = node->UINode::getFirstChildPtr(); child; child = child->getNextSiblingPtr()) {
+            if (_doUnusedKeyboardEvent(type, child, event)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
+    bool InteractiveUINode::_doTimerEvent(UINode* node, const Event& event) {
+        if (!node || !node->isEnabledTree()) {
+            return false;
+        }
+
+        if (node->dispatchEvent(event)) {
+            return true;
+        }
+
+        for (UINode* child = node->UINode::getFirstChildPtr(); child; child = child->getNextSiblingPtr()) {
+            if (_doTimerEvent(child, event)) {
+                return true;
+            }
         }
 
         return false;

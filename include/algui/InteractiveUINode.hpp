@@ -247,7 +247,9 @@ namespace algui {
         static bool _doMouseWheelEvent(UINode* node, const ALLEGRO_EVENT& event);
         static bool _doMouseButtonDownEvent(UINode* node, const ALLEGRO_EVENT& event);
         static bool _doMouseButtonUpEvent(UINode* node, const ALLEGRO_EVENT& event);
-        static bool _doKeyboardEvent(UINode* node, const ALLEGRO_EVENT& event);
+        static bool _doKeyboardEvent(const std::string_view& type, InteractiveUINode* node, const ALLEGRO_EVENT& event);
+        static bool _doUnusedKeyboardEvent(const std::string_view& type, UINode* node, const ALLEGRO_EVENT& event);
+        static bool _doTimerEvent(UINode* node, const Event& event);
 };
 
 

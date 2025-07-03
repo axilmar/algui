@@ -23,8 +23,8 @@ namespace algui {
          * @param modifiers ALLEGRO modifiers bitfield.
          * @param repeated if event is repeated.
          */
-        KeyboardEvent(std::string&& type, std::shared_ptr<InteractiveUINode>&& target, int keycode, int char_, unsigned int modifiers, bool repeated)
-            : InteractiveUINodeEvent(std::move(type), std::move(target))
+        KeyboardEvent(const std::string_view& type, std::shared_ptr<InteractiveUINode>&& target, int keycode, int char_, unsigned int modifiers, bool repeated)
+            : InteractiveUINodeEvent(type, std::move(target))
             , m_keycode(keycode)
             , m_char(char_)
             , m_modifiers(modifiers)

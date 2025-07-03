@@ -104,7 +104,7 @@ namespace algui {
         void addEventListenerId(EventListenerId&& id);
 
     private:
-        std::map<std::string, std::list<EventListenerFunction>> m_eventListenerFunctions;
+        std::map<std::string, std::list<EventListenerFunction>, std::less<>> m_eventListenerFunctions;
         std::vector<EventListenerId> m_eventListenerIds;
     };
 

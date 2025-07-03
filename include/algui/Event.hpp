@@ -2,7 +2,7 @@
 #define ALGUI_EVENT_HPP
 
 
-#include <string>
+#include <string_view>
 #include <utility>
 
 
@@ -15,6 +15,13 @@ namespace algui {
     class Event {
     public:
         /**
+         * The constructor.
+         * @param type event type.
+         */
+        Event(const std::string_view& type) : m_type(type) {
+        }
+
+        /**
          * The destructor.
          * Virtual due to inheritance.
          */
@@ -25,20 +32,12 @@ namespace algui {
          * Returns the event type.
          * @return the event type.
          */
-        const std::string& getType() const {
+        const std::string_view& getType() const {
             return m_type;
         }
 
-    protected:
-        /**
-         * The constructor.
-         * @param type event type.
-         */
-        Event(std::string&& type) : m_type(std::move(type)) {
-        }
-
     private:
-        std::string m_type;
+        std::string_view m_type;
     };
 
 
