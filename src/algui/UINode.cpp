@@ -209,7 +209,7 @@ namespace algui {
     }
 
 
-    void UINode::updateScreenProps() {
+    void UINode::updateScreenProperties() {
         if (m_flags & LAYOUT_DIRTY) {
             updateLayout();
             m_flags &= ~LAYOUT_DIRTY;
@@ -242,7 +242,7 @@ namespace algui {
     void UINode::_updateScreenProps(int& flags) {
         m_flags |= flags;
         flags = m_flags & DIRTY_FLAGS;
-        updateScreenProps();
+        updateScreenProperties();
     }
 
 

@@ -253,12 +253,12 @@ namespace algui {
         void updateScreenScaling();
 
         /**
-         * Interface for updating screen props.
+         * Interface for updating screen properties.
          * Invoked just before a UI node is to be painted onto the target bitmap.
          * The default implementation updates the layout, the screen rect and the screen scaling, if the relevant flags are set.
          * Subclasses can put more update functions here, for example to update resources based on screen scaling.
          */
-        virtual void updateScreenProps();
+        virtual void updateScreenProperties();
 
         /**
          * Interface for painting the node, using Allegro functions.
