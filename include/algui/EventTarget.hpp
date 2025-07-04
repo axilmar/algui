@@ -93,7 +93,7 @@ namespace algui {
         EventListenerId addEventListener(std::string&& eventType, L&& func, bool prioritized = false) {
             auto f = EventListenerFunction([func](const Event& e) {
                 using T = FirstArgumentType<L>;
-                return func(static_cast<const T&>(e));
+                return func(dynamic_cast<const T&>(e));
             });
             return addEventListener(std::move(eventType), std::move(f), prioritized);
         }
