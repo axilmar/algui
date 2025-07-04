@@ -18,11 +18,18 @@ namespace algui {
         HIGHLIGHTED_TREE      = 1 << 9,
         PRESSED_TREE          = 1 << 10,
         SELECTED_TREE         = 1 << 11,
-        ERROR_TREE            = 1 << 12
+        ERROR_TREE            = 1 << 12,
+        GEOMETRY_MANAGED      = 1 << 13
     };
 
 
     static constexpr int DIRTY_FLAGS = RECT_DIRTY | DESCENTANT_RECT_DIRTY | LAYOUT_DIRTY | SCREEN_RECT_DIRTY | SCREEN_SCALING_DIRTY;
+
+
+    UINode::UINode()
+        : m_flags(VISIBLE | ENABLED_TREE | GEOMETRY_MANAGED)
+    {
+    }
 
 
     void UINode::setRect(Rect rect) {
@@ -110,6 +117,23 @@ namespace algui {
 
     bool UINode::isErrorTree() const {
         return (m_flags & ERROR_TREE) == ERROR_TREE;
+    }
+
+
+    bool UINode::isGeometryManaged() const {
+        return (m_flags & GEOMETRY_MANAGED) == GEOMETRY_MANAGED;
+    }
+
+
+    void UINode::setGeometryManaged(bool v) {
+        if (v != isGeometryManaged()) {
+            m_flags = v ? m_flags | GEOMETRY_MANAGED : m_flags & ~GEOMETRY_MANAGED;
+            if (getParentPtr()) {
+                getParentPtr()->invalidateRect();
+                getParentPtr()->invalidateLayout();
+            }
+            dispatchEvent(ObjectEvent<UINode>("geometryManagedChanged", sharedFromThis<UINode>()));
+        }
     }
 
 

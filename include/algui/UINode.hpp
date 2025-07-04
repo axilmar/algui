@@ -57,6 +57,11 @@ namespace algui {
     class UINode : public TreeNode<UINode> {
     public:
         /**
+         * The default constructor.
+         */
+        UINode();
+
+        /**
          * Returns the rectangle of this node, relative to its parent, or to the screen.
          * @return the rectangle of this node
          */
@@ -163,6 +168,20 @@ namespace algui {
          * @return true if this UI node belongs in an a error tree, false otherwise.
          */
         bool isErrorTree() const;
+
+        /**
+         * Checks if this UI node has its geometry managed by its parent.
+         * The default is true.
+         * @return true if this node's geometry is managed by its parent, false otherwise.
+         */
+        bool isGeometryManaged() const;
+
+        /**
+         * Sets the geometry managed state.
+         * It emits an ObjectEvent with type "geometryManagedChanged".
+         * @param v if true, the node's geometry is managed by its parent.
+         */
+        void setGeometryManaged(bool v);
 
         /**
          * Updates and paints the node tree.
@@ -281,7 +300,7 @@ namespace algui {
         Rect m_screenRect;
         Scaling m_scaling;
         Scaling m_screenScaling;
-        int m_flags{3};
+        int m_flags;
 
         void _updateRect();
         void _updateScreenProps(int& flags);
