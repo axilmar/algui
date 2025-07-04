@@ -110,6 +110,7 @@ namespace algui {
          * It executes the functions registered for the given event, until a function returns true.
          * @param event the event to dispatch.
          * @return true if propagation stopped, false otherwise.
+         * @exception std::bad_cast thrown if an event handler's first argument type does not match the underlying type of the given event.
          */
         bool dispatchEvent(const Event& event) const;
 
