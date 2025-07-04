@@ -7,6 +7,7 @@
 #include <list>
 #include "SharedObject.hpp"
 #include "Event.hpp"
+#include "FirstArgument.hpp"
 
 
 namespace algui {
@@ -80,6 +81,22 @@ namespace algui {
          * @return an id for the event listener.
          */
         EventListenerId addEventListener(std::string&& eventType, EventListenerFunction&& func, bool prioritized = false);
+
+        /**
+         * Adds an event listener.
+         * @param eventType type of event.
+         * @param func function to add; the event parameter can be any type derived from `class Event`.
+         * @param prioritized if true, the function will be executed before previously added functions, otherwise it will be executed after them.
+         * @return an id for the event listener.
+         */
+        template <class L>
+        EventListenerId addEventListener(std::string&& eventType, L&& func, bool prioritized = false) {
+            auto f = EventListenerFunction([func](const Event& e) {
+                using T = FirstArgumentType<L>;
+                return func(static_cast<const T&>(e));
+            });
+            return addEventListener(std::move(eventType), std::move(f), prioritized);
+        }
 
         /**
          * Removes an event listener.

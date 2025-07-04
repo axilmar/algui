@@ -127,17 +127,15 @@ int main(int argc, char** argv) {
         return false;
     });
 
-    root->addEventListener("dragKeyDown", [&](const Event& event) { 
-        const KeyboardEvent& keyboardEvent = static_cast<const KeyboardEvent&>(event);
-        if (keyboardEvent.getKeyCode() == ALLEGRO_KEY_LSHIFT) {
+    root->addEventListener("dragKeyDown", [&](const KeyboardEvent& event) {
+        if (event.getKeyCode() == ALLEGRO_KEY_LSHIFT) {
             draggedImages[1].enabled = true;
         }
         return false;
     });
 
-    root->addEventListener("dragKeyUp", [&](const Event& event) { 
-        const KeyboardEvent& keyboardEvent = static_cast<const KeyboardEvent&>(event);
-        if (keyboardEvent.getKeyCode() == ALLEGRO_KEY_LSHIFT) {
+    root->addEventListener("dragKeyUp", [&](const KeyboardEvent& event) { 
+        if (event.getKeyCode() == ALLEGRO_KEY_LSHIFT) {
             draggedImages[1].enabled = false;
         }
         return false;
