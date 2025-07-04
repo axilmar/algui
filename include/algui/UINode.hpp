@@ -244,13 +244,15 @@ namespace algui {
 
         /**
          * Updates the screen rectangle of the node, based on its local rectangle and the screen rectangle of its parent.
+         * Subclasses can add code that does some computation, based on the screen position of the node.
          */
-        void updateScreenRect();
+        virtual void updateScreenRect();
 
         /**
          * Updates the screen scaling of the node, based on its own scaling and on the screen scaling of its parent.
+         * Subclasses can add code that does some computation, based on the screen scaling of the node.
          */
-        void updateScreenScaling();
+        virtual void updateScreenScaling();
 
         /**
          * Interface for updating screen properties.
