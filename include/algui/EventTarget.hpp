@@ -7,7 +7,7 @@
 #include <list>
 #include "SharedObject.hpp"
 #include "Event.hpp"
-#include "FirstArgument.hpp"
+#include "FirstArgumentType.hpp"
 
 
 namespace algui {
