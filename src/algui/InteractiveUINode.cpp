@@ -44,13 +44,19 @@ namespace algui {
     }
 
 
-    static void _renderDraggedImages() {
+    static void _renderDraggedImages(const Scaling &scaling) {
         if (_draggedImages) {
             ALLEGRO_MOUSE_STATE state;
             al_get_mouse_state(&state);
             for (const DraggedImage& di : *_draggedImages) {
                 if (di.enabled) {
-                    al_draw_bitmap(di.bitmap, state.x - di.xFocus, state.y - di.yFocus, 0);
+                    const float sw = al_get_bitmap_width(di.bitmap);
+                    const float sh = al_get_bitmap_height(di.bitmap);
+                    const float dx = state.x - di.xFocus * scaling.horizontal;
+                    const float dy = state.y - di.yFocus * scaling.vertical;
+                    const float dw = sw * scaling.horizontal;
+                    const float dh = sh * scaling.vertical;
+                    al_draw_scaled_bitmap(di.bitmap, 0, 0, sw, sh, dx, dy, dw, dh, 0);
                 }
             }
         }
@@ -66,13 +72,13 @@ namespace algui {
 
     void InteractiveUINode::render() {
         UINode::render();
-        _renderDraggedImages();
+        _renderDraggedImages(getScreenScaling());
     }
 
 
     void InteractiveUINode::render(const Rect& clipping) {
         UINode::render(clipping);
-        _renderDraggedImages();
+        _renderDraggedImages(getScreenScaling());
     }
 
 

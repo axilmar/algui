@@ -59,8 +59,10 @@ int main(int argc, char** argv) {
     al_install_joystick();
     al_install_audio();
 
+    const Scaling scaling{1, 1};
+
     //al_set_new_display_flags(ALLEGRO_FULLSCREEN | ALLEGRO_OPENGL);
-    ALLEGRO_DISPLAY* display = al_create_display(800, 600);
+    ALLEGRO_DISPLAY* display = al_create_display(800*scaling.horizontal, 600*scaling.vertical);
     ALLEGRO_EVENT_QUEUE* eventQueue = al_create_event_queue();
     ALLEGRO_TIMER* timer = al_create_timer(1.0/60.0);
     al_register_event_source(eventQueue, al_get_display_event_source(display));
@@ -73,7 +75,8 @@ int main(int argc, char** argv) {
     al_start_timer(timer);
 
     std::shared_ptr<Test> root = std::make_shared<Test>("root");
-    root->setRect(Rect::rect(0, 0, 800, 600));
+    root->setRect(Rect::rect(0, 0, al_get_display_width(display), al_get_display_height(display)));
+    root->setScaling(scaling);
 
     std::shared_ptr<Test> form1 = std::make_shared<Test>("form1");
     form1->setRect(Rect::rect(100, 50, 250, 200));
@@ -152,6 +155,11 @@ int main(int argc, char** argv) {
             case ALLEGRO_EVENT_TIMER:
                 root->render();
                 al_flip_display();
+                break;
+
+            case ALLEGRO_EVENT_MOUSE_AXES:
+                std::cout << "mouse x = " << event.mouse.x << ", mouse y = " << event.mouse.y << std::endl;
+                root->doEvent(event);
                 break;
 
             case ALLEGRO_EVENT_KEY_DOWN:

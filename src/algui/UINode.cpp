@@ -210,8 +210,8 @@ namespace algui {
         UINode* parent = getParentPtr();
         if (parent) {
             m_screenRect.setPositionAndSize(
-                m_rect.left * parent->m_screenScaling.horizontal + parent->m_screenRect.left,
-                m_rect.top * parent->m_screenScaling.vertical + parent->m_screenRect.top,
+                parent->m_screenRect.left + m_rect.left * parent->m_screenScaling.horizontal,
+                parent->m_screenRect.top + m_rect.top * parent->m_screenScaling.vertical,
                 m_rect.getWidth() * parent->m_screenScaling.horizontal,
                 m_rect.getHeight() * parent->m_screenScaling.vertical);
         }
