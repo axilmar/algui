@@ -26,6 +26,7 @@ namespace algui {
         WidgetPtr parent() const;
         const WidgetContainer& children() const;
         size_t indexOf(const WidgetPtr& child) const;
+        bool inTree(const WidgetPtr& root) const;
         virtual void add(const WidgetPtr& child, size_t index = -1);
         virtual void remove(const WidgetPtr& child);
         void detach();
@@ -54,19 +55,34 @@ namespace algui {
         bool enabledTree() const;
         void setEnabled(bool enabled);
 
+        static WidgetPtr focusedWidget();
+        bool focused() const;
+        bool focusedTree() const;
+        virtual bool setFocused(bool focused);
+
         void invalidatePreferredSize();
         void invalidateLayout();
         virtual void update();
         void draw(const PainterPtr& painter);
 
+        WidgetPtr childFromPoint(float x, float y) const;
+        WidgetPtr descentantFromPoint(float x, float y) const;
+        WidgetPtr widgetFromPoint(float x, float y) const;
+
     protected:
-        virtual void onSetPreferredSize() {
-        }
+        virtual void setPreferredSize() {}
 
-        virtual void onSetLayout() {
-        }
+        virtual void doLayout() {}
 
-        virtual void onPaint(const PainterPtr& painter) const = 0;
+        virtual void paint(const PainterPtr& painter) const = 0;
+
+        virtual bool wantsFocus() const;
+
+        virtual void lostFocus() {}
+
+        virtual void gotFocus() {}
+
+        virtual bool hitTest(float x, float y) const;
 
     private:
         std::weak_ptr<Widget> m_parent;
@@ -89,17 +105,29 @@ namespace algui {
         bool m_visibleTree;
         bool m_enabled;
         bool m_enabledTree;
+        bool m_focused;
+        bool m_focusedTree;
+        bool m_focusedContainer;
+
+        void invalidateRect();
+        void invalidateParent();
 
         void updatePreferredSize();
         void updateLayout();
-        void invalidateRect();
         void updateRect(Widget* parent);
-        void invalidateParent();
+        
         void updateVisibleTreeFlag(Widget* parent);
         void updateVisibleTree(Widget* parent);
+        
         void updateEnabledTreeFlag(Widget* parent);
         void updateEnabledTree(Widget* parent);
-        void updateEnabledVisibleTree(Widget* parent);
+        
+        void updateFocusedTreeFlag(Widget* parent);
+        void updateFocusedTree(Widget* parent);
+
+        void updateTreeFlags(Widget* parent);
+
+        void updateAncestorFocusedContainer(bool focusedContainer);
     };
 
 

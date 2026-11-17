@@ -6,6 +6,15 @@
 namespace algui {
 
 
+    // INTERNAL ---------------------------------------------------------------
+
+
+    static std::weak_ptr<Widget> focusedWidget;
+
+
+    // PUBLIC -----------------------------------------------------------------
+
+
     Widget::Widget()
         : m_x(0)
         , m_y(0)
@@ -25,6 +34,9 @@ namespace algui {
         , m_visibleTree(true)
         , m_enabled(true)
         , m_enabledTree(true)
+        , m_focused(false)
+        , m_focusedTree(false)
+        , m_focusedContainer(false)
     {
     }
 
@@ -54,6 +66,21 @@ namespace algui {
     }
 
 
+    bool Widget::inTree(const WidgetPtr& root) const {
+        if (!root) {
+            throw std::invalid_argument("Widget::inTree(root): null root.");
+        }
+        
+        for (WidgetPtr wgt = const_cast<Widget*>(this)->shared_from_this(); wgt; wgt = wgt->parent()) {
+            if (wgt == root) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
     void Widget::add(const WidgetPtr& child, size_t index) {
         if (!child) {
             throw std::invalid_argument("Widget::add(child): null child.");
@@ -63,16 +90,27 @@ namespace algui {
             throw std::invalid_argument("Widget::add(child): invalid child.");
         }
         
+        if (inTree(child)) {
+            throw std::invalid_argument("Widget::add(child): invalid tree.");
+        }
+        
         if (index > m_children.size()) {
             index = m_children.size();
         }
 
         child->m_parent = shared_from_this();
         m_children.insert(std::next(m_children.begin(), index), child);
+
         child->invalidateRect();
-        invalidatePreferredSize();
+        invalidatePreferredSize();        
         invalidateLayout();
-        child->updateEnabledVisibleTree(this);
+        
+        child->updateTreeFlags(this);
+
+        WidgetPtr currentFocused = algui::focusedWidget.lock();
+        if (currentFocused && currentFocused->inTree(child)) {
+            child->updateAncestorFocusedContainer(true);
+        }
     }
 
 
@@ -84,12 +122,19 @@ namespace algui {
         if (child->parent().get() != this) {
             throw std::invalid_argument("Widget::remove(child): invalid child.");
         }
+
+        WidgetPtr currentFocused = algui::focusedWidget.lock();
+        if (currentFocused && currentFocused->inTree(child)) {
+            currentFocused->setFocused(false);
+        }
         
         child->m_parent.reset();
         m_children.erase(std::find(m_children.begin(), m_children.end(), child));
+
         invalidatePreferredSize();
         invalidateLayout();
-        child->updateEnabledVisibleTree(nullptr);
+        
+        child->updateTreeFlags(nullptr);
     }
 
 
@@ -230,9 +275,64 @@ namespace algui {
 
     void Widget::setEnabled(bool enabled) {
         if (enabled != m_enabled) {
+            if (!enabled) {
+                WidgetPtr currentFocused = algui::focusedWidget.lock();
+                if (currentFocused && currentFocused->inTree(shared_from_this())) {
+                    currentFocused->setFocused(false);
+                }
+            }
             m_enabled = enabled;
             updateEnabledTree(parent().get());
         }
+    }
+
+
+    WidgetPtr Widget::focusedWidget() {
+        return algui::focusedWidget.lock();
+    }
+
+
+    bool Widget::focused() const {
+        return m_focused;
+    }
+
+
+    bool Widget::focusedTree() const {
+        return m_focusedTree;
+    }
+
+
+    bool Widget::setFocused(bool focused) {
+        bool result = false;
+
+        if (focused != m_focused) {
+            if (focused) {
+                if (m_enabledTree && wantsFocus()) {
+                    WidgetPtr currentFocused = algui::focusedWidget.lock();
+                    if (currentFocused) {
+                        currentFocused->setFocused(false);
+                    }
+
+                    algui::focusedWidget = shared_from_this();
+                    m_focused = true;
+                    updateFocusedTree(parent().get());
+                    updateAncestorFocusedContainer(true);
+                    gotFocus();
+                    result = true;
+                }
+            }
+
+            else {
+                algui::focusedWidget.reset();
+                m_focused = false;
+                updateFocusedTree(parent().get());
+                updateAncestorFocusedContainer(false);
+                lostFocus();
+                result = true;
+            }
+        }
+        
+        return result;
     }
 
 
@@ -275,7 +375,7 @@ namespace algui {
 
     void Widget::draw(const PainterPtr& painter) {
         if (m_visibleTree) {
-            onPaint(painter);
+            paint(painter);
             for (const WidgetPtr& child : m_children) {
                 child->draw(painter);
             }
@@ -283,32 +383,59 @@ namespace algui {
     }
 
 
-    void Widget::updatePreferredSize() {
-        if (!m_validPreferredSizeTree) {
-            for (const WidgetPtr& child : m_children) {
-                child->updatePreferredSize();
+    WidgetPtr Widget::childFromPoint(float x, float y) const {
+        WidgetPtr result;
+
+        for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
+            const WidgetPtr& child = *it;
+            if (child->hitTest(x, y)) {
+                result = child;
+                break;
             }
-            m_validPreferredSizeTree = true;
         }
-        if (!m_validPreferredSize) {
-            onSetPreferredSize();
-            m_validPreferredSize = true;
+
+        return result;
+    }
+        
+        
+    WidgetPtr Widget::descentantFromPoint(float x, float y) const {
+        WidgetPtr result;
+
+        WidgetPtr child = childFromPoint(x, y);
+        if (child) {
+            result = child->widgetFromPoint(x, y);
+            if (!result) {
+                result = child;
+            }
         }
+
+        return result;
     }
 
 
-    void Widget::updateLayout() {
-        if (!m_validLayout) {
-            onSetLayout();
-            m_validLayout = true;
+    WidgetPtr Widget::widgetFromPoint(float x, float y) const {
+        WidgetPtr result = descentantFromPoint(x, y);
+        if (!result && hitTest(x, y)) {
+            result = const_cast<Widget*>(this)->shared_from_this();
         }
-        if (!m_validLayoutTree) {
-            for (const WidgetPtr& child : m_children) {
-                child->updateLayout();
-            }
-            m_validLayoutTree = true;
-        }
+        return result;
     }
+
+
+    // PROTECTED --------------------------------------------------------------
+
+
+    bool Widget::wantsFocus() const {
+        return false;
+    }
+
+
+    bool Widget::hitTest(float x, float y) const {
+        return m_visibleTree && x >= m_left && y >= m_top && x < m_right && y < m_bottom;
+    }
+
+
+    // PRIVATE ----------------------------------------------------------------
 
 
     void Widget::invalidateRect() {
@@ -326,6 +453,43 @@ namespace algui {
     }
         
         
+    void Widget::invalidateParent() {
+        WidgetPtr parent = this->parent();
+        if (parent) {
+            parent->invalidatePreferredSize();
+            parent->invalidateLayout();
+        }
+    }
+
+
+    void Widget::updatePreferredSize() {
+        if (!m_validPreferredSizeTree) {
+            for (const WidgetPtr& child : m_children) {
+                child->updatePreferredSize();
+            }
+            m_validPreferredSizeTree = true;
+        }
+        if (!m_validPreferredSize) {
+            setPreferredSize();
+            m_validPreferredSize = true;
+        }
+    }
+
+
+    void Widget::updateLayout() {
+        if (!m_validLayout) {
+            doLayout();
+            m_validLayout = true;
+        }
+        if (!m_validLayoutTree) {
+            for (const WidgetPtr& child : m_children) {
+                child->updateLayout();
+            }
+            m_validLayoutTree = true;
+        }
+    }
+
+
     void Widget::updateRect(Widget* parent) {
         if (!m_validRect) {
             if (parent) {
@@ -346,15 +510,6 @@ namespace algui {
                 child->updateRect(this);
             }
             m_validRectTree = true;
-        }
-    }
-
-
-    void Widget::invalidateParent() {
-        WidgetPtr parent = this->parent();
-        if (parent) {
-            parent->invalidatePreferredSize();
-            parent->invalidateLayout();
         }
     }
 
@@ -385,11 +540,37 @@ namespace algui {
     }
 
 
-    void Widget::updateEnabledVisibleTree(Widget* parent) {
-        updateEnabledTreeFlag(parent);
-        updateVisibleTreeFlag(parent);
+    void Widget::updateFocusedTreeFlag(Widget* parent) {
+        m_focusedTree = m_focused && (!parent || parent->m_focusedTree);
+    }
+
+
+    void Widget::updateFocusedTree(Widget* parent) {
+        updateFocusedTreeFlag(parent);
         for (const WidgetPtr& child : m_children) {
-            child->updateEnabledVisibleTree(this);
+            child->updateFocusedTree(this);
+        }
+    }
+
+
+    void Widget::updateTreeFlags(Widget* parent) {
+        updateVisibleTreeFlag(parent);
+        updateEnabledTreeFlag(parent);
+        updateFocusedTreeFlag(parent);
+        for (const WidgetPtr& child : m_children) {
+            child->updateTreeFlags(this);
+        }
+    }
+
+
+    void Widget::updateAncestorFocusedContainer(bool focusedContainer) {
+        for (WidgetPtr ancestor = parent(); ancestor; ancestor = ancestor->parent()) {
+            if (focusedContainer != ancestor->m_focusedContainer) {
+                ancestor->m_focusedContainer = focusedContainer;
+            }
+            else {
+                break;
+            }
         }
     }
 
