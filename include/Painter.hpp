@@ -19,6 +19,10 @@ namespace algui {
         virtual void drawRect(float left, float top, float right, float bottom, const Color& color, float thickness) = 0;
 
         virtual void fillRect(float left, float top, float right, float bottom, const Color& color) = 0;
+
+        virtual void getClipping(float& left, float& top, float& right, float& bottom) = 0;
+
+        virtual void setClipping(float left, float top, float right, float bottom) = 0;
     };
 
 

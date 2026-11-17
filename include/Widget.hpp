@@ -63,7 +63,8 @@ namespace algui {
         void invalidatePreferredSize();
         void invalidateLayout();
         virtual void update();
-        void draw(const PainterPtr& painter);
+        virtual void draw(const PainterPtr& painter);
+        virtual void draw(const PainterPtr& painter, float left, float top, float right, float bottom);
 
         WidgetPtr childFromPoint(float x, float y) const;
         WidgetPtr descentantFromPoint(float x, float y) const;
@@ -74,7 +75,13 @@ namespace algui {
 
         virtual void doLayout() {}
 
-        virtual void paint(const PainterPtr& painter) const = 0;
+        virtual void paintBackground(const PainterPtr& painter) const = 0;
+
+        virtual void drawChildren(const PainterPtr& painter) const;
+
+        virtual void drawChildren(const PainterPtr& painter, float left, float top, float right, float bottom) const;
+
+        virtual void paintForeground(const PainterPtr& painter) const {}
 
         virtual bool wantsFocus() const;
 

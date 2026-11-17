@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include "Widget.hpp"
+#include "utility.hpp"
 
 
 namespace algui {
@@ -375,10 +376,18 @@ namespace algui {
 
     void Widget::draw(const PainterPtr& painter) {
         if (m_visibleTree) {
-            paint(painter);
-            for (const WidgetPtr& child : m_children) {
-                child->draw(painter);
-            }
+            paintBackground(painter);
+            drawChildren(painter);
+            paintForeground(painter);
+        }
+    }
+
+
+    void Widget::draw(const PainterPtr& painter, float left, float top, float right, float bottom) {
+        if (m_visibleTree && checkRectIntersection(left, top, right, bottom, m_left, m_top, m_right, m_bottom)) {
+            paintBackground(painter);
+            drawChildren(painter, left, top, right, bottom);
+            paintForeground(painter);
         }
     }
 
@@ -423,6 +432,20 @@ namespace algui {
 
 
     // PROTECTED --------------------------------------------------------------
+
+
+    void Widget::drawChildren(const PainterPtr& painter) const {
+        for (const WidgetPtr& child : m_children) {
+            child->draw(painter);
+        }
+    }
+
+
+    void Widget::drawChildren(const PainterPtr& painter, float left, float top, float right, float bottom) const {
+        for (const WidgetPtr& child : m_children) {
+            child->draw(painter, left, top, right, bottom);
+        }
+    }
 
 
     bool Widget::wantsFocus() const {
