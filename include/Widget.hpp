@@ -47,9 +47,11 @@ namespace algui {
         void setHeight(float height);
 
         bool visible() const;
+        bool visibleTree() const;
         void setVisible(bool visible);
 
         bool enabled() const;
+        bool enabledTree() const;
         void setEnabled(bool enabled);
 
         void invalidatePreferredSize();

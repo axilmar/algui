@@ -204,6 +204,11 @@ namespace algui {
     }
 
 
+    bool Widget::visibleTree() const {
+        return m_visibleTree;
+    }
+
+
     void Widget::setVisible(bool visible) {
         if (visible != m_visible) {
             m_visible = visible;
@@ -215,6 +220,11 @@ namespace algui {
 
     bool Widget::enabled() const {
         return m_enabled;
+    }
+
+
+    bool Widget::enabledTree() const {
+        return m_enabledTree;
     }
 
 
