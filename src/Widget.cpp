@@ -22,6 +22,9 @@ namespace algui {
         , m_validRect(false)
         , m_validRectTree(false)
         , m_visible(true)
+        , m_visibleTree(true)
+        , m_enabled(true)
+        , m_enabledTree(true)
     {
     }
 
@@ -69,6 +72,7 @@ namespace algui {
         child->invalidateRect();
         invalidatePreferredSize();
         invalidateLayout();
+        child->updateEnabledVisibleTree(this);
     }
 
 
@@ -85,6 +89,7 @@ namespace algui {
         m_children.erase(std::find(m_children.begin(), m_children.end(), child));
         invalidatePreferredSize();
         invalidateLayout();
+        child->updateEnabledVisibleTree(nullptr);
     }
 
 
@@ -159,11 +164,7 @@ namespace algui {
                 invalidateLayout();
             }
 
-            WidgetPtr parent = this->parent();
-            if (parent) {
-                parent->invalidatePreferredSize();
-                parent->invalidateLayout();
-            }
+            invalidateParent();
         }
     }
 
@@ -195,6 +196,33 @@ namespace algui {
 
     void Widget::setHeight(float height) {
         setSize(m_width, height);
+    }
+
+
+    bool Widget::visible() const {
+        return m_visible;
+    }
+
+
+    void Widget::setVisible(bool visible) {
+        if (visible != m_visible) {
+            m_visible = visible;
+            updateVisibleTree(parent().get());
+            invalidateParent();
+        }
+    }
+
+
+    bool Widget::enabled() const {
+        return m_enabled;
+    }
+
+
+    void Widget::setEnabled(bool enabled) {
+        if (enabled != m_enabled) {
+            m_enabled = enabled;
+            updateEnabledTree(parent().get());
+        }
     }
 
 
@@ -236,7 +264,7 @@ namespace algui {
 
 
     void Widget::draw(const PainterPtr& painter) {
-        if (m_visible) {
+        if (m_visibleTree) {
             onPaint(painter);
             for (const WidgetPtr& child : m_children) {
                 child->draw(painter);
@@ -308,6 +336,50 @@ namespace algui {
                 child->updateRect(this);
             }
             m_validRectTree = true;
+        }
+    }
+
+
+    void Widget::invalidateParent() {
+        WidgetPtr parent = this->parent();
+        if (parent) {
+            parent->invalidatePreferredSize();
+            parent->invalidateLayout();
+        }
+    }
+
+
+    void Widget::updateVisibleTreeFlag(Widget* parent) {
+        m_visibleTree = m_visible && (!parent || parent->m_visibleTree);
+    }
+
+
+    void Widget::updateVisibleTree(Widget* parent) {
+        updateVisibleTreeFlag(parent);
+        for (const WidgetPtr& child : m_children) {
+            child->updateVisibleTree(this);
+        }
+    }
+
+
+    void Widget::updateEnabledTreeFlag(Widget* parent) {
+        m_enabledTree = m_enabled && (!parent || parent->m_enabledTree);
+    }
+
+
+    void Widget::updateEnabledTree(Widget* parent) {
+        updateEnabledTreeFlag(parent);
+        for (const WidgetPtr& child : m_children) {
+            child->updateEnabledTree(this);
+        }
+    }
+
+
+    void Widget::updateEnabledVisibleTree(Widget* parent) {
+        updateEnabledTreeFlag(parent);
+        updateVisibleTreeFlag(parent);
+        for (const WidgetPtr& child : m_children) {
+            child->updateEnabledVisibleTree(this);
         }
     }
 

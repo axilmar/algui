@@ -46,6 +46,12 @@ namespace algui {
         void setWidth(float width);
         void setHeight(float height);
 
+        bool visible() const;
+        void setVisible(bool visible);
+
+        bool enabled() const;
+        void setEnabled(bool enabled);
+
         void invalidatePreferredSize();
         void invalidateLayout();
         virtual void update();
@@ -78,12 +84,20 @@ namespace algui {
         bool m_validRect;
         bool m_validRectTree;
         bool m_visible;
+        bool m_visibleTree;
+        bool m_enabled;
+        bool m_enabledTree;
 
         void updatePreferredSize();
         void updateLayout();
         void invalidateRect();
         void updateRect(Widget* parent);
-
+        void invalidateParent();
+        void updateVisibleTreeFlag(Widget* parent);
+        void updateVisibleTree(Widget* parent);
+        void updateEnabledTreeFlag(Widget* parent);
+        void updateEnabledTree(Widget* parent);
+        void updateEnabledVisibleTree(Widget* parent);
     };
 
 
