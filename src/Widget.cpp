@@ -42,6 +42,13 @@ namespace algui {
     }
 
 
+    Widget::~Widget() {
+        if (m_layout) {
+            m_layout->removeWidget(shared_from_this());
+        }
+    }
+
+
     WidgetPtr Widget::parent() const {
         return m_parent.lock();
     }
@@ -431,7 +438,34 @@ namespace algui {
     }
 
 
+    const LayoutPtr& Widget::layout() const {
+        return m_layout;
+    }
+        
+        
+    void Widget::setLayout(const LayoutPtr& layout) {
+        if (layout != m_layout) {
+            if (m_layout) {
+                m_layout->removeWidget(shared_from_this());
+            }
+            m_layout = layout;
+            if (m_layout) {
+                m_layout->addWidget(shared_from_this());
+                invalidatePreferredSize();
+                invalidateLayout();
+            }
+        }
+    }
+
+
     // PROTECTED --------------------------------------------------------------
+
+
+    void Widget::doLayout() {
+        if (m_layout) {
+            m_layout->apply(shared_from_this());
+        }
+    }
 
 
     void Widget::drawChildren(const PainterPtr& painter) const {

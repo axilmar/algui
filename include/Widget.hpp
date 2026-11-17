@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 #include "Painter.hpp"
+#include "Layout.hpp"
 
 
 namespace algui {
@@ -13,15 +14,13 @@ namespace algui {
     class Widget;
 
 
-    using WidgetPtr = std::shared_ptr<Widget>;
-
-
     using WidgetContainer = std::vector<WidgetPtr>;
 
 
     class Widget : public std::enable_shared_from_this<Widget> {
     public:
         Widget();
+        virtual ~Widget();
 
         WidgetPtr parent() const;
         const WidgetContainer& children() const;
@@ -70,10 +69,13 @@ namespace algui {
         WidgetPtr descentantFromPoint(float x, float y) const;
         WidgetPtr widgetFromPoint(float x, float y) const;
 
+        const LayoutPtr& layout() const;
+        void setLayout(const LayoutPtr& layout);
+
     protected:
         virtual void setPreferredSize() {}
 
-        virtual void doLayout() {}
+        virtual void doLayout();
 
         virtual void paintBackground(const PainterPtr& painter) const = 0;
 
@@ -94,6 +96,7 @@ namespace algui {
     private:
         std::weak_ptr<Widget> m_parent;
         WidgetContainer m_children;
+        LayoutPtr m_layout;
         float m_x;
         float m_y;
         float m_width;

@@ -39,6 +39,14 @@ namespace algui {
     }
 
 
+    template <class It, class StrongPtr>
+    auto findWeakPtr(const It& begin, const It& end, const StrongPtr& ptr) {
+        return std::find_if(begin, end, [&](const auto& weakPtr) {
+            return weakPtr.lock() == ptr;
+        });
+    }
+
+
 } //namespace algui
 
 
